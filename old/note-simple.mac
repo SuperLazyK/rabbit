@@ -1,0 +1,80 @@
+ratprint: false$
+
+declare ("'", alphabetic)$
+depends([z, x, th, th2] , t)$
+/*
+z : linear actuator stroke
+x : retraction of spring
+th : angle of the center-mass
+omega : rotation velocity of fly-wheele
+*/
+
+size(M):=[length(M),length(args(M))]$
+sizev(M):=length(M)$
+
+grind:true;
+showmat(m):= for i thru length(m) do
+    for j thru length(transpose(m)) do
+        block([], printf(true,"~d:~d=~%  ~a~%", i-1,j-1, m[i][j]))$
+
+load ("f90")$
+f90_output_line_length_max:10000000$
+showmatf90(m):= for i thru length(m) do
+    for j thru length(transpose(m)) do
+    block([], printf(true,"[~d][~d] = ~%  ~%", i-1,j-1), f90(m[i][j]))$
+
+symbolilze(M):= subst([ diff(z,t,2)=ddz
+                      , diff(x,t,2)=ddx
+                      , diff(th,t,2)=ddth
+                      , diff(th2,t,2)=ddth2
+                      , diff(z,t,1)=dz
+                      , diff(x,t,1)=dx
+                      , diff(th,t,1)=dth
+                      , diff(th2,t,1)=dth2
+                    ], M)$
+
+
+/*------------*/
+/* Parameters */
+/*------------*/
+/* l0:0.2$ */
+
+
+/*------------*/
+/* Kinematics */
+/*------------*/
+l: l0 + x$
+r: l + z$
+cx: r * cos(th)$
+cy: r * sin(th)$
+
+th': diff(th,t,1)$
+r': diff(r,t,1)$
+
+z': diff(z,t,1)$
+x': diff(x,t,1)$
+th': diff(th,t,1)$
+omega:diff(th2,t,1)$
+
+/* r'*r' + r*r*th'*th' */
+v2: trigrat(trigsimp(expand(trigexpand(diff(cx,t,1) * diff(cx,t,1) + diff(cy,t,1) * diff(cy,t,1)))))$
+
+/* m : flywheel mass */
+U: 1/2 * k * x * x + r * sin(th) * (m) * g $
+T: 1/2 * (m) * v2 + 1/2 * I * omega * omega$
+L: T - U $
+
+X : [z, x, th, th2]$
+dX : [z', x', th', omega]$
+rhs : symbolilze((diff(jacobian([L],dX), t) - jacobian([L], X)))$
+disp(rhs)$
+disp(expand(rhs[1][3]
+- m * ddth * (r)^2
+- m * g * cos(th) * (r)
+- 2 * (dz + dx) * (r) * m * dth
+))$
+showmat(rhs)$
+
+lhs : [f, -f, tau, -tau]$
+
+

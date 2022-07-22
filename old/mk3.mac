@@ -1,0 +1,73 @@
+ratprint: false$
+
+declare ("'", alphabetic)$
+depends([th, phi] , t)$
+
+size(M):=[length(M),length(args(M))]$
+sizev(M):=length(M)$
+
+grind:true;
+showmat(m):= for i thru length(m) do
+    for j thru length(transpose(m)) do
+        block([], printf(true,"~d:~d=~%  ~a~%", i-1,j-1, m[i][j]))$
+
+load ("f90")$
+f90_output_line_length_max:10000000$
+showmatf90(m):= for i thru length(m) do
+    for j thru length(transpose(m)) do
+    block([], printf(true,"[~d][~d] = ~%  ~%", i-1,j-1), f90(m[i][j]))$
+
+symbolilze(M):= subst([ diff(th,t,2)=ddth
+                      , diff(phi,t,2)=ddphi
+                      , diff(th,t,1)=dth
+                      , diff(phi,t,1)=dphi
+                    ], M)$
+
+
+/* th: stater's angle from vertical line(world corrdinate) */
+/* phi: roter's angle from vertical liner(world corrdinate) not from stater*/
+/* relative coordinate is dicfficult */
+th': diff(th, t)$
+phi': diff(phi, t)$
+
+th'': diff(th', t)$
+phi'': diff(phi', t)$
+
+/*xw:R * (th + phi) $ */
+xw:R * (phi) $
+yw:R $
+xb: xw + L * sin(th) $
+yb: yw + L * cos(th) $
+Uw: yw * Mw * g $
+Ub: yb * Mb * g $
+xb':diff(xb, t) $
+yb':diff(yb, t) $
+xw':diff(xw, t) $
+yw':diff(yw, t) $
+
+
+Kb_rot: 1/2 * Jb * (th' ** 2) $
+/* Kw_rot: 1/2 * Jw * (phi' + th') ** 2 $ */
+Kw_rot: 1/2 * Jw * (phi') ** 2 $
+
+Kb_trs: 1/2 * Mb * (xb' ** 2 + yb' ** 2) $
+Kw_trs: 1/2 * Mw * (xw' ** 2 + yw' ** 2) $
+
+Lag: Kb_trs + Kb_rot + Kw_trs + Kw_rot - Ub - Uw $
+X : [phi, th]$
+dX : [phi', th']$
+ddX : symbolilze([phi'', th''])$
+rhs : ratsimp(expand(trigsimp(expand(trigexpand(symbolilze(diff(jacobian([Lag],dX), t) - jacobian([Lag], X)))))))$
+showmat(rhs)$
+A:trigrat(trigsimp(expand(trigexpand(jacobian(args(rhs)[1], ddX)))))$
+detA:trigrat(trigsimp(expand(trigexpand(determinant(((A)))))))$
+adjA:trigrat(trigsimp(expand(trigexpand(adjoint(A)))))$
+disp(detA)$
+b:(expand(transpose(rhs) - (jacobian(args(rhs)[1], ddX)).transpose(matrix(ddX))))$
+torq : matrix([T], [-T])$
+
+showmatf90((((adjA) . (torq - b))))$
+
+/*
+
+*/

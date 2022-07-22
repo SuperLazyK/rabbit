@@ -1,0 +1,17 @@
+load ("f90")$
+
+showmat(m):= for i thru length(m) do
+    for j thru length(transpose(m)) do
+        block([], printf(true,"~d:~d=~%", i,j), f90(m[i][j]))$
+
+diffmatbyvec(m,v):= \
+    for i thru length(m) do
+        for j thru length(transpose(m)) do
+            for k thru length(v) do
+                for l thru length(transpose(v)) do
+                block([], printf(true,"~d:~d:~d:~d=~%", i,j,k,l), f90(diff(m[i][j], v[k][l])))$
+
+m: matrix([x, x*x,2], [1, x,4])$
+print(m)$
+showmat(m)$
+diffmatbyvec(m, matrix([x, x]))$
