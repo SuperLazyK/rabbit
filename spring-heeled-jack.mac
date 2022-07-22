@@ -1,0 +1,202 @@
+/* 4 mass point */
+
+
+ratprint: false$
+
+declare ("'", alphabetic)$
+depends([xr, yr] , t)$  /* root */
+depends([z] , t)$
+depends([th0, th1, th2] , t)$
+depends([u1, u2] , t)$
+
+size(M):=[length(M),length(args(M))]$
+sizev(M):=length(M)$
+
+grind:true;
+showmat(m):= for i thru length(m) do
+    for j thru length(transpose(m)) do
+        block([], printf(true,"~d:~d=~%  ~a~%", i-1,j-1, m[i][j]))$
+
+load ("f90")$
+f90_output_line_length_max:10000000$
+showmatf90(m):= for i thru length(m) do
+    for j thru length(transpose(m)) do
+    block([], printf(true,"[~d][~d] = ", i-1,j-1), f90(m[i][j]))$
+
+symbolilze(M):= subst([ diff(xr,t,2)=ddxr
+                      , diff(yr,t,2)=ddyr
+                      , diff(z,t,2)=ddz
+                      , diff(th0,t,2)=ddth0
+                      , diff(th1,t,2)=ddth1
+                      , diff(th2,t,2)=ddth2
+                      , diff(xr,t,1)=dxr
+                      , diff(yr,t,1)=dyr
+                      , diff(z,t,1)=dz
+                      , diff(th0,t,1)=dth0
+                      , diff(th1,t,1)=dth1
+                      , diff(th2,t,1)=dth2
+                    ], M)$
+ground(M):= subst([dxr=0 , ddxr=0 , dyr=0, ddyr=0 ], M)$
+air(M):= subst([dz=0 , ddz=0 , z=0], M)$
+
+/*------------*/
+/* Kinematics */
+/*------------*/
+x0: xr + (z0 + z) * cos(th0)$
+y0: yr + (z0 + z) * sin(th0)$
+
+x1: x0 + l0 * cos(th0)$
+y1: y0 + l0 * sin(th0)$
+
+x2: x1 + l1 * cos(th1 + th0)$
+y2: y1 + l1 * sin(th1 + th0)$
+
+x3: x2 + l2 * cos(th2 + th1 + th0)$
+y3: y2 + l2 * sin(th2 + th1 + th0)$
+
+xc: (m0 * x0 + m1 * x1 + m2 * x2 + m3 * x3) / (m0 + m1 + m2 + m3) $
+yc: (m0 * y0 + m1 * y1 + m2 * y2 + m3 * y3) / (m0 + m1 + m2 + m3) $
+
+r: (xc - x0) * cos(th0) + (yc - y0) * sin(th0) $
+
+f90(expand(xc - xr))$
+f90(expand(yc - yr))$
+
+/*----------*/
+/* dynamics */
+/*----------*/
+
+th0': diff(th0, t)$
+th1': diff(th1, t)$
+th2': diff(th2, t)$
+xr': diff(xr, t)$
+yr': diff(yr, t)$
+z': diff(z, t)$
+x0': diff(x0, t)$
+y0': diff(y0, t)$
+x1': diff(x1, t)$
+y1': diff(y1, t)$
+x2': diff(x2, t)$
+y2': diff(y2, t)$
+x3': diff(x3, t)$
+y3': diff(y3, t)$
+r': diff(r,t)$
+
+/*
+f90(symbolilze(x1'-x0'))$
+f90(symbolilze(y1'-y0'))$
+f90(symbolilze(x2'-x1'))$
+f90(symbolilze(y2'-y1'))$
+f90(symbolilze(x3'-x2'))$
+f90(symbolilze(y3'-y2'))$
+*/
+
+th0'': diff(th0', t)$
+th1'': diff(th1', t)$
+th2'': diff(th2', t)$
+xr'': diff(xr', t)$
+yr'': diff(yr', t)$
+z'': diff(z', t)$
+x0'': diff(x0', t)$
+y0'': diff(y0', t)$
+x1'': diff(x1', t)$
+y1'': diff(y1', t)$
+x2'': diff(x2', t)$
+y2'': diff(y2', t)$
+x3'': diff(x3', t)$
+y3'': diff(y3', t)$
+r'': diff(r', t)$
+
+f90(trigrat(trigsimp(expand(trigexpand(symbolilze(r'))))))$
+f90(trigrat(trigsimp(expand(trigexpand(symbolilze(r''))))))$
+
+/*----------*/
+/* Lagrange */
+/*----------*/
+
+v0: x0'**2 + y0'**2$
+v1: x1'**2 + y1'**2$
+v2: x2'**2 + y2'**2$
+v3: x3'**2 + y3'**2$
+
+U0: y0 * m0 * g$
+K0_trs: 1/2 * m0 * v0$
+
+U1: y1 * m1 * g$
+K1_trs: 1/2 * m1 * v1$
+
+U2: y2 * m2 * g$
+K2_trs: 1/2 * m2 * v2$
+
+U3: y3 * m3 * g$
+K3_trs: 1/2 * m3 * v3$
+
+L: K0_trs + K1_trs + K2_trs + K3_trs - U0 - U1 - U2 - U3 - 1/2*k*(z)*(z)$
+
+
+
+/* CASE1: air  fx0=fy0=0*/
+/*
+X : [xr, yr, th0, th1, th2]$
+dX : [xr', yr', th0', th1', th2']$
+ddX : symbolilze([xr'', yr'', th0'', th1'', th2''])$
+rhs : expand(air(symbolilze(expand(diff(jacobian([L],dX), t) - jacobian([L], X)))))$
+A:trigrat(trigsimp(expand(trigexpand(jacobian(args(rhs)[1], ddX)))))$
+b:(expand(transpose(rhs) - (jacobian(args(rhs)[1], ddX)).transpose(matrix(ddX))))$
+showmatf90(A)$
+showmatf90(b)$
+*/
+/*
+disp(trigsimp(expand(trigexpand(determinant(A)))))$
+*/
+
+
+/* CASE2: ground  dx0=ddx0=dy0=ddy0=0 */
+/*
+X : [z, th0, th1, th2]$
+dX : [z', th0', th1', th2']$
+ddX : symbolilze([z'', th0'', th1'', th2''])$
+rhs : expand(ground(symbolilze(diff(jacobian([L],dX), t) - jacobian([L], X))))$
+A:trigrat(trigsimp(expand(trigexpand(jacobian(args(rhs)[1], ddX)))))$
+b:(expand(transpose(rhs) - (jacobian(args(rhs)[1], ddX)).transpose(matrix(ddX))))$
+showmatf90(A)$
+showmatf90(b)$
+*/
+/*
+disp(trigsimp(expand(trigexpand(determinant(A)))))$
+*/
+
+
+/* CASE3-4: collision/jump */
+/* keep each node-velocity (Enegy)
+Note:
+ - vi is depend on v0!
+ - preserve v0  then all velocity is preserved
+ - impulse torq at root point does not change relative angle velocity at another point
+ - at jump, only dx dy dz changes!
+     - before jump
+       - dx dy = 0
+       - z = 0
+     - after jump
+       - dz = 0
+       - z = 0
+ - at collistion, only dx dy dz dth0 changes!
+     - before collistion
+       - z = 0
+       - dz = 0
+     - after colistion
+       - dx dy = 0
+*/
+jumpx0:ratsimp(subst([z=0], ground(symbolilze(x0')) -  subst([dz=dz'], air(symbolilze(x0')))))$
+jumpy0:ratsimp(subst([z=0], ground(symbolilze(y0')) -  subst([dz=dz'], air(symbolilze(y0')))))$
+f90(jumpx0 = 0)$
+f90(jumpy0 = 0)$
+
+colx0:ratsimp(subst([z=0], air(symbolilze(x0')) -  subst([dz=dz', dth0=dth0'], ground(symbolilze(x0')))))$
+coly0:ratsimp(subst([z=0], air(symbolilze(y0')) -  subst([dz=dz', dth0=dth0'], ground(symbolilze(y0')))))$
+f90(colx0 = 0)$
+f90(coly0 = 0)$
+
+
+
+

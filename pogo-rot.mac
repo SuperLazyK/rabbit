@@ -1,0 +1,336 @@
+/* 4 mass point */
+
+ratprint: false$
+
+declare ("'", alphabetic)$
+depends([xr, yr, thr] , t)$  /* root */
+depends([z] , t)$
+depends([th0, th1] , t)$
+depends([u1, u2] , t)$
+
+cross(vx0,vy0,vx1,vy1):=vx0*vy1-vy0*vx1$
+
+size(M):=[length(M),length(args(M))]$
+sizev(M):=length(M)$
+
+grind:true;
+showmat(m):= for i thru length(m) do
+    for j thru length(transpose(m)) do
+        block([], printf(true,"~d:~d= ~a~%", i-1,j-1, m[i][j]))$
+
+load ("f90")$
+f90_output_line_length_max:10000000$
+showmatf90(m):= for i thru length(m) do
+    for j thru length(transpose(m)) do
+    block([], printf(true,"[~d][~d] = ", i-1,j-1), f90(m[i][j]))$
+
+showmatf90'(m):= for i thru length(m) do
+    for j thru length(transpose(m)) do
+    block([], printf(true,"[~d][~d] = ", i-1,j-1), f90(m[i][j][1]))$
+
+symbolilze(M):= subst([ diff(xr,t,2)=ddxr
+                      , diff(yr,t,2)=ddyr
+                      , diff(z,t,2)=ddz
+                      , diff(thr,t,2)=ddthr
+                      , diff(th0,t,2)=ddth0
+                      , diff(th1,t,2)=ddth1
+                      , diff(xr,t,1)=dxr
+                      , diff(yr,t,1)=dyr
+                      , diff(z,t,1)=dz
+                      , diff(thr,t,1)=dthr
+                      , diff(th0,t,1)=dth0
+                      , diff(th1,t,1)=dth1
+                    ], M)$
+ground(M):= subst([dxr=0 , ddxr=0 , dyr=0, ddyr=0 ], M)$
+air(M):= subst([dz=0 , ddz=0 , z=0], M)$
+config(m):= subst([l0=0.4, l1=0.6,z0=0.55,m0=10,m1=25,m2=35,k=10000,c=0],m)$
+balance(m):= subst([thr=0, dthr=0, ddthr=0], (m))$
+fixth1(m):= subst([th1=0, dth1=0, ddth1=0], (m))$
+th0limit(m):= subst([th0=0, dth0=0], m)$
+
+/*------------*/
+/* Kinematics */
+/*------------*/
+x0: xr + (z0 + z) * sin(thr)$
+y0: yr + (z0 + z) * cos(thr)$
+
+d: 2 * l0 * cos(th0)$
+
+x1: x0 + d * sin(thr)$
+y1: y0 + d * cos(thr)$
+
+x2: x1 + l1 * sin(thr + th1)$
+y2: y1 + l1 * cos(thr + th1)$
+
+xc: (m0 * x0 + m1 * x1 + m2 * x2) / (m0 + m1 + m2) $
+yc: (m0 * y0 + m1 * y1 + m2 * y2) / (m0 + m1 + m2) $
+
+
+f90(expand(xc - xr))$
+f90(expand(yc - yr))$
+
+/*----------*/
+/* dynamics */
+/*----------*/
+thr': diff(thr, t)$
+th0': diff(th0, t)$
+th1': diff(th1, t)$
+xr': diff(xr, t)$
+yr': diff(yr, t)$
+z': diff(z, t)$
+x0': diff(x0, t)$
+y0': diff(y0, t)$
+x1': diff(x1, t)$
+y1': diff(y1, t)$
+x2': diff(x2, t)$
+y2': diff(y2, t)$
+
+f90(symbolilze(x0'-xr'))$
+f90(symbolilze(y0'-yr'))$
+f90(symbolilze(x1'-x0'))$
+f90(symbolilze(y1'-y0'))$
+f90(symbolilze(x2'-x1'))$
+f90(symbolilze(y2'-y1'))$
+f90(trigrat(trigsimp(expand(trigexpand(symbolilze(x0'))))))$
+f90(trigrat(trigsimp(expand(trigexpand(symbolilze(y0'))))))$
+
+thr'': diff(thr', t)$
+th0'': diff(th0', t)$
+th1'': diff(th1', t)$
+xr'': diff(xr', t)$
+yr'': diff(yr', t)$
+z'': diff(z', t)$
+x0'': diff(x0', t)$
+y0'': diff(y0', t)$
+x1'': diff(x1', t)$
+y1'': diff(y1', t)$
+x2'': diff(x2', t)$
+y2'': diff(y2', t)$
+
+/*
+ddr = -(ddth1*l1*m2*sin(th1) +dth1**2*l1*m2*cos(th1)-ddd*m2-ddd*m1)/(m2+m1+m0)
+*/
+
+/*----------*/
+/* Lagrange */
+/*----------*/
+
+v0: x0'**2 + y0'**2$
+v1: x1'**2 + y1'**2$
+v2: x2'**2 + y2'**2$
+
+U0: y0 * m0 * g$
+K0_trs: 1/2 * m0 * v0$
+
+U1: y1 * m1 * g$
+K1_trs: 1/2 * m1 * v1$
+
+U2: y2 * m2 * g$
+K2_trs: 1/2 * m2 * v2$
+
+D: 1/2 * c * z' * z' $
+L: K0_trs + K1_trs + K2_trs - U0 - U1 - U2 - 1/2*k*(z)*(z)$
+
+Mx:m0*x0'+m1*x1'+m2*x2'$
+My:m0*y0'+m1*y1'+m2*y2'$
+Mo:m0*cross(x0',y0',x0,y0)+m1*cross(x1',y1',x1,y1)+m2*cross(x2',y2',x2,y2)$
+
+Mr:Mx * sin(thr) + My * cos(thr)$
+Mth:Mx * cos(thr) - My * sin(thr)$
+
+xg: (m0*x0 + m1*x1 + m2*x2)/(m0+m1+m2)$
+yg: (m0*y0 + m1*y1 + m2*y2)/(m0+m1+m2)$
+xg': diff(xg,t)$
+yg': diff(yg,t)$
+
+Mxg:m0*(x0'-xg')+m1*(x1'-xg')+m2*(x2'-xg')$
+Myg:m0*(y0'-yg')+m1*(y1'-yg')+m2*(y2'-yg')$
+Mog:m0*cross(x0'-xg',y0'-yg',x0-xg,y0-yg)+m1*cross(x1'-xg',y1'-yg',x1-xg,y1-yg)+m2*cross(x2'-xg',y2'-yg',x2-xg,y2-yg)$
+
+/* CASE: air  fx0=fy0=0*/
+/*
+X : [xr, yr, thr, th0, th1]$
+dX : [xr', yr', thr', th0', th1']$
+ddX : symbolilze([xr'', yr'', thr'', th0'', th1''])$
+rhs : expand(air(symbolilze(expand(diff(jacobian([L],dX), t) - jacobian([L], X) + jacobian([D],dX)))))$
+A:trigrat(trigsimp(expand(trigexpand(jacobian(args(rhs)[1], ddX)))))$
+b:(expand(transpose(rhs) - (jacobian(args(rhs)[1], ddX)).transpose(matrix(ddX))))$
+showmatf90(A)$
+showmatf90(b)$
+*/
+/*
+disp(trigsimp(expand(trigexpand(determinant(A)))))$
+*/
+
+/* CASE: air-limit  fx0=fy0=0*/
+X : [xr, yr, thr, th1]$
+dX : [xr', yr', thr', th1']$
+ddX : symbolilze([xr'', yr'', thr'', th1''])$
+rhs : expand(th0limit(air(symbolilze(expand(diff(jacobian([L],dX), t) - jacobian([L], X) + jacobian([D],dX))))))$
+A:trigrat(trigsimp(expand(trigexpand(jacobian(args(rhs)[1], ddX)))))$
+b:(expand(transpose(rhs) - (jacobian(args(rhs)[1], ddX)).transpose(matrix(ddX))))$
+showmatf90(A)$
+showmatf90(b)$
+/*
+disp(trigsimp(expand(trigexpand(determinant(A)))))$
+*/
+
+/* CASE: ground  dx0=ddx0=dy0=ddy0=0 */
+/*
+X : [z, thr, th0, th1]$
+dX : [z', thr', th0', th1']$
+ddX : symbolilze([z'', thr'', th0'', th1''])$
+rhs : expand(ground(symbolilze(expand(diff(jacobian([L],dX), t) - jacobian([L], X) + jacobian([D],dX)))))$
+ddz_eq : solve(rhs[1][1]=0,ddz);
+ddth0_eq : solve(subst(ddz_eq, rhs[1][3])=tau0, ddth0);
+numer:true$
+f90((expand(ratsimp(fixth1(balance(config(rhs[1][3])))))))$
+f90((expand(ratsimp(fixth1(balance(config(ddz_eq)))))))$
+f90((expand(ratsimp(fixth1(balance(config(subst(ddth0_eq,ddth0))))))))$
+f90(expand(ratsimp(fixth1(balance(config(subst(ddz_eq, rhs[1][3])=tau0))))))$
+A:trigrat(trigsimp(expand(trigexpand(jacobian(args(rhs)[1], ddX)))))$
+b:(expand(transpose(rhs) - (jacobian(args(rhs)[1], ddX)).transpose(matrix(ddX))))$
+showmatf90(A)$
+showmatf90(b)$
+*/
+/*
+disp(trigsimp(expand(trigexpand(determinant(A)))))$
+*/
+
+/* CASE: ground-th0-limit  dx0=ddx0=dy0=ddy0=0 */
+/*
+X : [z, thr, th1]$
+dX : [z', thr', th1']$
+ddX : symbolilze([z'', thr'', th1''])$
+rhs : expand(th0limit(ground(symbolilze(expand(diff(jacobian([L],dX), t) - jacobian([L], X) + jacobian([D],dX))))))$
+A:trigrat(trigsimp(expand(trigexpand(jacobian(args(rhs)[1], ddX)))))$
+b:(expand(transpose(rhs) - (jacobian(args(rhs)[1], ddX)).transpose(matrix(ddX))))$
+showmatf90(A)$
+showmatf90(b)$
+*/
+
+/*
+disp(trigsimp(expand(trigexpand(determinant(A)))))$
+*/
+
+
+
+
+/* CASE3: jump dth0 does not change*/
+/*
+jumpx0:ratsimp(subst([z=0], ground(symbolilze(x0')) -  subst([dz=dz'], air(symbolilze(x0')))))$
+jumpy0:ratsimp(subst([z=0], ground(symbolilze(y0')) -  subst([dz=dz'], air(symbolilze(y0')))))$
+f90(jumpx0 = 0)$
+f90(jumpy0 = 0)$
+*/
+
+/* CASE4: collision */
+/* momentum conservation with dz and dthr */
+/*
+Mr:Mx * sin(thr) + My * cos(thr)$
+Mth:Mx * cos(thr) - My * sin(thr)$
+f90(symbolilze(Mr))$
+f90(symbolilze(Mth))$
+eq0:ratsimp(subst([z=0],air(symbolilze(Mr))) -  subst([dz=dz', dthr=dthr'], ground(symbolilze(Mr))))$
+eq1:ratsimp(subst([z=0],air(symbolilze(Mth))) -  subst([dz=dz', dthr=dthr'], ground(symbolilze(Mth))))$
+y : [dz', dthr']$
+A:jacobian([eq0, eq1], y)$
+b:(expand(transpose([eq0, eq1]) - A.transpose(matrix(y))))$
+showmatf90(A)$
+showmatf90(b)$
+*/
+/*
+disp(subst([z=0, thr=0], determinant(A)))$
+*/
+
+
+/* control-3: air*/
+/*
+X : [xr, yr, thr, th0, th1]$
+dX : [xr', yr', thr', th0', th1']$
+ext: matrix([0, 0, 0, tau0, tau1])$
+lhs : expand(air(symbolilze(expand(diff(jacobian([L],dX), t) - jacobian([L], X) + jacobian([D],dX)))))[1] - transpose(ext)$
+y : symbolilze([xr'', yr'', thr'', tau0, tau1])$
+A:trigrat(trigsimp(expand(trigexpand(jacobian(args(lhs), y)))))$
+showmatf90'(A)$
+b:ratsimp(trigrat(trigsimp(expand(trigexpand(lhs) - A.transpose(matrix(y))))))$
+showmatf90'(b)$
+*/
+/* A y + b = 0 */
+/*
+disp(trigsimp(expand(trigexpand(determinant(A)))))$
+*/
+
+/* control-4: ground */
+/*
+X : [z, thr, th0, th1]$
+dX : [z', thr', th0', th1']$
+ext: matrix([0, 0, tau0, tau1])$
+lhs : expand(ground(symbolilze(expand(diff(jacobian([L],dX), t) - jacobian([L], X) + jacobian([D],dX)))))[1] - transpose(ext)$
+y : symbolilze([z'', thr'', tau0, tau1])$
+A:trigrat(trigsimp(expand(trigexpand(jacobian(args(lhs), y)))))$
+showmatf90'(A)$
+b:ratsimp(trigrat(trigsimp(expand(trigexpand(lhs) - A.transpose(matrix(y))))))$
+showmatf90'(b)$
+*/
+/* A y + b = 0 */
+/*
+disp(trigsimp(expand(trigexpand(determinant(A)))))$
+*/
+
+/* CASE4: limit-air */
+/* no change dz and dthr(????) */
+/*inelastic:subst([dth0=0, dth1=dth1', dxr=dxr', dyr=dyr'], symbolilze(x0' * sin(thr) + y0' * cos(thr) - (x1' * sin(thr) + y1' * cos(thr))))$*/
+/* inelastic <- dth0 = 0 */
+/*
+Mx1:ratsimp(subst([dth0=0, dth1=dth1', dxr=dxr', dyr=dyr'], symbolilze(Mx)))$
+My1:ratsimp(subst([dth0=0, dth1=dth1', dxr=dxr', dyr=dyr'], symbolilze(My)))$
+Mog1:ratsimp(subst([dth0=0, dth1=dth1', dxr=dxr', dyr=dyr'], symbolilze(Mog)))$
+Mo1:ratsimp(subst([dth0=0, dth1=dth1', dxr=dxr', dyr=dyr'], symbolilze(Mo)))$
+Mx0:ratsimp(symbolilze(Mx))$
+My0:ratsimp(symbolilze(My))$
+Mog0:ratsimp(symbolilze(Mog))$air
+Mo0:ratsimp(symbolilze(Mo))$
+eqs:[ratsimp(Mx1 - Mx0), ratsimp(My1 - My0), ratsimp(Mog1 - Mog0)]$
+f90(eqs)$
+y:ratsimp([dxr',dyr',dth1'])$
+A:jacobian(eqs, y)$
+b:ratsimp(expand(transpose(eqs) - A.transpose(matrix(y))))$
+showmatf90(A)$
+showmatf90(b)$
+*/
+/*
+trans-momentum conservation!!
+f90(ratsimp(Mx1 - Mx0))$
+f90(ratsimp(My1 - My0))$
+f90(ratsimp(coeff(expand(Mo1 - Mo0), xr)))$
+f90(ratsimp(coeff(expand(Mo1 - Mo0), yr)))$
+*/
+
+/* CASE5: limit-ground */
+/*inelastic:subst([dth0=0, dth1=dth1', dxr=dxr', dyr=dyr'], symbolilze(x0' * sin(thr) + y0' * cos(thr) - (x1' * sin(thr) + y1' * cos(thr))))$*/
+/* inelastic <- dth0 = 0 */
+Mx1:ratsimp(subst([dth0=0, dthr=dthr', dth1=dth1', dz=dz'], symbolilze(Mx)))$
+My1:ratsimp(subst([dth0=0, dthr=dthr', dth1=dth1', dz=dz'], symbolilze(My)))$
+Mth1:ratsimp(subst([dth0=0, dthr=dthr', dth1=dth1', dz=dz'], symbolilze(Mth)))$
+Mr1:ratsimp(subst([dth0=0, dthr=dthr', dth1=dth1', dz=dz'], symbolilze(Mr)))$
+Mog1:ratsimp(subst([dth0=0, dthr=dthr', dth1=dth1', dz=dz'], symbolilze(Mog)))$
+Mo1:ratsimp(subst([dth0=0, dthr=dthr', dth1=dth1', dz=dz'], symbolilze(Mo)))$
+Mx0:ratsimp(symbolilze(Mx))$
+My0:ratsimp(symbolilze(My))$
+Mr0:ratsimp(symbolilze(Mr))$
+Mth0:ratsimp(symbolilze(Mth))$
+Mog0:ratsimp(symbolilze(Mog))$
+Mo0:ratsimp(symbolilze(Mo))$
+
+f90(Mx1)$
+eqs:trigsimp(expand(trigexpand([ratsimp(Mx1 - Mx0), ratsimp(My1 - My0), ratsimp(Mog1 - Mog0)])))$
+f90(eqs)$
+y:ratsimp([dthr', dz',dth1'])$
+A:jacobian(eqs, y)$
+b:ratsimp(expand(transpose(eqs) - A.transpose(matrix(y))))$
+showmatf90(A)$
+showmatf90(b)$
+disp(trigsimp(expand(trigexpand(rank(A)))))$
+
+

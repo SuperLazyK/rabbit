@@ -1,0 +1,174 @@
+/* 3 rigid body */
+
+declare ("'", alphabetic)$
+depends([x0, y0] , t)$
+depends([th0, th1, th2] , t)$
+depends([u0, u1, u2] , t)$
+
+size(M):=[length(M),length(args(M))]$
+sizev(M):=length(M)$
+
+grind:true;
+showmat(m):= for i thru length(m) do
+    for j thru length(transpose(m)) do
+        block([], printf(true,"~d:~d=~%  ~a~%", i,j, m[i][j]))$
+
+load ("f90")$
+f90_output_line_length_max:10000000$
+showmatf90(m):= for i thru length(m) do
+    for j thru length(transpose(m)) do
+    block([], printf(true,"[~d][~d] = ~%  ~%", i-1,j-1), f90(m[i][j]))$
+
+symbolilze(M):= subst([ diff(x0,t,2)=ddx0
+                            , diff(y0,t,2)=ddy0
+                            , diff(th0,t,2)=ddth0
+                            , diff(th1,t,2)=ddth1
+                            , diff(th2,t,2)=ddth2
+                            , diff(x0,t,1)=dx0
+                            , diff(y0,t,1)=dy0
+                            , diff(th0,t,1)=dth0
+                            , diff(th1,t,1)=dth1
+                            , diff(th2,t,1)=dth2
+                    ], M)$
+ground(M):= subst([dx0=0 , ddx0=0 , dy0=0, ddy0=0 ], M)$
+
+debug(M):= subst([ x0=0
+                 , y0=0
+                 ], M)$
+
+/*------------*/
+/* Parameters */
+/*------------*/
+l0:1$
+l1:1$
+l2:1$
+g:9.8$
+m0:0.3$
+m1:0.5$
+m2:0.4$
+I0:0$
+I1:0$
+I2:0$
+
+/*------------*/
+/* Kinematics */
+/*------------*/
+
+x1: x0 + l0 * cos(th0)$
+y1: y0 + l0 * sin(th0)$
+
+x2: x1 + l1 * cos(th1 + th0)$
+y2: y1 + l1 * sin(th1 + th0)$
+
+x3: x2 + l2 * cos(th2 + th1 + th0)$
+y3: y2 + l2 * sin(th2 + th1 + th0)$
+
+xc0: (x0 + x1)/2$
+yc0: (y0 + y1)/2$
+
+xc1: (x1 + x2)/2$
+yc1: (y1 + y2)/2$
+
+xc2: (x2 + x3)/2$
+yc2: (y2 + y3)/2$
+
+xc: (m0 * xc0 + m1 * xc1 + m2 * xc2) / (m0 + m1 + m2) $
+yc: (m0 * yc0 + m1 * yc1 + m2 * yc2) / (m0 + m1 + m2) $
+
+/*----------*/
+/* dynamics */
+/*----------*/
+
+th0': diff(th0, t)$
+th1': diff(th1, t)$
+th2': diff(th2, t)$
+
+x0': diff(x0, t)$
+y0': diff(y0, t)$
+
+th0'': diff(th0', t)$
+th1'': diff(th1', t)$
+th2'': diff(th2', t)$
+
+x0'': diff(x0', t)$
+y0'': diff(y0', t)$
+
+xc0': diff(xc0, t)$
+yc0': diff(yc0, t)$
+
+xc1': diff(xc1, t)$
+yc1': diff(yc1, t)$
+
+xc2': diff(xc2, t)$
+yc2': diff(yc2, t)$
+
+/*----------*/
+/* Lagrange */
+/*----------*/
+
+vc0: xc0'**2 + yc0'**2$
+vc1: xc1'**2 + yc1'**2$
+vc2: xc2'**2 + yc2'**2$
+
+U0: yc0 * m0 * g$
+K0_trs: 1/2 * m0 * vc0$
+K0_rot: 1/2 * I0 * th0' ** 2$
+
+U1 : yc1 * m1 * g$
+K1_trs : 1/2 * m1 * vc1$
+K1_rot: 1/2 * I1 * (th1') ** 2$
+
+U2 : yc2 * m2 * g$
+K2_trs : 1/2 * m2 * vc2$
+K2_rot: 1/2 * I2 * (th2') ** 2$
+
+L : K0_trs + K0_rot + K1_trs + K1_rot + K2_trs + K2_rot - U0 - U1 - U2$
+
+/* CASE1: air  fx0=fy0=0*/
+X : [x0, y0, th0, th1, th2]$
+dX : [x0', y0', th0', th1', th2']$
+rhs : symbolilze(expand(diff(jacobian([L],dX), t) - jacobian([L], X)))$
+force : matrix([0], [0], [0], [tau1], [tau2])$
+ddX : symbolilze([x0'', y0'', th0'', th1'', th2''])$
+A:trigrat(trigsimp(expand(trigexpand(jacobian(args(rhs)[1], ddX)))))$
+b:(expand(transpose(rhs) - (jacobian(args(rhs)[1], ddX)).transpose(matrix(ddX))))$
+detA:trigrat(trigsimp(expand(trigexpand(determinant(((A)))))))$
+adjA:trigrat(trigsimp(expand(trigexpand(adjoint(A)))))$
+f90(detA)$
+showmatf90(ratsimp(trigexpand(adjA . (force - ratsimp(b)))))$
+
+/* CASE2: ground  dx0=ddx0=dy0=ddy0=0 */
+X : [th0, th1, th2]$
+dX : [th0', th1', th2']$
+rhs : expand(ground(symbolilze(diff(jacobian([L],dX), t) - jacobian([L], X))))$
+force : matrix([0], [tau1], [tau2])$
+ddX : symbolilze([th0'', th1'', th2''])$
+A:trigrat(trigsimp(expand(trigexpand(jacobian(args(rhs)[1], ddX)))))$
+b:(expand(transpose(rhs) - (jacobian(args(rhs)[1], ddX)).transpose(matrix(ddX))))$
+detA:trigrat(trigsimp(expand(trigexpand(determinant(((A)))))))$
+adjA:trigrat(trigsimp(expand(trigexpand(adjoint(A)))))$
+f90(detA)$
+showmatf90(ratsimp((adjA . (force - ratsimp(b)))))$
+
+/* CASE3: collision */
+/* 
+bad Ii=0
+[A11, A12] dx   = df
+[A21, A22] dth    0
+<=>
+dth = - A22 ^-1 A21 dx
+*/
+X : [x0, y0, th0, th1, th2]$
+dX : [x0', y0', th0', th1', th2']$
+rhs : symbolilze(expand(diff(jacobian([L],dX), t) - jacobian([L], X)))$
+ddX : symbolilze([x0'', y0'', th0'', th1'', th2''])$
+A:trigrat(trigsimp(expand(trigexpand(jacobian(args(rhs)[1], ddX)))))$
+A1:submatrix(1,2,A,3,4,5)$
+A2:submatrix(1,2,A,1,2)$
+ddxy : symbolilze([x0'', y0''])$
+detA2:trigrat(trigsimp(expand(trigexpand(determinant(((A2)))))))$
+adjA2:trigrat(trigsimp(expand(trigexpand(adjoint(A2)))))$
+offset:A1 . transpose(matrix(ddxy))$
+f90(detA2)$
+showmat(adjA2 . offset)$
+

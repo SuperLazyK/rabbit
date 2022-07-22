@@ -1,0 +1,54 @@
+
+ratprint: false$
+
+declare ("'", alphabetic)$
+
+size(M):=[length(M),length(args(M))]$
+sizev(M):=length(M)$
+
+grind:true;
+showmat(m):= for i thru length(m) do
+    for j thru length(transpose(m)) do
+        block([], printf(true,"~d:~d=~%  ~a~%", i-1,j-1, m[i][j]))$
+
+load ("f90")$
+f90_output_line_length_max:10000000$
+showmatf90(m):= for i thru length(m) do
+    for j thru length(transpose(m)) do
+    block([], printf(true,"[~d][~d] = ~%  ~%", i-1,j-1), f90(m[i][j]))$
+
+symbolilze(M):= subst([ diff(x1,t,2)=ddx1
+                      , diff(z,t,2)=ddz
+                      , diff(x1,t,1)=dx1
+                      , diff(z,t,1)=dz
+                    ], M)$
+
+
+depends([x1, z] , t)$
+x1': diff(x1, t)$
+z': diff(z, t)$
+
+x1'': diff(x1', t)$
+z'': diff(z', t)$
+
+x2 : x1 + l0 + z $
+x2': diff(x2, t)$
+x2'': diff(x2', t)$
+
+
+U : 1/2 * k * z ** 2 $
+K1 : 1/2 * m1 * (x1') ** 2 $
+K2 : 1/2 * m2 * (x2') ** 2 $
+
+
+L: K1 + K2 - U $
+X : [x1, z]$
+dX : [x1', z']$
+ddX : symbolilze([x1'', z''])$
+rhs : ratsimp(expand(trigsimp(expand(trigexpand(symbolilze(diff(jacobian([L],dX), t) - jacobian([L], X)))))))$
+
+showmat(rhs)$
+
+
+
+
