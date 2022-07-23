@@ -139,6 +139,16 @@ def replace_sym(exp):
         , (dth2, symbols("th2'"))
         , (x0, symbols("x0"))
         , (y0, symbols("y0"))
+        , (cos(th0), symbols("c0"))
+        , (cos(th1), symbols("c1"))
+        , (cos(th2), symbols("c2"))
+        , (cos(th0+th1), symbols("c01"))
+        , (cos(th0+th1+th2), symbols("c012"))
+        , (sin(th0), symbols("s0"))
+        , (sin(th1), symbols("s1"))
+        , (sin(th2), symbols("s2"))
+        , (sin(th0+th1), symbols("s01"))
+        , (sin(th0+th1+th2), symbols("s012"))
         , (th0, symbols("th0"))
         , (th1, symbols("th1"))
         , (th2, symbols("th2"))
@@ -146,6 +156,7 @@ def replace_sym(exp):
 
 def sprint(exp):
     print(replace_sym(exp))
+    #pprint(replace_sym(exp), use_unicode=False)
 
 tau = cached_simplify("extF.txt", tau)
 
@@ -172,7 +183,7 @@ for d1,d2 in itertools.combinations(dTh, 2):
 dTh_B= Matrix(dTh_B)
 B = Matrix(B)
 B = cached_simplify("B.txt", B)
-print(B)
+sprint(B)
 
 #for Centrifugal
 dTh_C = []
@@ -186,7 +197,7 @@ for d in dTh:
 dTh_C= Matrix(dTh_C)
 C = Matrix(C)
 C = cached_simplify("C.txt", C)
-print(C)
+sprint(C)
 
 
 
