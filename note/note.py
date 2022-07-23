@@ -1,3 +1,4 @@
+import dill as pickle
 from sympy import symbols, Matrix, Function, Symbol, diff, solve
 from sympy import cos, sin, simplify
 import sympy
@@ -6,6 +7,7 @@ import os
 import tkinter as tk
 import matplotlib.pyplot as plt
 from sympy import init_printing, pprint
+
 init_printing()
 
 
@@ -33,9 +35,6 @@ th2 = Function('th2')(t)
 # ExtForce(Input)
 #-----------
 
-tau1 = Function('tau1')(t)
-tau2 = Function('tau2')(t)
-
 #----------
 # Kinematics
 #----------
@@ -61,6 +60,16 @@ yc2 = y2 + l2 * sin(th0 + th1 + th2)
 dth0 = diff(th0, t)
 dth1 = diff(th1, t)
 dth2 = diff(th2, t)
+
+dx0 = diff(x0, t)
+dy0 = diff(y0, t)
+
+ddth0 = diff(dth0, t)
+ddth1 = diff(dth1, t)
+ddth2 = diff(dth2, t)
+
+ddx0 = diff(dx0, t)
+ddy0 = diff(dy0, t)
 
 dxc0 = diff(xc0, t)
 dyc0 = diff(yc0, t)
@@ -93,60 +102,53 @@ K2_trs = 1/2 * m2 * n2(dxc2, dyc2)
 K2_rot = 0
 
 L = K0_trs + K0_rot + K1_trs + K1_rot + K2_trs + K2_rot - U0 - U1 - U2
+X = Matrix([[x0], [y0], [th0], [th1], [th2]])
+dX = Matrix([[dx0], [dy0], [dth0], [dth1], [dth2]])
+tau = diff(diff(L, dX), t) - diff(L, X)
 
-
-X = Matrix([[th0], [th1], [th2]])
-dX = Matrix([[dth0], [dth1], [dth2]])
-
-tau = simplify(diff(diff(L, dX), t) - diff(L, X))
-
-sym_th0 = symbols("th0")
-sym_th1 = symbols("th1")
-sym_th2 = symbols("th2")
-symd_th0 = symbols("th0'")
-symd_th1 = symbols("th1'")
-symd_th2 = symbols("th2'")
-symdd_th0 = symbols("th0''")
-symdd_th1 = symbols("th1''")
-symdd_th2 = symbols("th2''")
-
-print(tau[0].subs(
-        [ (ddth0, symdd_th0)
+def replace_sym(exp):
+    sym_x0 = symbols("x0")
+    sym_y0 = symbols("y0")
+    sym_th0 = symbols("th0")
+    sym_th1 = symbols("th1")
+    sym_th2 = symbols("th2")
+    symd_x0 = symbols("x0'")
+    symd_y0 = symbols("y0'")
+    symd_th0 = symbols("th0'")
+    symd_th1 = symbols("th1'")
+    symd_th2 = symbols("th2'")
+    symdd_x0 = symbols("x0''")
+    symdd_y0 = symbols("y0''")
+    symdd_th0 = symbols("th0''")
+    symdd_th1 = symbols("th1''")
+    symdd_th2 = symbols("th2''")
+    return exp.subs(
+        [ (ddx0, symdd_x0)
+        , (ddy0, symdd_y0)
+        , (ddth0, symdd_th0)
         , (ddth1, symdd_th1)
         , (ddth2, symdd_th2)
+        , (dx0, symd_x0)
+        , (dy0, symd_y0)
         , (dth0, symd_th0)
         , (dth1, symd_th1)
         , (dth2, symd_th2)
+        , (x0, sym_x0)
+        , (y0, sym_y0)
         , (th0, sym_th0)
         , (th1, sym_th1)
         , (th2, sym_th2)
-        ]))
-print(tau[1].subs(
-        [ (ddth0, symdd_th0)
-        , (ddth1, symdd_th1)
-        , (ddth2, symdd_th2)
-        , (dth0, symd_th0)
-        , (dth1, symd_th1)
-        , (dth2, symd_th2)
-        , (th0, sym_th0)
-        , (th1, sym_th1)
-        , (th2, sym_th2)
-        ]))
-print(tau[2].subs(
-        [ (ddth0, symdd_th0)
-        , (ddth1, symdd_th1)
-        , (ddth2, symdd_th2)
-        , (dth0, symd_th0)
-        , (dth1, symd_th1)
-        , (dth2, symd_th2)
-        , (th0, sym_th0)
-        , (th1, sym_th1)
-        , (th2, sym_th2)
-        ]))
+        ])
 
-
-X = vector()
-dX = vector()
-
-#y_diff = y_diff.subs(u, opt_u)
+if not os.path.isfile("extF.txt"):
+    with open("extF.txt",'wb') as f:
+        pickle.dump(simplify(tau),f)
+else:
+    with open("extF.txt",'rb') as f:
+        tau = pickle.load(f)
+    for i in range(5):
+        print("======")
+        print(i)
+        print("======")
+        print(replace_sym(tau[i]))
 
