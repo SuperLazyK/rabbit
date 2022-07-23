@@ -160,6 +160,10 @@ def sprint(exp):
 
 tau = cached_simplify("extF.txt", tau)
 
+# tau = M * ddX + C * dTh_C + B * dTh_B + G
+# if the rabbit's toe is on the ground then x0''=0  y0''=0
+# if the rabbit's toe is in the airthen f0''= 0
+
 M=tau.col(0).jacobian(ddX)
 M = cached_simplify("M.txt", M)
 #print(M)
@@ -182,8 +186,7 @@ for d1,d2 in itertools.combinations(dTh, 2):
     B.append(b)
 dTh_B= Matrix(dTh_B)
 B = Matrix(B)
-B = cached_simplify("B.txt", B)
-sprint(B)
+B = cached_simplify("B.txt", B).T
 
 #for Centrifugal
 dTh_C = []
@@ -196,9 +199,23 @@ for d in dTh:
     C.append(c)
 dTh_C= Matrix(dTh_C)
 C = Matrix(C)
-C = cached_simplify("C.txt", C)
-sprint(C)
+C = cached_simplify("C.txt", C).T
+#sprint(B)
+sprint(C.row(0)[0])
+sprint(C.row(0)[1])
+sprint(C.row(0)[2])
 
+sprint(C.row(1)[0])
+sprint(C.row(1)[1])
+sprint(C.row(1)[2])
+
+sprint(C.row(2)[0])
+sprint(C.row(2)[1])
+sprint(C.row(2)[2])
+
+sprint(C.row(3)[0])
+sprint(C.row(3)[1])
+sprint(C.row(3)[2])
 
 
 #print(tau.col(0))
