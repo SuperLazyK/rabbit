@@ -19,12 +19,6 @@ def load(filename):
     with open(filename,'rb') as f:
         return pickle.load(f)
 
-def cached_simplify(filename, exp):
-    if not os.path.isfile(filename):
-        save(filename, simplify(exp))
-    ret = load(filename)
-    return ret
-
 t = Symbol('t')
 
 #----------
@@ -126,6 +120,20 @@ ddX = Matrix([ddx0, ddy0, ddth0, ddth1, ddth2])
 
 tau = diff(diff(L, dX), t) - diff(L, X)
 
+def sprint(exp):
+    print(replace_sym(exp))
+    #pprint(replace_sym(exp), use_unicode=False)
+
+def cached_simplify(filename, exp):
+    if not os.path.isfile(filename):
+        save(filename, simplify(exp))
+    ret = load(filename)
+    print("-----------")
+    print(filename)
+    print("-----------")
+    sprint(ret)
+    return ret
+
 def replace_sym(exp):
     return exp.subs(
         [ (ddx0, symbols("x0''"))
@@ -155,10 +163,6 @@ def replace_sym(exp):
         , (th2, symbols("th2"))
         ])
 
-def sprint(exp):
-    print(replace_sym(exp))
-    #pprint(replace_sym(exp), use_unicode=False)
-
 dx1 = diff(x1, t)
 dy1 = diff(y1, t)
 
@@ -166,11 +170,6 @@ dx2 = diff(x2, t)
 dy2 = diff(y2, t)
 
 # only depnd on x0' y0'
-sprint(dx1)
-sprint(dy1)
-
-sprint(dx2)
-sprint(dy2)
 
 tau = cached_simplify("extF.txt", tau)
 
@@ -214,18 +213,6 @@ for d in dTh:
 dTh_C= Matrix(dTh_C)
 C = Matrix(C)
 C = cached_simplify("C.txt", C).T
-#sprint(B)
-#sprint(V.row(0))
-#sprint(V.row(1))
-#sprint(V.row(2))
-#sprint(V.row(3))
-#sprint(V.row(4))
-#
-#sprint(M.row(0))
-#sprint(M.row(1))
-#sprint(M.row(2))
-#sprint(M.row(3))
-#sprint(M.row(4))
 
 #print(tau.col(0))
 #print(ddX.shape)
