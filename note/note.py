@@ -59,6 +59,7 @@ y1 = y0 + l0 * sin(th0)
 x2 = x1 + l1 * cos(th0 + th1)
 y2 = y1 + l1 * sin(th0 + th1)
 
+
 xc0 = x1
 yc0 = y1
 
@@ -158,6 +159,19 @@ def sprint(exp):
     print(replace_sym(exp))
     #pprint(replace_sym(exp), use_unicode=False)
 
+dx1 = diff(x1, t)
+dy1 = diff(y1, t)
+
+dx2 = diff(x2, t)
+dy2 = diff(y2, t)
+
+# only depnd on x0' y0'
+sprint(dx1)
+sprint(dy1)
+
+sprint(dx2)
+sprint(dy2)
+
 tau = cached_simplify("extF.txt", tau)
 
 # tau = M * ddX + C * dTh_C + B * dTh_B + G
@@ -201,22 +215,17 @@ dTh_C= Matrix(dTh_C)
 C = Matrix(C)
 C = cached_simplify("C.txt", C).T
 #sprint(B)
-sprint(C.row(0)[0])
-sprint(C.row(0)[1])
-sprint(C.row(0)[2])
-
-sprint(C.row(1)[0])
-sprint(C.row(1)[1])
-sprint(C.row(1)[2])
-
-sprint(C.row(2)[0])
-sprint(C.row(2)[1])
-sprint(C.row(2)[2])
-
-sprint(C.row(3)[0])
-sprint(C.row(3)[1])
-sprint(C.row(3)[2])
-
+#sprint(V.row(0))
+#sprint(V.row(1))
+#sprint(V.row(2))
+#sprint(V.row(3))
+#sprint(V.row(4))
+#
+#sprint(M.row(0))
+#sprint(M.row(1))
+#sprint(M.row(2))
+#sprint(M.row(3))
+#sprint(M.row(4))
 
 #print(tau.col(0))
 #print(ddX.shape)
