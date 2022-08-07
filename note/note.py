@@ -1,12 +1,13 @@
 import dill as pickle
-from sympy import symbols, Matrix, Function, Symbol, diff, solve, collect
+from sympy import symbols, Matrix, Function, Symbol, diff, solve, collect, Eq
 from sympy import cos, sin, simplify
 import sympy
 import numpy as np
 import os
 import tkinter as tk
 import matplotlib.pyplot as plt
-from sympy import init_printing, pprint
+from sympy import init_printing#, pprint
+from pprint import pprint
 import itertools
 
 init_printing()
@@ -28,6 +29,17 @@ l0,l1,l2 = symbols('l0 l1 l2')
 m0,m1,m2 = symbols('m0 m1 m2')
 g = symbols('g')
 
+
+#----------
+# sim symbol
+#---------
+symddx   = symbols("x0''")
+symddy   = symbols("y0''")
+symddth0 = symbols("th0''")
+symddth1 = symbols("th1''")
+symddth2 = symbols("th2''")
+
+
 #-----------
 # State
 #-----------
@@ -42,6 +54,14 @@ th2 = Function('th2')(t)
 #-----------
 # ExtForce(Input)
 #-----------
+fx0 = symbols('fx0')
+fy0 = symbols('fy0')
+
+tau0 = symbols('tau0')
+tau1 = symbols('tau1')
+tau2 = symbols('tau2')
+
+extF = Matrix([fx0, fy0, tau0, tau1, tau2])
 
 #----------
 # Kinematics
@@ -121,7 +141,8 @@ ddX = Matrix([ddx0, ddy0, ddth0, ddth1, ddth2])
 tau = diff(diff(L, dX), t) - diff(L, X)
 
 def sprint(exp):
-    print(replace_sym(exp))
+    #print(replace_sym(exp))
+    pprint(replace_sym(exp))
     #pprint(replace_sym(exp), use_unicode=False)
 
 def cached_simplify(filename, exp):
@@ -135,12 +156,13 @@ def cached_simplify(filename, exp):
     return ret
 
 def replace_sym(exp):
+
     return exp.subs(
-        [ (ddx0, symbols("x0''"))
-        , (ddy0, symbols("y0''"))
-        , (ddth0, symbols("th0''"))
-        , (ddth1, symbols("th1''"))
-        , (ddth2, symbols("th2''"))
+        [ (ddx0,  symddx  )
+        , (ddy0,  symddy  )
+        , (ddth0, symddth0)
+        , (ddth1, symddth1)
+        , (ddth2, symddth2)
         , (dx0, symbols("x0'"))
         , (dy0, symbols("y0'"))
         , (dth0, symbols("th0'"))
@@ -173,50 +195,100 @@ dy2 = diff(y2, t)
 
 tau = cached_simplify("extF.txt", tau)
 
+#---------------------
+# planning
+#---------------------
+
 # tau = M * ddX + C * dTh_C + B * dTh_B + G
 # if the rabbit's toe is on the ground then x0''=0  y0''=0
 # if the rabbit's toe is in the airthen f0''= 0
 
-M=tau.col(0).jacobian(ddX)
-M = cached_simplify("M.txt", M)
+if False:
+    M=tau.col(0).jacobian(ddX)
+    M = cached_simplify("M.txt", M)
 #print(M)
 
-remain = tau - M * ddX
-G = diff(remain, g) * g
-G = cached_simplify("G.txt", G)
+    remain = tau - M * ddX
+    G = diff(remain, g) * g
+    G = cached_simplify("G.txt", G)
 
-V = remain - G
-V = cached_simplify("V.txt", V)
+    V = remain - G
+    V = cached_simplify("V.txt", V)
 
 #for Coriolis
-dTh_B = []
-B = []
-for d1,d2 in itertools.combinations(dTh, 2):
-    dTh_B.append(d1*d2)
-    b = []
-    for i in range(V.shape[0]):
-        b.append(collect(collect(V[i],d1).coeff(d1, 1), d2).coeff(d2, 1))
-    B.append(b)
-dTh_B= Matrix(dTh_B)
-B = Matrix(B)
-B = cached_simplify("B.txt", B).T
+    dTh_B = []
+    B = []
+    for d1,d2 in itertools.combinations(dTh, 2):
+        dTh_B.append(d1*d2)
+        b = []
+        for i in range(V.shape[0]):
+            b.append(collect(collect(V[i],d1).coeff(d1, 1), d2).coeff(d2, 1))
+        B.append(b)
+    dTh_B= Matrix(dTh_B)
+    B = Matrix(B)
+    B = cached_simplify("B.txt", B).T
 
 #for Centrifugal
-dTh_C = []
-C = []
-for d in dTh:
-    dTh_C.append(d*d)
-    c = []
-    for i in range(V.shape[0]):
-        c.append(collect(V[i],d).coeff(d, 2))
-    C.append(c)
-dTh_C= Matrix(dTh_C)
-C = Matrix(C)
-C = cached_simplify("C.txt", C).T
+    dTh_C = []
+    C = []
+    for d in dTh:
+        dTh_C.append(d*d)
+        c = []
+        for i in range(V.shape[0]):
+            c.append(collect(V[i],d).coeff(d, 2))
+        C.append(c)
+    dTh_C= Matrix(dTh_C)
+    C = Matrix(C)
+    C = cached_simplify("C.txt", C).T
 
-#print(tau.col(0))
-#print(ddX.shape)
-#print(tau.col(0).shape)
-#print(M.shape)
-#print(M)
+
+#---------------------
+# simulation
+#---------------------
+
+if True:
+    print("")
+    print("==========")
+    print("")
+
+# foot-contact--mode
+    rhs = tau.subs([ (ddx0, 0)
+                  , (ddy0, 0)
+                  , (tau0, 0)
+                  ])[2:]
+    simeq_c = Eq(Matrix(rhs), Matrix(extF[2:]))
+    x = [ddth0, ddth1, ddth2]
+    A = Matrix(rhs).col(0).jacobian(Matrix(x))
+    b = simplify(Matrix(rhs) - A * Matrix(x)) - Matrix([0, tau1, tau2]) 
+    A = replace_sym(A)
+    b = replace_sym(b)
+    pprint(A)
+    pprint(b)
+
+    #pprint(simeq_c)
+    #simulation_c_mode=sympy.solve(simeq_c, )
+    #tau = replace_sym(tau)
+    #print(simeq_c)
+    #simulation_c_mode = sympy.solve(simeq_c, [symddth0, symddth1, symddth2])
+    ##simulation_c_mode = sympy.solve(simeq_c, x([fx0, fy0, symddth0, symddth1, symddth2]))
+    #cached_simplify("simulation_c_mode.txt", simulation_c_mode)
+
+# foot-in-the-air-mode
+    #f_a_mode = f.subs([ (fx0, 0)
+    #              , (fy0, 0)
+    #              , (tau0, 0)
+    #              ])
+
+    #sprint(f_a_mode)
+    #simulation_c_mode=sympy.solve(f_a_mode, ddX)
+    #cached_simplify("simulation_a_mode.txt", simulation_c_mode)
+
+
+
+
+
+
+
+
+
 
