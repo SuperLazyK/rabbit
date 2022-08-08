@@ -18,7 +18,19 @@ IDX_dth0 = 7
 IDX_dth1 = 8
 IDX_dth2 = 9
 
-def rhs_foot_contact(t, s, u, params):
+# -----------
+# A.txt
+# -----------
+# [2*c1*l0*l1*m1 + 2*c1*l0*l1*m2 + 2*c2*l1*l2*m2 + l0**2*m0 + l0**2*m1 + l0**2*m2 + 2*l0*l2*m2*cos(th1 + th2) + l1**2*m1 + l1**2*m2 + l2**2*m2, c1*l0*l1*m1 + c1*l0*l1*m2 + 2*c2*l1*l2*m2 + l0*l2*m2*cos(th1 + th2) + l1**2*m1 + l1**2*m2 + l2**2*m2, l2*m2*(c2*l1 + l0*cos(th1 + th2) + l2)]
+# [             1.0*c1*l0*l1*m1 + 1.0*c1*l0*l1*m2 + 2.0*c2*l1*l2*m2 + 1.0*l0*l2*m2*cos(th1 + th2) + 1.0*l1**2*m1 + 1.0*l1**2*m2 + 1.0*l2**2*m2,                                         2.0*c2*l1*l2*m2 + 1.0*l1**2*m1 + 1.0*l1**2*m2 + 1.0*l2**2*m2,                 1.0*l2*m2*(c2*l1 + l2)]
+# [                                                                                                 1.0*l2*m2*(c2*l1 + l0*cos(th1 + th2) + l2),                                                                               1.0*l2*m2*(c2*l1 + l2),                           1.0*l2**2*m2]
+# -----------
+# b.txt
+# -----------
+# [c0*g*l0*m0 + c0*g*l0*m1 + c0*g*l0*m2 + c01*g*l1*m1 + c01*g*l1*m2 + c012*g*l2*m2 - 2*l0*l1*m1*s1*th0'*th1' - l0*l1*m1*s1*th1'**2 - 2*l0*l1*m2*s1*th0'*th1' - l0*l1*m2*s1*th1'**2 - 2*l0*l2*m2*th0'*th1'*sin(th1 + th2) - 2*l0*l2*m2*th0'*th2'*sin(th1 + th2) - l0*l2*m2*th1'**2*sin(th1 + th2) - 2*l0*l2*m2*th1'*th2'*sin(th1 + th2) - l0*l2*m2*th2'**2*sin(th1 + th2) - 2*l1*l2*m2*s2*th0'*th2' - 2*l1*l2*m2*s2*th1'*th2' - l1*l2*m2*s2*th2'**2]
+# [                                                                                                                                                                                                    1.0*c01*g*l1*m1 + 1.0*c01*g*l1*m2 + 1.0*c012*g*l2*m2 + 1.0*l0*l1*m1*s1*th0'**2 + 1.0*l0*l1*m2*s1*th0'**2 + 1.0*l0*l2*m2*th0'**2*sin(th1 + th2) - 2.0*l1*l2*m2*s2*th0'*th2' - 2.0*l1*l2*m2*s2*th1'*th2' - 1.0*l1*l2*m2*s2*th2'**2 - 1.0*tau1]
+# [                                                                                                                                                                                                                                                                                              1.0*c012*g*l2*m2 + 1.0*l0*l2*m2*th0'**2*sin(th1 + th2) + 1.0*l1*l2*m2*s2*th0'**2 + 2.0*l1*l2*m2*s2*th0'*th1' + 1.0*l1*l2*m2*s2*th1'**2 - 1.0*tau2]
+def calc(t, s, u, params):
     g  = params.get('g',     9.8)
     m0 = params.get('m0',    1.)
     m1 = params.get('m1',    1.)
@@ -26,17 +38,14 @@ def rhs_foot_contact(t, s, u, params):
     l0 = params.get('l0',    1.)
     l1 = params.get('l1',    1.)
     l2 = params.get('l2',    1.)
+    return delta,A,b
+
+def rhs_foot_contact(t, s, u, params):
+    delta,A,b = calc(t, s, u,)
     pass
 
 
 def rhs_foot_in_the_air(t, s, u, params):
-    g  = params.get('g',     9.8)
-    m0 = params.get('m0',    1.)
-    m1 = params.get('m1',    1.)
-    m2 = params.get('m2',    2.)
-    l0 = params.get('l0',    1.)
-    l1 = params.get('l1',    1.)
-    l2 = params.get('l2',    1.)
     pass
 
 
@@ -52,6 +61,7 @@ def obs(t, s, u, params):
     pass
 
 
+# sensor 6-IMU? estimated th0 is noisy...
 model = ct.NonlinearIOSystem(rhs, obs
         , inputs=('tau1', 'tau2')
         , outputs=('th0', 'th1', 'th2', 'dth0', 'dth1', 'dth2', 'fy')

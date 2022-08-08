@@ -247,23 +247,18 @@ if False:
 #---------------------
 
 if True:
-    print("")
-    print("==========")
-    print("")
 
 # foot-contact--mode
-    rhs = tau.subs([ (ddx0, 0)
-                  , (ddy0, 0)
-                  , (tau0, 0)
-                  ])[2:]
+    rhs = tau.subs([(tau0, 0)])[2:]
     simeq_c = Eq(Matrix(rhs), Matrix(extF[2:]))
     x = [ddth0, ddth1, ddth2]
     A = Matrix(rhs).col(0).jacobian(Matrix(x))
-    b = simplify(Matrix(rhs) - A * Matrix(x)) - Matrix([0, tau1, tau2]) 
-    A = replace_sym(A)
-    b = replace_sym(b)
-    pprint(A)
-    pprint(b)
+    b = Matrix(rhs) - A * Matrix(x) - Matrix([0, tau1, tau2])
+    print("==========")
+    cached_simplify("A.txt", A)
+    print("==========")
+    cached_simplify("b.txt", b)
+    print("==========")
 
     #pprint(simeq_c)
     #simulation_c_mode=sympy.solve(simeq_c, )
@@ -271,7 +266,6 @@ if True:
     #print(simeq_c)
     #simulation_c_mode = sympy.solve(simeq_c, [symddth0, symddth1, symddth2])
     ##simulation_c_mode = sympy.solve(simeq_c, x([fx0, fy0, symddth0, symddth1, symddth2]))
-    #cached_simplify("simulation_c_mode.txt", simulation_c_mode)
 
 # foot-in-the-air-mode
     #f_a_mode = f.subs([ (fx0, 0)
