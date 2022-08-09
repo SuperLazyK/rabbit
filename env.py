@@ -23,7 +23,6 @@ MAX_TORQUE=2.
 
 
 def rhs(t, s, u, params):
-    assert s[IDX_y0] >= 0
     g  = params.get('g',     9.8)
     m0 = params.get('m0',    1.)
     m1 = params.get('m1',    1.)
@@ -82,9 +81,18 @@ def rhs(t, s, u, params):
 
     dd = np.zeros(5)
 
-    if y0 <= 0: # foot is contact
-        dd[2:] = np.linalg.solve(A[2:,2:],b[2:])
+    assert y0 >= 0
+    #print(u.shape)
+    #print(A.shape)
+    #print(b.shape)
+
+    if y0 == 0: # foot is contact
+        dd[2:] = np.linalg.solve(A[2:,2:], b[2:]).reshape(3)
+        print(A)
+        print(b)
+        print(dd[2:])
         fxy = b[:2] - A[:2,2:] @ dd[2:]
+        print(fxy)
         fy = fxy[1]
         if fy < 0: # jump start
             dd = np.linalg.solve(A,b)
