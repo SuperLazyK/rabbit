@@ -7,8 +7,8 @@ from os import path
 import time
 import control
 
-IDX_x    = 0
-IDX_y    = 1
+IDX_x0   = 0
+IDX_y0   = 1
 IDX_th0  = 2
 IDX_th1  = 3
 IDX_th2  = 4
@@ -18,19 +18,10 @@ IDX_dth0 = 7
 IDX_dth1 = 8
 IDX_dth2 = 9
 
-# -----------
-# A.txt
-# -----------
-# [2*c1*l0*l1*m1 + 2*c1*l0*l1*m2 + 2*c2*l1*l2*m2 + l0**2*m0 + l0**2*m1 + l0**2*m2 + 2*l0*l2*m2*cos(th1 + th2) + l1**2*m1 + l1**2*m2 + l2**2*m2, c1*l0*l1*m1 + c1*l0*l1*m2 + 2*c2*l1*l2*m2 + l0*l2*m2*cos(th1 + th2) + l1**2*m1 + l1**2*m2 + l2**2*m2, l2*m2*(c2*l1 + l0*cos(th1 + th2) + l2)]
-# [             1.0*c1*l0*l1*m1 + 1.0*c1*l0*l1*m2 + 2.0*c2*l1*l2*m2 + 1.0*l0*l2*m2*cos(th1 + th2) + 1.0*l1**2*m1 + 1.0*l1**2*m2 + 1.0*l2**2*m2,                                         2.0*c2*l1*l2*m2 + 1.0*l1**2*m1 + 1.0*l1**2*m2 + 1.0*l2**2*m2,                 1.0*l2*m2*(c2*l1 + l2)]
-# [                                                                                                 1.0*l2*m2*(c2*l1 + l0*cos(th1 + th2) + l2),                                                                               1.0*l2*m2*(c2*l1 + l2),                           1.0*l2**2*m2]
-# -----------
-# b.txt
-# -----------
-# [c0*g*l0*m0 + c0*g*l0*m1 + c0*g*l0*m2 + c01*g*l1*m1 + c01*g*l1*m2 + c012*g*l2*m2 - 2*l0*l1*m1*s1*th0'*th1' - l0*l1*m1*s1*th1'**2 - 2*l0*l1*m2*s1*th0'*th1' - l0*l1*m2*s1*th1'**2 - 2*l0*l2*m2*th0'*th1'*sin(th1 + th2) - 2*l0*l2*m2*th0'*th2'*sin(th1 + th2) - l0*l2*m2*th1'**2*sin(th1 + th2) - 2*l0*l2*m2*th1'*th2'*sin(th1 + th2) - l0*l2*m2*th2'**2*sin(th1 + th2) - 2*l1*l2*m2*s2*th0'*th2' - 2*l1*l2*m2*s2*th1'*th2' - l1*l2*m2*s2*th2'**2]
-# [                                                                                                                                                                                                    1.0*c01*g*l1*m1 + 1.0*c01*g*l1*m2 + 1.0*c012*g*l2*m2 + 1.0*l0*l1*m1*s1*th0'**2 + 1.0*l0*l1*m2*s1*th0'**2 + 1.0*l0*l2*m2*th0'**2*sin(th1 + th2) - 2.0*l1*l2*m2*s2*th0'*th2' - 2.0*l1*l2*m2*s2*th1'*th2' - 1.0*l1*l2*m2*s2*th2'**2 - 1.0*tau1]
-# [                                                                                                                                                                                                                                                                                              1.0*c012*g*l2*m2 + 1.0*l0*l2*m2*th0'**2*sin(th1 + th2) + 1.0*l1*l2*m2*s2*th0'**2 + 2.0*l1*l2*m2*s2*th0'*th1' + 1.0*l1*l2*m2*s2*th1'**2 - 1.0*tau2]
-def calc(t, s, u, params):
+
+
+def rhs(t, s, u, params):
+    assert s.y >= 0, ""
     g  = params.get('g',     9.8)
     m0 = params.get('m0',    1.)
     m1 = params.get('m1',    1.)
@@ -38,23 +29,69 @@ def calc(t, s, u, params):
     l0 = params.get('l0',    1.)
     l1 = params.get('l1',    1.)
     l2 = params.get('l2',    1.)
-    return delta,A,b
+    x0   = s[IDX_x0]
+    y0   = s[IDX_y0]
+    th0  = s[IDX_th0]
+    th1  = s[IDX_th1]
+    th2  = s[IDX_th2]
+    dx   = s[IDX_dx  ]
+    dy   = s[IDX_dy  ]
+    dth0 = s[IDX_dth0]
+    dth1 = s[IDX_dth1]
+    dth2 = s[IDX_dth2]
+    c0   = cos(th0)
+    s0   = sin(th0)
+    c1   = cos(th1)
+    s1   = sin(th1)
+    c2   = cos(th2)
+    s2   = sin(th2)
+    c01  = cos(th0 + th1)
+    s01  = sin(th0 + th1)
+    c12  = cos(th1 + th2)
+    s12  = sin(th1 + th2)
+    c012 = cos(th0 + th1 + th2)
+    s012 = sin(th0 + th1 + th2)
 
-def rhs_foot_contact(t, s, u, params):
-    delta,A,b = calc(t, s, u,)
-    pass
+    A = np.array([
+                [                                            1.0*m0 + 1.0*m1 + 1.0*m2,                                                                   0,                                                      -1.0*l0*m0*s0 - 1.0*m1*(l0*s0 + l1*s01) - 1.0*m2*(l0*s0 + l1*s01 + l2*s012),                                                -1.0*l1*m1*s01 - 1.0*m2*(l1*s01 + l2*s012),             -1.0*l2*m2*s012],
+                [                                                                   0,                                                        m0 + m1 + m2,                                                                   c0*l0*m0 + m1*(c0*l0 + c01*l1) + m2*(c0*l0 + c01*l1 + c012*l2),                                                         c01*l1*m1 + m2*(c01*l1 + c012*l2),                  c012*l2*m2],
+                [-l0*m0*s0 - l0*m1*s0 - l0*m2*s0 - l1*m1*s01 - l1*m2*s01 - l2*m2*s012, c0*l0*m0 + c0*l0*m1 + c0*l0*m2 + c01*l1*m1 + c01*l1*m2 + c012*l2*m2, 2*c1*l0*l1*m1 + 2*c1*l0*l1*m2 + 2*c12*l0*l2*m2 + 2*c2*l1*l2*m2 + l0**2*m0 + l0**2*m1 + l0**2*m2 + l1**2*m1 + l1**2*m2 + l2**2*m2, c1*l0*l1*m1 + c1*l0*l1*m2 + c12*l0*l2*m2 + 2*c2*l1*l2*m2 + l1**2*m1 + l1**2*m2 + l2**2*m2, l2*m2*(c12*l0 + c2*l1 + l2)],
+                [                     -1.0*l1*m1*s01 - 1.0*l1*m2*s01 - 1.0*l2*m2*s012,                      1.0*c01*l1*m1 + 1.0*c01*l1*m2 + 1.0*c012*l2*m2,              1.0*c1*l0*l1*m1 + 1.0*c1*l0*l1*m2 + 1.0*c12*l0*l2*m2 + 2.0*c2*l1*l2*m2 + 1.0*l1**2*m1 + 1.0*l1**2*m2 + 1.0*l2**2*m2,                              2.0*c2*l1*l2*m2 + 1.0*l1**2*m1 + 1.0*l1**2*m2 + 1.0*l2**2*m2,      1.0*l2*m2*(c2*l1 + l2)],
+                [                                                     -1.0*l2*m2*s012,                                                      1.0*c012*l2*m2,                                                                                                  1.0*l2*m2*(c12*l0 + c2*l1 + l2),                                                                    1.0*l2*m2*(c2*l1 + l2),                1.0*l2**2*m2]
+            ])
 
+    b = np.array([
+                [  -1.0*c0*l0*m0*dth0**2 - 1.0*c0*l0*m1*dth0**2 - 1.0*c0*l0*m2*dth0**2 - 1.0*c01*l1*m1*dth0**2 - 2.0*c01*l1*m1*dth0*dth1 - 1.0*c01*l1*m1*dth1**2 - 1.0*c01*l1*m2*dth0**2 - 2.0*c01*l1*m2*dth0*dth1 - 1.0*c01*l1*m2*dth1**2 - 1.0*c012*l2*m2*dth0**2 - 2.0*c012*l2*m2*dth0*dth1 - 2.0*c012*l2*m2*dth0*dth2 - 1.0*c012*l2*m2*dth1**2 - 2.0*c012*l2*m2*dth1*dth2 - 1.0*c012*l2*m2*dth2**2],      # -fx0
+                [                                   g*m0 + g*m1 + g*m2 - l0*m0*s0*dth0**2 - l0*m1*s0*dth0**2 - l0*m2*s0*dth0**2 - l1*m1*s01*dth0**2 - 2*l1*m1*s01*dth0*dth1 - l1*m1*s01*dth1**2 - l1*m2*s01*dth0**2 - 2*l1*m2*s01*dth0*dth1 - l1*m2*s01*dth1**2 - l2*m2*s012*dth0**2 - 2*l2*m2*s012*dth0*dth1 - 2*l2*m2*s012*dth0*dth2 - l2*m2*s012*dth1**2 - 2*l2*m2*s012*dth1*dth2 - l2*m2*s012*dth2**2],   # -fy0
+                [c0*g*l0*m0 + c0*g*l0*m1 + c0*g*l0*m2 + c01*g*l1*m1 + c01*g*l1*m2 + c012*g*l2*m2 - 2*l0*l1*m1*s1*dth0*dth1 - l0*l1*m1*s1*dth1**2 - 2*l0*l1*m2*s1*dth0*dth1 - l0*l1*m2*s1*dth1**2 - 2*l0*l2*m2*s12*dth0*dth1 - 2*l0*l2*m2*s12*dth0*dth2 - l0*l2*m2*s12*dth1**2 - 2*l0*l2*m2*s12*dth1*dth2 - l0*l2*m2*s12*dth2**2 - 2*l1*l2*m2*s2*dth0*dth2 - 2*l1*l2*m2*s2*dth1*dth2 - l1*l2*m2*s2*dth2**2 - tau0],
+                [                                                                                                                                                               1.0*c01*g*l1*m1 + 1.0*c01*g*l1*m2 + 1.0*c012*g*l2*m2 + 1.0*l0*l1*m1*s1*dth0**2 + 1.0*l0*l1*m2*s1*dth0**2 + 1.0*l0*l2*m2*s12*dth0**2 - 2.0*l1*l2*m2*s2*dth0*dth2 - 2.0*l1*l2*m2*s2*dth1*dth2 - 1.0*l1*l2*m2*s2*dth2**2 - 1.0*tau1],
+                [                                                                                                                                                                                                                                                         1.0*c012*g*l2*m2 + 1.0*l0*l2*m2*s12*dth0**2 + 1.0*l1*l2*m2*s2*dth0**2 + 2.0*l1*l2*m2*s2*dth0*dth1 + 1.0*l1*l2*m2*s2*dth1**2 - 1.0*tau2]
+            ])
 
-def rhs_foot_in_the_air(t, s, u, params):
-    pass
+    ds = np.zeros_like(s)
+    ds[IDX_x0] = s[IDX_dx]
+    ds[IDX_y0] = s[IDX_dy]
+    ds[IDX_th0] = s[IDX_dth0]
+    ds[IDX_th1] = s[IDX_dth1]
+    ds[IDX_th2] = s[IDX_dth2]
 
+    dd = np.zeros(5)
 
-def rhs(t, s, u, params):
-    assert s.y >= 0, ""
-    if s[IDX_y] == 0:
-        return rhs_foot_contact(t, s, u, params)
-    else:
-        return rhs_foot_in_the_air(t, s, u, params)
+    if y0 <= 0: # foot is contact
+        dd[2:] = solve(A[:2,2:],b[2:])
+        fy = ....
+        if fy < 0: # jump start
+            dd = solve(A,b)
+    else: # foot in the air
+        dd = np.linalg.solve(A, b)
+
+    ds[IDX_dx]   = dd[0]
+    ds[IDX_dy]   = dd[1]
+    ds[IDX_dth0] = dd[2]
+    ds[IDX_dth1] = dd[3]
+    ds[IDX_dth2] = dd[4]
+
+    return ds
 
 
 def obs(t, s, u, params):

@@ -163,11 +163,11 @@ def replace_sym(exp):
         , (ddth0, symddth0)
         , (ddth1, symddth1)
         , (ddth2, symddth2)
-        , (dx0, symbols("x0'"))
-        , (dy0, symbols("y0'"))
-        , (dth0, symbols("th0'"))
-        , (dth1, symbols("th1'"))
-        , (dth2, symbols("th2'"))
+        , (dx0, symbols("dx0"))
+        , (dy0, symbols("dy0"))
+        , (dth0, symbols("dth0"))
+        , (dth1, symbols("dth1"))
+        , (dth2, symbols("dth2"))
         , (x0, symbols("x0"))
         , (y0, symbols("y0"))
         , (cos(th0), symbols("c0"))
@@ -175,11 +175,13 @@ def replace_sym(exp):
         , (cos(th2), symbols("c2"))
         , (cos(th0+th1), symbols("c01"))
         , (cos(th0+th1+th2), symbols("c012"))
+        , (cos(th1+th2), symbols("c12"))
         , (sin(th0), symbols("s0"))
         , (sin(th1), symbols("s1"))
         , (sin(th2), symbols("s2"))
         , (sin(th0+th1), symbols("s01"))
         , (sin(th0+th1+th2), symbols("s012"))
+        , (sin(th1+th2), symbols("s12"))
         , (th0, symbols("th0"))
         , (th1, symbols("th1"))
         , (th2, symbols("th2"))
@@ -246,11 +248,11 @@ if False:
 # simulation
 #---------------------
 
-if True:
+if False:
 
 # foot-contact--mode
     rhs = tau.subs([(tau0, 0)])[2:]
-    simeq_c = Eq(Matrix(rhs), Matrix(extF[2:]))
+    #simeq_c = Eq(Matrix(rhs), Matrix(extF[2:]))
     x = [ddth0, ddth1, ddth2]
     A = Matrix(rhs).col(0).jacobian(Matrix(x))
     b = Matrix(rhs) - A * Matrix(x) - Matrix([0, tau1, tau2])
@@ -259,15 +261,19 @@ if True:
     print("==========")
     cached_simplify("b.txt", b)
     print("==========")
-
-    #pprint(simeq_c)
-    #simulation_c_mode=sympy.solve(simeq_c, )
-    #tau = replace_sym(tau)
-    #print(simeq_c)
-    #simulation_c_mode = sympy.solve(simeq_c, [symddth0, symddth1, symddth2])
-    ##simulation_c_mode = sympy.solve(simeq_c, x([fx0, fy0, symddth0, symddth1, symddth2]))
+else:
 
 # foot-in-the-air-mode
+    rhs = tau
+    #simeq_c = Eq(Matrix(rhs), Matrix(extF))
+    x = [ddx0, ddy0, ddth0, ddth1, ddth2]
+    A = Matrix(rhs).col(0).jacobian(Matrix(x))
+    b = Matrix(rhs) - A * Matrix(x) - extF
+    print("==========")
+    cached_simplify("A.txt", A)
+    print("==========")
+    cached_simplify("b.txt", b)
+    print("==========")
     #f_a_mode = f.subs([ (fx0, 0)
     #              , (fy0, 0)
     #              , (tau0, 0)
