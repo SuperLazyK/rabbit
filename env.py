@@ -78,8 +78,9 @@ def rhs(t, s, u, params):
     dd = np.zeros(5)
 
     if y0 <= 0: # foot is contact
-        dd[2:] = solve(A[:2,2:],b[2:])
-        fy = ....
+        dd[2:] = solve(A[2:,2:],b[2:])
+        fxy = b[:2] - A[:2,2:] @ dd[2:]
+        fy = fxy[1]
         if fy < 0: # jump start
             dd = solve(A,b)
     else: # foot in the air
