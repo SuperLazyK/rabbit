@@ -23,7 +23,7 @@ MAX_TORQUE=2.
 
 
 def rhs(t, s, u, params):
-    assert s.y >= 0, ""
+    assert s[IDX_y0] >= 0
     g  = params.get('g',     9.8)
     m0 = params.get('m0',    1.)
     m1 = params.get('m1',    1.)
@@ -41,18 +41,21 @@ def rhs(t, s, u, params):
     dth0 = s[IDX_dth0]
     dth1 = s[IDX_dth1]
     dth2 = s[IDX_dth2]
-    c0   = cos(th0)
-    s0   = sin(th0)
-    c1   = cos(th1)
-    s1   = sin(th1)
-    c2   = cos(th2)
-    s2   = sin(th2)
-    c01  = cos(th0 + th1)
-    s01  = sin(th0 + th1)
-    c12  = cos(th1 + th2)
-    s12  = sin(th1 + th2)
-    c012 = cos(th0 + th1 + th2)
-    s012 = sin(th0 + th1 + th2)
+    c0   = np.cos(th0)
+    s0   = np.sin(th0)
+    c1   = np.cos(th1)
+    s1   = np.sin(th1)
+    c2   = np.cos(th2)
+    s2   = np.sin(th2)
+    c01  = np.cos(th0 + th1)
+    s01  = np.sin(th0 + th1)
+    c12  = np.cos(th1 + th2)
+    s12  = np.sin(th1 + th2)
+    c012 = np.cos(th0 + th1 + th2)
+    s012 = np.sin(th0 + th1 + th2)
+    tau0 = 0
+    tau1 = u[0]
+    tau2 = u[1]
 
     A = np.array([
                 [                                            1.0*m0 + 1.0*m1 + 1.0*m2,                                                                   0,                                                      -1.0*l0*m0*s0 - 1.0*m1*(l0*s0 + l1*s01) - 1.0*m2*(l0*s0 + l1*s01 + l2*s012),                                                -1.0*l1*m1*s01 - 1.0*m2*(l1*s01 + l2*s012),             -1.0*l2*m2*s012],
@@ -80,11 +83,11 @@ def rhs(t, s, u, params):
     dd = np.zeros(5)
 
     if y0 <= 0: # foot is contact
-        dd[2:] = solve(A[2:,2:],b[2:])
+        dd[2:] = np.linalg.solve(A[2:,2:],b[2:])
         fxy = b[:2] - A[:2,2:] @ dd[2:]
         fy = fxy[1]
         if fy < 0: # jump start
-            dd = solve(A,b)
+            dd = np.linalg.solve(A,b)
     else: # foot in the air
         dd = np.linalg.solve(A, b)
 
@@ -99,11 +102,11 @@ def rhs(t, s, u, params):
 
 def obs(s):
     # sensor 6-IMU? estimated th0 is noisy...
-    return np.concat([s[IDX_th0:IDX_th2+1], s[IDX_dth0:IDX_dth2+1]], axis=-1)
+    return np.concatenate([s[IDX_th0:IDX_th2+1], s[IDX_dth0:IDX_dth2+1]], axis=-1)
 
 
-def step(s, u):
-    u = np.repeat(np.array(u).reshape(Nu,1), 2, axis=1)
+def step(model, s, u):
+    u = np.repeat(np.array(u).reshape(Nu,1), 1, axis=1)
     T = np.array(range(1,2))
     t, s = ct.input_output_response(model, T, U=u, X0=s, params={})
     s = clip(s)
@@ -128,8 +131,9 @@ ob_high = np.array([ np.pi
 
 def clip(s):
     new_s = s.copy()
-    new_s[] ob_low
-
+    new_s[IDX_th0:IDX_th2+1] = np.clip(new_s[IDX_th0:IDX_th2+1], ob_low[0:3], ob_high[0:3])
+    new_s[IDX_dth0:IDX_dth2+1] = np.clip(new_s[IDX_dth0:IDX_dth2+1], ob_low[3:6], ob_high[4:6])
+    new_s[ID_y0] = np.max(new_s[ID_y0], 0)
 
 
 def reset_state(np_random=None):
@@ -146,9 +150,10 @@ def reset_state(np_random=None):
     s[IDX_dth2] = 0.
 
     if np_random is not None:
-        s[IDX_th0] = np_random.uniform(low=-np.pi/4, high=self.np.pi/4)
-        s[IDX_th1] = np_random.uniform(low=-np.pi/4, high=self.np.pi/4)
-        s[IDX_th2] = np_random.uniform(low=-np.pi/4, high=self.np.pi/4)
+        s[IDX_th0] = np_random.uniform(low=-np.pi/4, high=np.pi/4)
+        s[IDX_th1] = np_random.uniform(low=-np.pi/4, high=np.pi/4)
+        s[IDX_th2] = np_random.uniform(low=-np.pi/4, high=np.pi/4)
+    return s
 
 
 class RabbitEnv(gym.Env):
@@ -161,7 +166,6 @@ class RabbitEnv(gym.Env):
     def __init__(self):
         self.model = ct.NonlinearIOSystem(rhs, None
                         , inputs=('tau1', 'tau2')
-                        , outputs=('th0', 'th1', 'th2', 'dth0', 'dth1', 'dth2', 'fy')
                         , states=('x', 'y', 'th0', 'th1', 'th2', 'dx', 'dy', 'dth0', 'dth1', 'dth2')
                         , name='rabit')
 
@@ -186,9 +190,9 @@ class RabbitEnv(gym.Env):
 
 
     def step(self, u):
-        self.state = step(self.state, u)
+        self.state = step(self.model, self.state, u)
         self.frame_no = self.frame_no + 1
-        return obs(self.state), 0, False {}
+        return obs(self.state), 0, False, {}
 
 
     def reset(self):
@@ -204,16 +208,18 @@ class RabbitEnv(gym.Env):
             from gym.envs.classic_control import rendering
             self.viewer = rendering.Viewer(500,500)
             self.viewer.set_bounds(-2.2,2.2,-2.2,2.2)
+
             rod = rendering.make_capsule(1, .2)
             rod.set_color(.8, .3, .3)
             self.pole_transform = rendering.Transform()
             rod.add_attr(self.pole_transform)
             self.viewer.add_geom(rod)
+
             axle = rendering.make_circle(.05)
             axle.set_color(0,0,0)
             self.viewer.add_geom(axle)
 
-        self.pole_transform.set_rotation(self.state[0] + np.pi/2)
+        #self.pole_transform.set_rotation(self.state[0] + np.pi/2)
         #if self.frame_no < 3:
         #    time.sleep(1)
         #time.sleep(0.1)
@@ -224,6 +230,24 @@ class RabbitEnv(gym.Env):
         if self.viewer:
             self.viewer.close()
             self.viewer = None
+
+if __name__ == '__main__':
+    env = RabbitEnv()
+    
+    while True:
+        env.reset()
+        for i in range(1000):
+            env.step(np.array([0, 0]))
+            env.render()
+
+
+
+
+
+
+
+
+
 
 
 
