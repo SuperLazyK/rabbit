@@ -22,15 +22,15 @@ dt = 0.01
 
 MAX_TORQUE=2.
 
+l0 = params.get('l0',    1.)
+l1 = params.get('l1',    1.)
+l2 = params.get('l2',    1.)
 
 def rhs(t, s, u, params):
     g  = params.get('g',     9.8)
     m0 = params.get('m0',    1.)
     m1 = params.get('m1',    1.)
     m2 = params.get('m2',    2.)
-    l0 = params.get('l0',    1.)
-    l1 = params.get('l1',    1.)
-    l2 = params.get('l2',    1.)
     x0   = s[IDX_x0]
     y0   = s[IDX_y0]
     th0  = s[IDX_th0]
@@ -91,11 +91,11 @@ def rhs(t, s, u, params):
         dd[2:] = np.linalg.solve(A[2:,2:], b[2:]).reshape(3)
         fxy = b[:2].reshape((2,)) - A[:2,2:] @ dd[2:]
         fy = fxy[1]
-        if fy > 0: # jump start
-            if np.linalg.matrix_rank(A) != 5:
-                print(A)
-                assert False
-            dd = np.linalg.solve(A,b)
+        #if fy > 0: # jump start
+        #    if np.linalg.matrix_rank(A) != 5:
+        #        print(A, np.linalg.matrix_rank(A) )
+        #        assert False
+        #    dd = np.linalg.solve(A,b)
     else: # foot in the air
         dd = np.linalg.solve(A, b)
 
@@ -211,24 +211,43 @@ class RabbitEnv(gym.Env):
 
 
     def render(self, mode='human'):
-        #TODO
 
         if self.viewer is None:
             from gym.envs.classic_control import rendering
             self.viewer = rendering.Viewer(500,500)
             self.viewer.set_bounds(-2.2,2.2,-2.2,2.2)
 
-            rod = rendering.make_capsule(1, .2)
-            rod.set_color(.8, .3, .3)
-            self.pole_transform = rendering.Transform()
-            rod.add_attr(self.pole_transform)
-            self.viewer.add_geom(rod)
+            rod0 = rendering.make_capsule(l0, .2)
+            rod0.set_color(.0, .0, .0)
+            self.t0 = rendering.Transform()
+            rod0.add_attr(self.t0)
+            self.viewer.add_geom(rod0)
 
-            axle = rendering.make_circle(.05)
-            axle.set_color(0,0,0)
-            self.viewer.add_geom(axle)
+            rod1 = rendering.make_capsule(l1, .2)
+            rod1.set_color(.0, .0, .0)
+            self.t1 = rendering.Transform()
+            rod1.add_attr(self.t1)
+            self.viewer.add_geom(rod1)
 
-        #self.pole_transform.set_rotation(self.state[0] + np.pi/2)
+            rod2 = rendering.make_capsule(l2, .2)
+            rod2.set_color(.0, .0, .0)
+            self.t2 = rendering.Transform()
+            rod2.add_attr(self.t2)
+            self.viewer.add_geom(rod2)
+
+            foot = rendering.make_circle(.05)
+            foot.set_color(0,0,0)
+            self.viewer.add_geom(foot)
+
+        self.t1.set_rotation(self.state[0] + np.pi/2)
+        self.t1.set_translation(self.state[0] + np.pi/2)
+
+        self.t2.set_rotation(self.state[0] + np.pi/2)
+        self.t2.set_translation(self.state[0] + np.pi/2)
+
+        self.t3.set_rotation(self.state[0] + np.pi/2)
+        self.t3.set_translation(self.state[0] + np.pi/2)
+
         #if self.frame_no < 3:
         #    time.sleep(1)
         #time.sleep(0.1)
@@ -246,6 +265,7 @@ if __name__ == '__main__':
     while True:
         env.reset()
         for i in range(1000):
+            print(i)
             env.step(np.array([0, 0]))
             env.render()
 
