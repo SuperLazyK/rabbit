@@ -84,22 +84,22 @@ def rhs(t, s, u, params):
 
     dd = np.zeros(5)
 
-    #assert y0 >= 0
+    assert y0 >= 0
 
-    #if y0 == 0: # foot is contact
-    #    if np.linalg.matrix_rank(A[2:,2:]) != 3:
-    #        print(A[2:,2:])
-    #        assert False
-    #    dd[2:] = np.linalg.solve(A[2:,2:], b[2:]).reshape(3)
-    #    fxy = b[:2].reshape((2,)) - A[:2,2:] @ dd[2:]
-    #    fy = fxy[1]
-    #    #if fy > 0: # jump start
-    #    #    if np.linalg.matrix_rank(A) != 5:
-    #    #        print(A, np.linalg.matrix_rank(A) )
-    #    #        assert False
-    #    #    dd = np.linalg.solve(A,b)
-    #else: # foot in the air
-    #    dd = np.linalg.solve(A, b)
+    if y0 == 0: # foot is contact
+        if np.linalg.matrix_rank(A[2:,2:]) != 3:
+            print(A[2:,2:])
+            assert False
+        dd[2:] = np.linalg.solve(A[2:,2:], b[2:]).reshape(3)
+        fxy = b[:2].reshape((2,)) - A[:2,2:] @ dd[2:]
+        fy = fxy[1]
+        #if fy > 0: # jump start
+        #    if np.linalg.matrix_rank(A) != 5:
+        #        print(A, np.linalg.matrix_rank(A) )
+        #        assert False
+        #    dd = np.linalg.solve(A,b)
+    else: # foot in the air
+        dd = np.linalg.solve(A, b)
 
     ds[IDX_dx]   = dd[0]
     ds[IDX_dy]   = dd[1]
