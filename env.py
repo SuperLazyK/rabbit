@@ -18,6 +18,7 @@ IDX_dth0 = 7
 IDX_dth1 = 8
 IDX_dth2 = 9
 Nu = 2
+dt = 0.01
 
 MAX_TORQUE=2.
 
@@ -82,19 +83,18 @@ def rhs(t, s, u, params):
     dd = np.zeros(5)
 
     assert y0 >= 0
-    #print(u.shape)
-    #print(A.shape)
-    #print(b.shape)
 
     if y0 == 0: # foot is contact
+        if np.linalg.matrix_rank(A[2:,2:]) != 3:
+            print(A[2:,2:])
+            assert False
         dd[2:] = np.linalg.solve(A[2:,2:], b[2:]).reshape(3)
-        print(A)
-        print(b)
-        print(dd[2:])
-        fxy = b[:2] - A[:2,2:] @ dd[2:]
-        print(fxy)
+        fxy = b[:2].reshape((2,)) - A[:2,2:] @ dd[2:]
         fy = fxy[1]
-        if fy < 0: # jump start
+        if fy > 0: # jump start
+            if np.linalg.matrix_rank(A) != 5:
+                print(A)
+                assert False
             dd = np.linalg.solve(A,b)
     else: # foot in the air
         dd = np.linalg.solve(A, b)
@@ -112,14 +112,6 @@ def obs(s):
     # sensor 6-IMU? estimated th0 is noisy...
     return np.concatenate([s[IDX_th0:IDX_th2+1], s[IDX_dth0:IDX_dth2+1]], axis=-1)
 
-
-def step(model, s, u):
-    u = np.repeat(np.array(u).reshape(Nu,1), 1, axis=1)
-    T = np.array(range(1,2))
-    t, s = ct.input_output_response(model, T, U=u, X0=s, params={})
-    s = clip(s)
-    return s[:,-1]
-
 ob_low = np.array([ 0
                   , 0
                   , -np.pi
@@ -136,12 +128,20 @@ ob_high = np.array([ np.pi
                    , 8
             ], dtype=np.float32)
 
-
 def clip(s):
     new_s = s.copy()
     new_s[IDX_th0:IDX_th2+1] = np.clip(new_s[IDX_th0:IDX_th2+1], ob_low[0:3], ob_high[0:3])
-    new_s[IDX_dth0:IDX_dth2+1] = np.clip(new_s[IDX_dth0:IDX_dth2+1], ob_low[3:6], ob_high[4:6])
-    new_s[ID_y0] = np.max(new_s[ID_y0], 0)
+    new_s[IDX_dth0:IDX_dth2+1] = np.clip(new_s[IDX_dth0:IDX_dth2+1], ob_low[3:6], ob_high[3:6])
+    new_s[IDX_y0] = np.max(new_s[IDX_y0], 0)
+    return new_s
+
+
+def step(model, s, u):
+    T = np.array([0, dt])
+    u = np.repeat(np.array(u).reshape(Nu,1), 2, axis=1)
+    t, s = ct.input_output_response(model, T, U=u, X0=s, params={})
+    s = clip(s[:,-1])
+    return s
 
 
 def reset_state(np_random=None):
@@ -172,7 +172,8 @@ class RabbitEnv(gym.Env):
     }
 
     def __init__(self):
-        self.model = ct.NonlinearIOSystem(rhs, None
+        self.model = ct.NonlinearIOSystem(rhs, outfcn=None
+                        , dt=dt
                         , inputs=('tau1', 'tau2')
                         , states=('x', 'y', 'th0', 'th1', 'th2', 'dx', 'dy', 'dth0', 'dth1', 'dth2')
                         , name='rabit')
