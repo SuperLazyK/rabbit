@@ -243,8 +243,6 @@ class RabbitEnv(gym.Env):
             head.add_attr(self.t3)
             self.viewer.add_geom(head)
 
-        print(self.state[IDX_th0])
-        print(self.state[IDX_dth0])
         offset_t = np.array([0, RENDER_OFFSET_Y]) + self.state[IDX_x0:IDX_y0+1]
         offset_r = self.state[IDX_th0]
         self.t0.set_rotation(offset_r)
