@@ -6,6 +6,7 @@ import numpy as np
 from os import path
 import time
 import control as ct
+import sys
 
 IDX_x0   = 0
 IDX_y0   = 1
@@ -22,9 +23,9 @@ dt = 0.01
 
 MAX_TORQUE=2.
 
-l0 = params.get('l0',    1.)
-l1 = params.get('l1',    1.)
-l2 = params.get('l2',    1.)
+l0 =  1.
+l1 =  1.
+l2 =  1.
 
 def rhs(t, s, u, params):
     g  = params.get('g',     9.8)
@@ -72,7 +73,7 @@ def rhs(t, s, u, params):
                 [                                                                                                                                                               1.0*c01*g*l1*m1 + 1.0*c01*g*l1*m2 + 1.0*c012*g*l2*m2 + 1.0*l0*l1*m1*s1*dth0**2 + 1.0*l0*l1*m2*s1*dth0**2 + 1.0*l0*l2*m2*s12*dth0**2 - 2.0*l1*l2*m2*s2*dth0*dth2 - 2.0*l1*l2*m2*s2*dth1*dth2 - 1.0*l1*l2*m2*s2*dth2**2 - 1.0*tau1],
                 [                                                                                                                                                                                                                                                         1.0*c012*g*l2*m2 + 1.0*l0*l2*m2*s12*dth0**2 + 1.0*l1*l2*m2*s2*dth0**2 + 2.0*l1*l2*m2*s2*dth0*dth1 + 1.0*l1*l2*m2*s2*dth1**2 - 1.0*tau2]
             ])
-
+    
     ds = np.zeros_like(s)
     ds[IDX_x0] = s[IDX_dx]
     ds[IDX_y0] = s[IDX_dy]
@@ -82,22 +83,22 @@ def rhs(t, s, u, params):
 
     dd = np.zeros(5)
 
-    assert y0 >= 0
+    #assert y0 >= 0
 
-    if y0 == 0: # foot is contact
-        if np.linalg.matrix_rank(A[2:,2:]) != 3:
-            print(A[2:,2:])
-            assert False
-        dd[2:] = np.linalg.solve(A[2:,2:], b[2:]).reshape(3)
-        fxy = b[:2].reshape((2,)) - A[:2,2:] @ dd[2:]
-        fy = fxy[1]
-        #if fy > 0: # jump start
-        #    if np.linalg.matrix_rank(A) != 5:
-        #        print(A, np.linalg.matrix_rank(A) )
-        #        assert False
-        #    dd = np.linalg.solve(A,b)
-    else: # foot in the air
-        dd = np.linalg.solve(A, b)
+    #if y0 == 0: # foot is contact
+    #    if np.linalg.matrix_rank(A[2:,2:]) != 3:
+    #        print(A[2:,2:])
+    #        assert False
+    #    dd[2:] = np.linalg.solve(A[2:,2:], b[2:]).reshape(3)
+    #    fxy = b[:2].reshape((2,)) - A[:2,2:] @ dd[2:]
+    #    fy = fxy[1]
+    #    #if fy > 0: # jump start
+    #    #    if np.linalg.matrix_rank(A) != 5:
+    #    #        print(A, np.linalg.matrix_rank(A) )
+    #    #        assert False
+    #    #    dd = np.linalg.solve(A,b)
+    #else: # foot in the air
+    #    dd = np.linalg.solve(A, b)
 
     ds[IDX_dx]   = dd[0]
     ds[IDX_dy]   = dd[1]
@@ -153,7 +154,7 @@ def reset_state(np_random=None):
     s[IDX_th2]  = -np.pi/3
     s[IDX_dx  ] = 0.
     s[IDX_dy  ] = 0.
-    s[IDX_dth0] = 0.
+    s[IDX_dth0] = 0.01
     s[IDX_dth1] = 0.
     s[IDX_dth2] = 0.
 
@@ -173,7 +174,7 @@ class RabbitEnv(gym.Env):
 
     def __init__(self):
         self.model = ct.NonlinearIOSystem(rhs, outfcn=None
-                        , dt=dt
+                        #, dt=dt
                         , inputs=('tau1', 'tau2')
                         , states=('x', 'y', 'th0', 'th1', 'th2', 'dx', 'dy', 'dth0', 'dth1', 'dth2')
                         , name='rabit')
@@ -223,30 +224,32 @@ class RabbitEnv(gym.Env):
             rod0.add_attr(self.t0)
             self.viewer.add_geom(rod0)
 
-            rod1 = rendering.make_capsule(l1, .2)
-            rod1.set_color(.0, .0, .0)
-            self.t1 = rendering.Transform()
-            rod1.add_attr(self.t1)
-            self.viewer.add_geom(rod1)
+            #rod1 = rendering.make_capsule(l1, .2)
+            #rod1.set_color(.0, .0, .0)
+            #self.t1 = rendering.Transform()
+            #rod1.add_attr(self.t1)
+            #self.viewer.add_geom(rod1)
 
-            rod2 = rendering.make_capsule(l2, .2)
-            rod2.set_color(.0, .0, .0)
-            self.t2 = rendering.Transform()
-            rod2.add_attr(self.t2)
-            self.viewer.add_geom(rod2)
+            #rod2 = rendering.make_capsule(l2, .2)
+            #rod2.set_color(.0, .0, .0)
+            #self.t2 = rendering.Transform()
+            #rod2.add_attr(self.t2)
+            #self.viewer.add_geom(rod2)
 
-            foot = rendering.make_circle(.05)
-            foot.set_color(0,0,0)
-            self.viewer.add_geom(foot)
+            #foot = rendering.make_circle(.05)
+            #foot.set_color(0,0,0)
+            #self.viewer.add_geom(foot)
 
-        self.t1.set_rotation(self.state[0] + np.pi/2)
-        self.t1.set_translation(self.state[0] + np.pi/2)
+        print(self.state[IDX_th0])
+        print(self.state[IDX_dth0])
+        self.t0.set_rotation(self.state[IDX_th0])
+        self.t0.set_translation(self.state[IDX_x0], self.state[IDX_y0])
 
-        self.t2.set_rotation(self.state[0] + np.pi/2)
-        self.t2.set_translation(self.state[0] + np.pi/2)
+        #self.t1.set_rotation(self.state[0] + np.pi/2)
+        #self.t1.set_translation(self.state[0] + np.pi/2)
 
-        self.t3.set_rotation(self.state[0] + np.pi/2)
-        self.t3.set_translation(self.state[0] + np.pi/2)
+        #self.t2.set_rotation(self.state[0] + np.pi/2)
+        #self.t2.set_translation(self.state[0] + np.pi/2)
 
         #if self.frame_no < 3:
         #    time.sleep(1)
@@ -261,9 +264,9 @@ class RabbitEnv(gym.Env):
 
 if __name__ == '__main__':
     env = RabbitEnv()
-    
     while True:
         env.reset()
+        print(env.state)
         for i in range(1000):
             print(i)
             env.step(np.array([0, 0]))
