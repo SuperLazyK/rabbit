@@ -20,6 +20,7 @@ IDX_dth1 = 8
 IDX_dth2 = 9
 Nu = 2
 dt = 0.01
+RENDER_OFFSET_Y = -2
 
 MAX_TORQUE=2.
 
@@ -159,9 +160,9 @@ def reset_state(np_random=None):
     s[IDX_dth2] = 0.
 
     if np_random is not None:
-        s[IDX_th0] = np_random.uniform(low=-np.pi/4, high=np.pi/4)
-        s[IDX_th1] = np_random.uniform(low=-np.pi/4, high=np.pi/4)
-        s[IDX_th2] = np_random.uniform(low=-np.pi/4, high=np.pi/4)
+        s[IDX_th0] = np.pi/4  + np_random.uniform(low=-np.pi/10, high=np.pi/10)
+        s[IDX_th1] = np.pi/2  + np_random.uniform(low=-np.pi/10, high=np.pi/10)
+        s[IDX_th2] = -np.pi/3 + np_random.uniform(low=-np.pi/4, high=np.pi/4)
     return s
 
 
@@ -242,7 +243,7 @@ class RabbitEnv(gym.Env):
 
         print(self.state[IDX_th0])
         print(self.state[IDX_dth0])
-        offset_t = self.state[IDX_x0:IDX_y0+1]
+        offset_t = np.array([0, RENDER_OFFSET_Y]) + self.state[IDX_x0:IDX_y0+1]
         offset_r = self.state[IDX_th0]
         self.t0.set_rotation(offset_r)
         self.t0.set_translation(offset_t[0], offset_t[1])
