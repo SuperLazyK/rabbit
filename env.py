@@ -231,15 +231,17 @@ class RabbitEnv(gym.Env):
             rod1.add_attr(self.t1)
             self.viewer.add_geom(rod1)
 
-            #rod2 = rendering.make_capsule(l2, .2)
-            #rod2.set_color(.0, .0, .0)
-            #self.t2 = rendering.Transform()
-            #rod2.add_attr(self.t2)
-            #self.viewer.add_geom(rod2)
+            rod2 = rendering.make_capsule(l2, .2)
+            rod2.set_color(.0, .0, .0)
+            self.t2 = rendering.Transform()
+            rod2.add_attr(self.t2)
+            self.viewer.add_geom(rod2)
 
-            #foot = rendering.make_circle(.05)
-            #foot.set_color(0,0,0)
-            #self.viewer.add_geom(foot)
+            head = rendering.make_circle(.5)
+            head.set_color(0.3,0.1,0.1)
+            self.t3 = rendering.Transform()
+            head.add_attr(self.t3)
+            self.viewer.add_geom(head)
 
         print(self.state[IDX_th0])
         print(self.state[IDX_dth0])
@@ -248,13 +250,18 @@ class RabbitEnv(gym.Env):
         self.t0.set_rotation(offset_r)
         self.t0.set_translation(offset_t[0], offset_t[1])
 
-        offset_t = offset_t + np.array([np.cos(offset_r), np.sin(offset_r)])
+        offset_t = offset_t + l0 * np.array([np.cos(offset_r), np.sin(offset_r)])
         offset_r = offset_r + self.state[IDX_th1]
         self.t1.set_rotation(offset_r)
         self.t1.set_translation(offset_t[0], offset_t[1])
 
-        #self.t2.set_rotation(self.state[0] + np.pi/2)
-        #self.t2.set_translation(self.state[0] + np.pi/2)
+        offset_t = offset_t + l1 * np.array([np.cos(offset_r), np.sin(offset_r)])
+        offset_r = offset_r + self.state[IDX_th2]
+        self.t2.set_rotation(offset_r)
+        self.t2.set_translation(offset_t[0], offset_t[1])
+
+        offset_t = offset_t + l2 * np.array([np.cos(offset_r), np.sin(offset_r)])
+        self.t3.set_translation(offset_t[0], offset_t[1])
 
         #if self.frame_no < 3:
         #    time.sleep(1)
