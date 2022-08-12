@@ -1,6 +1,6 @@
 import dill as pickle
 from sympy import symbols, Matrix, Function, Symbol, diff, solve, collect, Eq
-from sympy import cos, sin, simplify
+from sympy import simplify
 import sympy
 import numpy as np
 import os
@@ -67,11 +67,11 @@ extF = Matrix([fx0, fy0, tau0, tau1, tau2])
 # Kinematics
 #----------
 
-x1 = x0 + l0 * cos(th0)
-y1 = y0 + l0 * sin(th0)
+x1 = x0 + l0 * simpy.cos(th0)
+y1 = y0 + l0 * simpy.sin(th0)
 
-x2 = x1 + l1 * cos(th0 + th1)
-y2 = y1 + l1 * sin(th0 + th1)
+x2 = x1 + l1 * simpy.cos(th0 + th1)
+y2 = y1 + l1 * simpy.sin(th0 + th1)
 
 
 xc0 = x1
@@ -80,8 +80,8 @@ yc0 = y1
 xc1 = x2
 yc1 = y2
 
-xc2 = x2 + l2 * cos(th0 + th1 + th2)
-yc2 = y2 + l2 * sin(th0 + th1 + th2)
+xc2 = x2 + l2 * simpy.cos(th0 + th1 + th2)
+yc2 = y2 + l2 * simpy.sin(th0 + th1 + th2)
 
 #----------
 # dynamics
@@ -154,6 +154,47 @@ def cached_simplify(filename, exp):
     print("-----------")
     sprint(ret)
     return ret
+
+
+def sub_param(exp, vl0, vl1, vl2, vm0, vm1, vm2):
+    return exp.subs(
+        [ (l0,  vl0  )
+        , (l1,  vl1  )
+        , (l2,  vl2  )
+        , (m0,  vm0  )
+        , (m1,  vm1  )
+        , (m2,  vm2  )
+        , (g,   9.8  )
+        ])
+
+
+def sub_state(exp, vx0, vy0, vth0, vth1, vth2, dx0, dy0, vdth0, vdh1, vth2):
+    return exp.subs(
+        [ (dx0,  vx0  )
+        , (dy0,  vy0  )
+        , (dth0, vdth0))
+        , (dth1, vdth1))
+        , (dth2, vdth2))
+        , (vx0, vx0))
+        , (vy0, vy0))
+        , (simpy.cos(th0),         np.cos(th0))
+        , (simpy.cos(th1),         np.cos(th0))
+        , (simpy.cos(th2),         np.cos(th0))
+        , (simpy.cos(th0+th1),     np.cos(th0+th1))
+        , (simpy.cos(th1+th2),     np.cos(th1+th2))
+        , (simpy.cos(th0+th1+th2), np.cos(th0+th1+th2))
+        , (simpy.sin(th0),         np.sin(th0))
+        , (simpy.sin(th1),         np.sin(th1))
+        , (simpy.sin(th2),         np.sin(th2))
+        , (simpy.sin(th0+th1),     np.sin(th0+th1))
+        , (simpy.sin(th1+th2),     np.sin(th1+th2))
+        , (simpy.sin(th0+th1+th2), np.sin(th0+th1+th2))
+        , (x0, vx0)
+        , (y0, vy0)
+        , (th0, vth0)
+        , (th1, vth1)
+        , (th2, vth2)
+        ])
 
 def replace_sym(exp):
 
@@ -248,14 +289,14 @@ if False:
 # simulation
 #---------------------
 
-if False:
+if True:
 
 # foot-contact--mode
-    rhs = tau.subs([(tau0, 0)])[2:]
+    rhs = tau[2:]
     #simeq_c = Eq(Matrix(rhs), Matrix(extF[2:]))
     x = [ddth0, ddth1, ddth2]
     A = Matrix(rhs).col(0).jacobian(Matrix(x))
-    b = Matrix(rhs) - A * Matrix(x) - Matrix([0, tau1, tau2])
+    b = Matrix(rhs) - A * Matrix(x) - Matrix([tau0, tau1, tau2])
     print("==========")
     cached_simplify("A.txt", A)
     print("==========")
