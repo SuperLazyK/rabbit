@@ -336,6 +336,8 @@ if __name__ == '__main__':
     history = constant_steps(env.model, env.state, u, T)
 
     for i in range(history.shape[1]):
+        if i == 1:
+            input('')
         s = history[:,i]
         env.state = s
         ds = rhs(0, s, u)
