@@ -28,7 +28,8 @@ l0 =  1.
 l1 =  1.
 l2 =  1.
 
-def rhs(t, s, u, params):
+
+def rhs(t, s, u, params={}):
     g  = params.get('g',     9.8)
     m0 = params.get('m0',    1.)
     m1 = params.get('m1',    1.)
@@ -109,6 +110,15 @@ def rhs(t, s, u, params):
 
     return ds
 
+def show(s, ds, dt):
+    th0  = s[IDX_th0]
+    th1  = s[IDX_th1]
+    th2  = s[IDX_th2]
+    dth0 = s[IDX_dth0]   * dt
+    dth1 = s[IDX_dth1]   * dt
+    dth2 = s[IDX_dth2]   * dt
+    print("{:.2f} {:.2f} {:.2f} : {:.2f} {:.2f} {:.2f} : {:.4f} {:.4f} {:.4f} : ".format(
+        th0, th1, th2, dth0, dth1, dth2, ds[2],ds[3],ds[4]))
 
 def obs(s):
     # sensor 6-IMU? estimated th0 is noisy...
@@ -142,7 +152,13 @@ def step(model, s, u):
     T = np.array([0, dt])
     u = np.repeat(np.array(u).reshape(Nu,1), 2, axis=1)
     t, s = ct.input_output_response(model, T, U=u, X0=s, params={})
-    s = clip(s[:,-1])
+    #return clip(s[:,-1])
+    return s[:,-1]
+
+def constant_steps(model, s, u, T):
+    u = np.repeat(np.array(u).reshape(Nu,1), T.shape[0], axis=1)
+    t, s = ct.input_output_response(model, T, U=u, X0=s, params={})
+    #s = clip(s[:,-1])
     return s
 
 
@@ -257,7 +273,7 @@ class RabbitEnv(gym.Env):
             head.add_attr(self.t3)
             self.viewer.add_geom(head)
 
-        img_scale = 0.5
+        img_scale = 0.3
         self.viewer.add_onetime(self.img0)
         self.viewer.add_onetime(self.img1)
         self.viewer.add_onetime(self.img2)
@@ -300,12 +316,27 @@ class RabbitEnv(gym.Env):
 
 if __name__ == '__main__':
     env = RabbitEnv()
-    while True:
-        env.reset()
-        print(env.state)
-        for i in range(1000):
-            env.step(np.array([0, 0]))
-            env.render()
+    env.reset()
+    dt = 0.03
+    T = np.arange(0, 20, dt)
+    u = np.array([0, 0])
+    history = constant_steps(env.model, env.state, u, T)
+
+    for i in range(history.shape[1]):
+        s = history[:,i]
+        env.state = s
+        ds = rhs(0, s, u)
+        show(s, ds, dt)
+        env.render()
+        time.sleep(0.1)
+        input('')
+
+
+    #while True:
+        #step(np.array([0, 0]))
+
+        #for i in range(1000):
+        #    env.step()
 
 
 
