@@ -67,11 +67,11 @@ extF = Matrix([fx0, fy0, tau0, tau1, tau2])
 # Kinematics
 #----------
 
-x1 = x0 + l0 * simpy.cos(th0)
-y1 = y0 + l0 * simpy.sin(th0)
+x1 = x0 + l0 * sympy.cos(th0)
+y1 = y0 + l0 * sympy.sin(th0)
 
-x2 = x1 + l1 * simpy.cos(th0 + th1)
-y2 = y1 + l1 * simpy.sin(th0 + th1)
+x2 = x1 + l1 * sympy.cos(th0 + th1)
+y2 = y1 + l1 * sympy.sin(th0 + th1)
 
 
 xc0 = x1
@@ -80,8 +80,8 @@ yc0 = y1
 xc1 = x2
 yc1 = y2
 
-xc2 = x2 + l2 * simpy.cos(th0 + th1 + th2)
-yc2 = y2 + l2 * simpy.sin(th0 + th1 + th2)
+xc2 = x2 + l2 * sympy.cos(th0 + th1 + th2)
+yc2 = y2 + l2 * sympy.sin(th0 + th1 + th2)
 
 #----------
 # dynamics
@@ -138,7 +138,7 @@ X = Matrix([x0, y0, th0, th1, th2])
 dX = Matrix([dx0, dy0, dth0, dth1, dth2])
 ddX = Matrix([ddx0, ddy0, ddth0, ddth1, ddth2])
 
-tau = diff(diff(L, dX), t) - diff(L, X)
+extF = diff(diff(L, dX), t) - diff(L, X)
 
 def sprint(exp):
     #print(replace_sym(exp))
@@ -156,39 +156,52 @@ def cached_simplify(filename, exp):
     return ret
 
 
-def sub_param(exp, vl0, vl1, vl2, vm0, vm1, vm2):
+def sub_param(exp):
     return exp.subs(
-        [ (l0,  vl0  )
-        , (l1,  vl1  )
-        , (l2,  vl2  )
-        , (m0,  vm0  )
-        , (m1,  vm1  )
-        , (m2,  vm2  )
+        [ (l0,  1.  )
+        , (l1,  1.  )
+        , (l2,  1.  )
+        , (m0,  1.  )
+        , (m1,  1.  )
+        , (m2,  2.  )
         , (g,   9.8  )
         ])
 
+def sub_ddthsym(exp):
+    return exp.subs(
+        [ (ddth0, symddth0)
+        , (ddth1, symddth1)
+        , (ddth2, symddth2)
+        , (ddx0 , 0)
+        , (ddy0 , 0)
+        ])
 
-def sub_state(exp, vx0, vy0, vth0, vth1, vth2, dx0, dy0, vdth0, vdh1, vth2):
+def sub_state(exp, vth0, vth1, vth2, vdth0, vdth1, vdth2):
+    vx0 = 0
+    vy0 = 0
+    vdx0 = 0
+    vdy0 = 0
+
     return exp.subs(
         [ (dx0,  vx0  )
         , (dy0,  vy0  )
-        , (dth0, vdth0))
-        , (dth1, vdth1))
-        , (dth2, vdth2))
-        , (vx0, vx0))
-        , (vy0, vy0))
-        , (simpy.cos(th0),         np.cos(th0))
-        , (simpy.cos(th1),         np.cos(th0))
-        , (simpy.cos(th2),         np.cos(th0))
-        , (simpy.cos(th0+th1),     np.cos(th0+th1))
-        , (simpy.cos(th1+th2),     np.cos(th1+th2))
-        , (simpy.cos(th0+th1+th2), np.cos(th0+th1+th2))
-        , (simpy.sin(th0),         np.sin(th0))
-        , (simpy.sin(th1),         np.sin(th1))
-        , (simpy.sin(th2),         np.sin(th2))
-        , (simpy.sin(th0+th1),     np.sin(th0+th1))
-        , (simpy.sin(th1+th2),     np.sin(th1+th2))
-        , (simpy.sin(th0+th1+th2), np.sin(th0+th1+th2))
+        , (dth0, vdth0)
+        , (dth1, vdth1)
+        , (dth2, vdth2)
+        , (vx0, vx0)
+        , (vy0, vy0)
+        , (sympy.cos(th0),         np.cos(vth0))
+        , (sympy.cos(th1),         np.cos(vth0))
+        , (sympy.cos(th2),         np.cos(vth0))
+        , (sympy.cos(th0+th1),     np.cos(vth0+vth1))
+        , (sympy.cos(th1+th2),     np.cos(vth1+vth2))
+        , (sympy.cos(th0+th1+th2), np.cos(vth0+vth1+vth2))
+        , (sympy.sin(th0),         np.sin(vth0))
+        , (sympy.sin(th1),         np.sin(vth1))
+        , (sympy.sin(th2),         np.sin(vth2))
+        , (sympy.sin(th0+th1),     np.sin(vth0+vth1))
+        , (sympy.sin(th1+th2),     np.sin(vth1+vth2))
+        , (sympy.sin(th0+th1+th2), np.sin(vth0+vth1+vth2))
         , (x0, vx0)
         , (y0, vy0)
         , (th0, vth0)
@@ -211,18 +224,18 @@ def replace_sym(exp):
         , (dth2, symbols("dth2"))
         , (x0, symbols("x0"))
         , (y0, symbols("y0"))
-        , (cos(th0), symbols("c0"))
-        , (cos(th1), symbols("c1"))
-        , (cos(th2), symbols("c2"))
-        , (cos(th0+th1), symbols("c01"))
-        , (cos(th0+th1+th2), symbols("c012"))
-        , (cos(th1+th2), symbols("c12"))
-        , (sin(th0), symbols("s0"))
-        , (sin(th1), symbols("s1"))
-        , (sin(th2), symbols("s2"))
-        , (sin(th0+th1), symbols("s01"))
-        , (sin(th0+th1+th2), symbols("s012"))
-        , (sin(th1+th2), symbols("s12"))
+        , (sympy.cos(th0), symbols("c0"))
+        , (sympy.cos(th1), symbols("c1"))
+        , (sympy.cos(th2), symbols("c2"))
+        , (sympy.cos(th0+th1), symbols("c01"))
+        , (sympy.cos(th0+th1+th2), symbols("c012"))
+        , (sympy.cos(th1+th2), symbols("c12"))
+        , (sympy.sin(th0), symbols("s0"))
+        , (sympy.sin(th1), symbols("s1"))
+        , (sympy.sin(th2), symbols("s2"))
+        , (sympy.sin(th0+th1), symbols("s01"))
+        , (sympy.sin(th0+th1+th2), symbols("s012"))
+        , (sympy.sin(th1+th2), symbols("s12"))
         , (th0, symbols("th0"))
         , (th1, symbols("th1"))
         , (th2, symbols("th2"))
@@ -236,22 +249,22 @@ dy2 = diff(y2, t)
 
 # only depnd on x0' y0'
 
-tau = cached_simplify("extF.txt", tau)
+extF = cached_simplify("extF.txt", extF)
 
 #---------------------
 # planning
 #---------------------
 
-# tau = M * ddX + C * dTh_C + B * dTh_B + G
+# extF = M * ddX + C * dTh_C + B * dTh_B + G
 # if the rabbit's toe is on the ground then x0''=0  y0''=0
 # if the rabbit's toe is in the airthen f0''= 0
 
 if False:
-    M=tau.col(0).jacobian(ddX)
+    M=extF.col(0).jacobian(ddX)
     M = cached_simplify("M.txt", M)
 #print(M)
 
-    remain = tau - M * ddX
+    remain = extF - M * ddX
     G = diff(remain, g) * g
     G = cached_simplify("G.txt", G)
 
@@ -292,28 +305,35 @@ if False:
 if True:
 
 # foot-contact--mode
-    rhs = tau[2:]
-    #simeq_c = Eq(Matrix(rhs), Matrix(extF[2:]))
+    rhs = extF[2:]
     x = [ddth0, ddth1, ddth2]
     A = Matrix(rhs).col(0).jacobian(Matrix(x))
-    b = Matrix(rhs) - A * Matrix(x) - Matrix([tau0, tau1, tau2])
+    b = Matrix(rhs) - A * Matrix(x) # - Matrix([tau0, tau1, tau2])
+    #print("==========")
+    #cached_simplify("A.txt", A)
+    #print("==========")
+    #cached_simplify("b.txt", b)
+    #print("==========")
+    simeq = Eq(sub_state(sub_ddthsym(sub_param(A * Matrix(x) + b)), np.pi/4, np.pi/2, -np.pi/3, 0.01, 0, 0), Matrix([0, 0, 0]))
     print("==========")
-    cached_simplify("A.txt", A)
+    print(simeq)
     print("==========")
-    cached_simplify("b.txt", b)
+    print(x)
+    print("==========")
+    print(solve(simeq, sub_ddthsym(Matrix(x))))
     print("==========")
 else:
 
 # foot-in-the-air-mode
-    rhs = tau
+    rhs = extF
     #simeq_c = Eq(Matrix(rhs), Matrix(extF))
     x = [ddx0, ddy0, ddth0, ddth1, ddth2]
     A = Matrix(rhs).col(0).jacobian(Matrix(x))
-    b = Matrix(rhs) - A * Matrix(x) - extF
+    b = Matrix(rhs) - A * Matrix(x)
     print("==========")
-    cached_simplify("A.txt", A)
+    cached_simplify("A-2.txt", A)
     print("==========")
-    cached_simplify("b.txt", b)
+    cached_simplify("b-2.txt", b)
     print("==========")
     #f_a_mode = f.subs([ (fx0, 0)
     #              , (fy0, 0)

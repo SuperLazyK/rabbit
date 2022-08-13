@@ -150,7 +150,7 @@ def reset_state(np_random=None):
     s = np.zeros(10, dtype=np.float32)
     s[IDX_x0]   = 0.
     s[IDX_y0]   = 0.
-    s[IDX_th0]  = np.pi/2
+    s[IDX_th0]  = np.pi/4
     s[IDX_th1]  = np.pi/2
     s[IDX_th2]  = -np.pi/3
     s[IDX_dx  ] = 0.
@@ -159,10 +159,10 @@ def reset_state(np_random=None):
     s[IDX_dth1] = 0.
     s[IDX_dth2] = 0.
 
-    if np_random is not None:
-        s[IDX_th0] = np.pi/4  + np_random.uniform(low=-np.pi/10, high=np.pi/10)
-        s[IDX_th1] = np.pi/2  + np_random.uniform(low=-np.pi/10, high=np.pi/10)
-        s[IDX_th2] = -np.pi/3 + np_random.uniform(low=-np.pi/4, high=np.pi/4)
+    #if np_random is not None:
+    #    s[IDX_th0] = np.pi/4  + np_random.uniform(low=-np.pi/10, high=np.pi/10)
+    #    s[IDX_th1] = np.pi/2  + np_random.uniform(low=-np.pi/10, high=np.pi/10)
+    #    s[IDX_th2] = -np.pi/3 + np_random.uniform(low=-np.pi/4, high=np.pi/4)
     return s
 
 
@@ -219,47 +219,73 @@ class RabbitEnv(gym.Env):
             self.viewer = rendering.Viewer(500,500)
             self.viewer.set_bounds(-2.2,2.2,-2.2,2.2)
 
+            fname = path.join(path.dirname(__file__), "clockwise.png")
+
             rod0 = rendering.make_capsule(l0, .2)
-            rod0.set_color(.0, .0, .0)
+            rod0.set_color(.0, .3, .3)
             self.t0 = rendering.Transform()
             rod0.add_attr(self.t0)
             self.viewer.add_geom(rod0)
 
-            rod1 = rendering.make_capsule(l1, .2)
-            rod1.set_color(.0, .0, .0)
+            self.img0 = rendering.Image(fname, 1., 1.)
+            self.it0 = rendering.Transform()
+            self.img0.add_attr(self.it0)
+
+            rod1 = rendering.make_capsule(l1, .1)
+            rod1.set_color(.2, .5, .0)
             self.t1 = rendering.Transform()
             rod1.add_attr(self.t1)
             self.viewer.add_geom(rod1)
 
-            rod2 = rendering.make_capsule(l2, .2)
-            rod2.set_color(.0, .0, .0)
+            self.img1 = rendering.Image(fname, 1., 1.)
+            self.it1 = rendering.Transform()
+            self.img1.add_attr(self.it1)
+
+            rod2 = rendering.make_capsule(l2, .05)
+            rod2.set_color(.4, .0, .4)
             self.t2 = rendering.Transform()
             rod2.add_attr(self.t2)
             self.viewer.add_geom(rod2)
 
-            head = rendering.make_circle(.5)
+            self.img2 = rendering.Image(fname, .5, .5)
+            self.it2 = rendering.Transform()
+            self.img2.add_attr(self.it2)
+
+            head = rendering.make_circle(.2)
             head.set_color(0.3,0.1,0.1)
             self.t3 = rendering.Transform()
             head.add_attr(self.t3)
             self.viewer.add_geom(head)
 
+        img_scale = 0.5
+        self.viewer.add_onetime(self.img0)
+        self.viewer.add_onetime(self.img1)
+        self.viewer.add_onetime(self.img2)
+
         offset_t = np.array([0, RENDER_OFFSET_Y]) + self.state[IDX_x0:IDX_y0+1]
         offset_r = self.state[IDX_th0]
         self.t0.set_rotation(offset_r)
         self.t0.set_translation(offset_t[0], offset_t[1])
+        self.it0.scale = (-self.state[IDX_dth0]*img_scale, np.abs(self.state[IDX_dth0]*img_scale))
+        self.it0.set_translation(offset_t[0], offset_t[1])
 
         offset_t = offset_t + l0 * np.array([np.cos(offset_r), np.sin(offset_r)])
         offset_r = offset_r + self.state[IDX_th1]
         self.t1.set_rotation(offset_r)
         self.t1.set_translation(offset_t[0], offset_t[1])
+        self.it1.scale = (-self.state[IDX_dth1]*img_scale, np.abs(self.state[IDX_dth1]*img_scale))
+        self.it1.set_translation(offset_t[0], offset_t[1])
 
         offset_t = offset_t + l1 * np.array([np.cos(offset_r), np.sin(offset_r)])
         offset_r = offset_r + self.state[IDX_th2]
         self.t2.set_rotation(offset_r)
         self.t2.set_translation(offset_t[0], offset_t[1])
+        self.it2.scale = (-self.state[IDX_dth2]*img_scale, np.abs(self.state[IDX_dth2]*img_scale))
+        self.it2.set_translation(offset_t[0], offset_t[1])
 
         offset_t = offset_t + l2 * np.array([np.cos(offset_r), np.sin(offset_r)])
         self.t3.set_translation(offset_t[0], offset_t[1])
+
 
         #if self.frame_no < 3:
         #    time.sleep(1)
