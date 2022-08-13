@@ -56,9 +56,12 @@ def rhs(t, s, u, params={}):
     s12  = np.sin(th1 + th2)
     c012 = np.cos(th0 + th1 + th2)
     s012 = np.sin(th0 + th1 + th2)
+    fx0  = 0
+    fy0  = 0
     tau0 = 0
     tau1 = u[0]
     tau2 = u[1]
+    extf = np.array([fx0, fy0, tau0, tau1, tau2]).reshape(5,1)
 
     A = np.array([
                 [                                            1.0*m0 + 1.0*m1 + 1.0*m2,                                                                   0,                                                      -1.0*l0*m0*s0 - 1.0*m1*(l0*s0 + l1*s01) - 1.0*m2*(l0*s0 + l1*s01 + l2*s012),                                                -1.0*l1*m1*s01 - 1.0*m2*(l1*s01 + l2*s012),             -1.0*l2*m2*s012],
@@ -69,11 +72,11 @@ def rhs(t, s, u, params={}):
             ])
 
     b = np.array([
-                [  -1.0*c0*l0*m0*dth0**2 - 1.0*c0*l0*m1*dth0**2 - 1.0*c0*l0*m2*dth0**2 - 1.0*c01*l1*m1*dth0**2 - 2.0*c01*l1*m1*dth0*dth1 - 1.0*c01*l1*m1*dth1**2 - 1.0*c01*l1*m2*dth0**2 - 2.0*c01*l1*m2*dth0*dth1 - 1.0*c01*l1*m2*dth1**2 - 1.0*c012*l2*m2*dth0**2 - 2.0*c012*l2*m2*dth0*dth1 - 2.0*c012*l2*m2*dth0*dth2 - 1.0*c012*l2*m2*dth1**2 - 2.0*c012*l2*m2*dth1*dth2 - 1.0*c012*l2*m2*dth2**2],      # -fx0
-                [                                   g*m0 + g*m1 + g*m2 - l0*m0*s0*dth0**2 - l0*m1*s0*dth0**2 - l0*m2*s0*dth0**2 - l1*m1*s01*dth0**2 - 2*l1*m1*s01*dth0*dth1 - l1*m1*s01*dth1**2 - l1*m2*s01*dth0**2 - 2*l1*m2*s01*dth0*dth1 - l1*m2*s01*dth1**2 - l2*m2*s012*dth0**2 - 2*l2*m2*s012*dth0*dth1 - 2*l2*m2*s012*dth0*dth2 - l2*m2*s012*dth1**2 - 2*l2*m2*s012*dth1*dth2 - l2*m2*s012*dth2**2],   # -fy0
-                [c0*g*l0*m0 + c0*g*l0*m1 + c0*g*l0*m2 + c01*g*l1*m1 + c01*g*l1*m2 + c012*g*l2*m2 - 2*l0*l1*m1*s1*dth0*dth1 - l0*l1*m1*s1*dth1**2 - 2*l0*l1*m2*s1*dth0*dth1 - l0*l1*m2*s1*dth1**2 - 2*l0*l2*m2*s12*dth0*dth1 - 2*l0*l2*m2*s12*dth0*dth2 - l0*l2*m2*s12*dth1**2 - 2*l0*l2*m2*s12*dth1*dth2 - l0*l2*m2*s12*dth2**2 - 2*l1*l2*m2*s2*dth0*dth2 - 2*l1*l2*m2*s2*dth1*dth2 - l1*l2*m2*s2*dth2**2 - tau0],
-                [                                                                                                                                                               1.0*c01*g*l1*m1 + 1.0*c01*g*l1*m2 + 1.0*c012*g*l2*m2 + 1.0*l0*l1*m1*s1*dth0**2 + 1.0*l0*l1*m2*s1*dth0**2 + 1.0*l0*l2*m2*s12*dth0**2 - 2.0*l1*l2*m2*s2*dth0*dth2 - 2.0*l1*l2*m2*s2*dth1*dth2 - 1.0*l1*l2*m2*s2*dth2**2 - 1.0*tau1],
-                [                                                                                                                                                                                                                                                         1.0*c012*g*l2*m2 + 1.0*l0*l2*m2*s12*dth0**2 + 1.0*l1*l2*m2*s2*dth0**2 + 2.0*l1*l2*m2*s2*dth0*dth1 + 1.0*l1*l2*m2*s2*dth1**2 - 1.0*tau2]
+                [     -1.0*c0*dth0**2*l0*m0 - 1.0*c0*dth0**2*l0*m1 - 1.0*c0*dth0**2*l0*m2 - 1.0*c01*dth0**2*l1*m1 - 1.0*c01*dth0**2*l1*m2 - 2.0*c01*dth0*dth1*l1*m1 - 2.0*c01*dth0*dth1*l1*m2 - 1.0*c01*dth1**2*l1*m1 - 1.0*c01*dth1**2*l1*m2 - 1.0*c012*dth0**2*l2*m2 - 2.0*c012*dth0*dth1*l2*m2 - 2.0*c012*dth0*dth2*l2*m2 - 1.0*c012*dth1**2*l2*m2 - 2.0*c012*dth1*dth2*l2*m2 - 1.0*c012*dth2**2*l2*m2],
+                [                                  -dth0**2*l0*m0*s0 - dth0**2*l0*m1*s0 - dth0**2*l0*m2*s0 - dth0**2*l1*m1*s01 - dth0**2*l1*m2*s01 - dth0**2*l2*m2*s012 - 2*dth0*dth1*l1*m1*s01 - 2*dth0*dth1*l1*m2*s01 - 2*dth0*dth1*l2*m2*s012 - 2*dth0*dth2*l2*m2*s012 - dth1**2*l1*m1*s01 - dth1**2*l1*m2*s01 - dth1**2*l2*m2*s012 - 2*dth1*dth2*l2*m2*s012 - dth2**2*l2*m2*s012 + g*m0 + g*m1 + g*m2],
+                [c0*g*l0*m0 + c0*g*l0*m1 + c0*g*l0*m2 + c01*g*l1*m1 + c01*g*l1*m2 + c012*g*l2*m2 - 2*dth0*dth1*l0*l1*m1*s1 - 2*dth0*dth1*l0*l1*m2*s1 - 2*dth0*dth1*l0*l2*m2*s12 - 2*dth0*dth2*l0*l2*m2*s12 - 2*dth0*dth2*l1*l2*m2*s2 - dth1**2*l0*l1*m1*s1 - dth1**2*l0*l1*m2*s1 - dth1**2*l0*l2*m2*s12 - 2*dth1*dth2*l0*l2*m2*s12 - 2*dth1*dth2*l1*l2*m2*s2 - dth2**2*l0*l2*m2*s12 - dth2**2*l1*l2*m2*s2],
+                [                                                                                                                                                                   1.0*c01*g*l1*m1 + 1.0*c01*g*l1*m2 + 1.0*c012*g*l2*m2 + 1.0*dth0**2*l0*l1*m1*s1 + 1.0*dth0**2*l0*l1*m2*s1 + 1.0*dth0**2*l0*l2*m2*s12 - 2.0*dth0*dth2*l1*l2*m2*s2 - 2.0*dth1*dth2*l1*l2*m2*s2 - 1.0*dth2**2*l1*l2*m2*s2],
+                [                                                                                                                                                                                                                                                                                   l2*m2*(1.0*c012*g + 1.0*dth0**2*l0*s12 + 1.0*dth0**2*l1*s2 + 2.0*dth0*dth1*l1*s2 + 1.0*dth1**2*l1*s2)]
             ])
 
     ds = np.zeros_like(s)
@@ -85,21 +88,22 @@ def rhs(t, s, u, params={}):
 
     dd = np.zeros(5)
 
-    assert y0 >= 0
+    #assert y0 >= 0
 
-    if y0 == 0: # foot is contact
+    #if y0 == 0: # foot is contact
+    if False:
         assert np.linalg.matrix_rank(A[2:,2:]) == 3
-        dd[2:] = np.linalg.solve(A[2:,2:], -b[2:]).reshape(3)
+        dd[2:] = np.linalg.solve(A[2:,2:], extf[2:]-b[2:]).reshape(3)
         fxy = b[:2].reshape((2,)) - A[:2,2:] @ dd[2:]
-        print(fxy)
+        #print(fxy)
         fy = fxy[1]
-        #if fy > 0: # jump start
-        #    if np.linalg.matrix_rank(A) != 5:
-        #        print(A, np.linalg.matrix_rank(A) )
-        #        assert False
-        #    dd = np.linalg.solve(A,b)
+        print("fy", fy)
+        if fy < 0: # jump start
+            assert np.linalg.matrix_rank(A) == 5, (s, A)
+            dd = np.linalg.solve(A,extf-b)
     else: # foot in the air
-        dd = np.linalg.solve(A, b)
+        assert np.linalg.matrix_rank(A) == 5, (s, A)
+        dd = np.linalg.solve(A, extf-b)
 
     ds[IDX_dx]   = dd[0]
     ds[IDX_dy]   = dd[1]

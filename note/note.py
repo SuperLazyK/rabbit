@@ -302,7 +302,7 @@ if False:
 # simulation
 #---------------------
 
-if True:
+if False:
 
 # foot-contact--mode
     rhs = extF[2:]
@@ -334,6 +334,9 @@ else:
     b = Matrix(rhs) - A * Matrix(x)
     print("==========")
     cached_simplify("A-2.txt", A)
+    print("==========")
+    cached_simplify("A-det", A.det())
+    print("==========")
     print("==========")
     cached_simplify("b-2.txt", b)
     print("==========")
