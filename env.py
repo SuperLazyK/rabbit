@@ -20,7 +20,7 @@ IDX_dth1 = 8
 IDX_dth2 = 9
 Nu = 2
 dt = 0.01
-RENDER_OFFSET_Y = -2
+RENDER_OFFSET_Y = 0
 
 MAX_TORQUE=2.
 
@@ -105,7 +105,7 @@ def rhs(t, s, u, params={}):
     assert np.linalg.matrix_rank(A) == 3
 
     dd[2:] = np.linalg.solve(A, -b).reshape(3) # Ax + b
-    print(dd)
+    #print(dd)
     #fxy = b[:2].reshape((2,)) - A[:2,2:] @ dd[2:]
     #fy = fxy[1]
     #if fy > 0: # jump start
@@ -245,7 +245,8 @@ class RabbitEnv(gym.Env):
         if self.viewer is None:
             from gym.envs.classic_control import rendering
             self.viewer = rendering.Viewer(500,500)
-            self.viewer.set_bounds(-2.2,2.2,-2.2,2.2)
+            wscale = 4.2
+            self.viewer.set_bounds(-wscale,wscale,-wscale,wscale)
 
             fname = path.join(path.dirname(__file__), "clockwise.png")
 
@@ -286,9 +287,9 @@ class RabbitEnv(gym.Env):
             self.viewer.add_geom(head)
 
         img_scale = 0.3
-        self.viewer.add_onetime(self.img0)
-        self.viewer.add_onetime(self.img1)
-        self.viewer.add_onetime(self.img2)
+        #self.viewer.add_onetime(self.img0)
+        #self.viewer.add_onetime(self.img1)
+        #self.viewer.add_onetime(self.img2)
 
         offset_t = np.array([0, RENDER_OFFSET_Y]) + self.state[IDX_x0:IDX_y0+1]
         offset_r = self.state[IDX_th0]
@@ -341,7 +342,7 @@ if __name__ == '__main__':
         show(s, ds, dt)
         env.render()
         time.sleep(0.1)
-        input('')
+        #input('')
 
 
     #while True:
