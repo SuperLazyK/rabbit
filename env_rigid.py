@@ -32,10 +32,10 @@ l2 =  1.
 g  = 9.8
 
 m0 = 1.
-m1 = 1.
-m2 = 2.
+m1 = 0.5
+m2 = 1.
 
-I0 = 1.
+I0 = 2.
 I1 = 1.
 I2 = 2.
 
@@ -98,7 +98,8 @@ def rhs(t, s, u, params={}):
 
     dd = np.linalg.solve(A, extf-b).reshape(5)
 
-    if y0 == 0 and dd[1] <= 0: # foot is contact
+    if True:
+    #if y0 == 0 and dd[1] <= 0: # foot is contact
         dd = np.zeros(5)
         assert np.linalg.matrix_rank(A[2:,2:]) == 3
         ddtheta = np.linalg.solve(A[2:,2:], extf[2:]-b[2:]).reshape(3)
@@ -328,14 +329,14 @@ if __name__ == '__main__':
     history = constant_steps(env.model, env.state, u, T)
 
     for i in range(history.shape[1]):
-        #if i == 1:
-        #    input('')
+        if i == 1:
+            input('')
         s = history[:,i]
         env.state = s
         ds = rhs(0, s, u)
         show(s, ds, dt)
         env.render()
-        time.sleep(0.1)
+        time.sleep(0.03)
 
 
     #while True:
