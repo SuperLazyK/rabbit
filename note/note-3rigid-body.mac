@@ -31,8 +31,8 @@ symbolilze(M):= grind(subst([ diff(x0,t,2)=ddx0
 x1: x0 + l0 * cos(th0)$
 y1: y0 + l0 * sin(th0)$
 
-x2: x1 + l1 * cos(th0 + th1)$
-y2: y1 + l1 * sin(th0 + th1)$
+x2: x1 + l1 * cos(th1)$
+y2: y1 + l1 * sin(th1)$
 
 xc0: (x0 + x1)/2$
 yc0: (y0 + y1)/2$
@@ -40,8 +40,8 @@ yc0: (y0 + y1)/2$
 xc1: (x1 + x2)/2$
 yc1: (y1 + y2)/2$
 
-xc2: x2 + l2 * cos(th0 + th1 + th2)$
-yc2: y2 + l2 * sin(th0 + th1 + th2)$
+xc2: x2 + l2 * cos(th2)$
+yc2: y2 + l2 * sin(th2)$
 
 /*----------*/
 /* dynamics */
@@ -85,12 +85,12 @@ K0_rot: 1/2 * I0 * th0' ** 2$
 
 U1 : yc1 * m1 * g$
 K1_trs : 1/2 * m1 * vc1$
-K1_rot: 1/2 * I1 * (th0' + th1') ** 2$
+K1_rot: 1/2 * I1 * (th1') ** 2$
 
 
 U2 : yc2 * m2 * g$
 K2_trs : 1/2 * m2 * vc2$
-K2_rot: 1/2 * I2 * (th0' + th1' + th2') ** 2$
+K2_rot: 1/2 * I2 * (th2') ** 2$
 
 X : [x0, y0, th0, th1, th2]$
 dX : [x0', y0', th0', th1', th2']$
