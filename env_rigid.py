@@ -128,6 +128,7 @@ modelc = ct.NonlinearIOSystem(rhs, outfcn=None
 def rhsd(t, s, u, params={}):
     ds = rhs(t, s, u, params)
     s = s + dt * ds
+    s[IDX_y0] = max(s[IDX_y0], 0)
     return s
 
 modeld = ct.NonlinearIOSystem(rhsd, outfcn=None
