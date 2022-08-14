@@ -1,0 +1,109 @@
+/* 3 rigid body */
+
+declare ("'", alphabetic)$
+depends([x0, y0] , t)$
+depends([th0, th1, th2] , t)$
+
+size(M):=[length(M),length(args(M))]$
+
+/*------------*/
+/* Kinematics */
+/*------------*/
+
+x1: x0 + l0 * cos(th0)$
+y1: y0 + l0 * sin(th0)$
+
+x2: x1 + l1 * cos(th0 + th1)$
+y2: y1 + l1 * sin(th0 + th1)$
+
+xc0: (x0 + x1)/2$
+yc0: (y0 + y1)/2$
+
+xc1: (x1 + x2)/2$
+yc1: (y1 + y2)/2$
+
+xc2: x2 + l2 * cos(th0 + th1 + th2)$
+yc2: y2 + l2 * sin(th0 + th1 + th2)$
+
+/*----------*/
+/* dynamics */
+/*----------*/
+
+th0': diff(th0, t)$
+th1': diff(th1, t)$
+th2': diff(th2, t)$
+
+x0': diff(x0, t)$
+y0': diff(y0, t)$
+
+th0'': diff(th0', t)$
+th1'': diff(th1', t)$
+th2'': diff(th2', t)$
+
+x0'': diff(x0', t)$
+y0'': diff(y0', t)$
+
+xc0': diff(xc0, t)$
+yc0': diff(yc0, t)$
+
+xc1': diff(xc1, t)$
+yc1': diff(yc1, t)$
+
+xc2': diff(xc2, t)$
+yc2': diff(yc2, t)$
+
+/*----------*/
+/* Lagrange */
+/*----------*/
+
+vc0: xc0'**2 + yc0'**2$
+vc1: xc1'**2 + yc1'**2$
+vc2: xc2'**2 + yc2'**2$
+
+U0: yc0 * m0 * g$
+K0_trs: 1/2 * m0 * vc0$
+K0_rot: 1/2 * I0 * th0' ** 2$
+
+
+U1 : yc1 * m1 * g$
+K1_trs : 1/2 * m1 * vc1$
+K1_rot: 1/2 * I1 * (th0' + th1') ** 2$
+
+
+U2 : yc2 * m2 * g$
+K2_trs : 1/2 * m2 * vc2$
+K2_rot: 1/2 * I2 * (th0' + th1' + th2') ** 2$
+
+X : [x0, y0, th0, th1, th2]$
+dX : [x0', y0', th0', th1', th2']$
+ddX : [x0'', y0'', th0'', th1'', th2'']$
+
+L : K0_trs + K0_rot + K1_trs + K1_rot + K2_trs + K2_rot - U0 - U1 - U2$
+rhs: diff(jacobian([L],dX), t) - jacobian([L], X)$
+/*grind(col(rhs, 5))$*/
+lhs:matrix([fx0, fy0, tau0, tau1, tau2])$
+
+/*
+rhs1 = grind(subst([ diff(x0,t,2)=ddx0
+            , diff(y0,t,2)=ddy0
+            , diff(th0,t,2)=ddth0
+            , diff(th1,t,2)=ddth1
+            , diff(th2,t,2)=ddth2
+            , diff(th0,t,1)=dth0
+            , diff(th1,t,1)=dth1
+            , diff(th2,t,1)=dth2
+    ], rhs))$
+*/
+
+grind(args(transpose(rhs)))$
+A:jacobian(args(rhs), ddX)$
+A:jacobian(args(transpose(rhs)), ddX)$
+size(A)$
+disp(grind(expand(determinant(A))))$
+
+grind(rhs);
+
+grind(A);
+
+
+
