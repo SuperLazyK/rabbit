@@ -91,25 +91,22 @@ def rhs(t, s, u, params={}):
     ds[IDX_th1] = s[IDX_dth1]
     ds[IDX_th2] = s[IDX_dth2]
 
-    dd = np.zeros(5)
+    assert y0 >= 0
 
-    #assert y0 >= 0
+    assert np.linalg.matrix_rank(A) == 5, (s, A)
 
-    #if y0 == 0: # foot is contact
-    if False:
+    dd = np.linalg.solve(A, extf-b).reshape(5)
+
+    if y0 == 0 and dd[1] <= 0: # foot is contact
+        dd = np.zeros(5)
         assert np.linalg.matrix_rank(A[2:,2:]) == 3
-        dd[2:] = np.linalg.solve(A[2:,2:], extf[2:]-b[2:]).reshape(3)
+        ddtheta = np.linalg.solve(A[2:,2:], extf[2:]-b[2:]).reshape(3)
+        print("ddtheta", ddtheta)
+        dd[2:] = ddtheta
         fxy = b[:2].reshape((2,)) - A[:2,2:] @ dd[2:]
-        #print(fxy)
         fy = fxy[1]
-        print("fy", fy)
-        if fy < 0: # jump start
-            assert np.linalg.matrix_rank(A) == 5, (s, A)
-            dd = np.linalg.solve(A,extf-b)
-    else: # foot in the air
-        assert np.linalg.matrix_rank(A) == 5, (s, A)
-        dd = np.linalg.solve(A, extf-b)
 
+    print("y0''", dd[1])
     ds[IDX_dx]   = dd[0]
     ds[IDX_dy]   = dd[1]
     ds[IDX_dth0] = dd[2]
