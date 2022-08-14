@@ -14,15 +14,17 @@ depends([x0, y0] , t)$
 depends([th0, th1, th2] , t)$
 
 size(M):=[length(M),length(args(M))]$
-symbolilze(M):= grind(subst([ diff(x0,t,2)=ddx0
+symbolilze(M):= subst([ diff(x0,t,2)=ddx0
                             , diff(y0,t,2)=ddy0
                             , diff(th0,t,2)=ddth0
                             , diff(th1,t,2)=ddth1
                             , diff(th2,t,2)=ddth2
+                            , diff(x0,t,1)=dx0
+                            , diff(y0,t,1)=dy0
                             , diff(th0,t,1)=dth0
                             , diff(th1,t,1)=dth1
                             , diff(th2,t,1)=dth2
-                    ], M))$
+                    ], M)$
 
 /*------------*/
 /* Kinematics */
@@ -101,10 +103,17 @@ rhs: diff(jacobian([L],dX), t) - jacobian([L], X)$
 /*grind(col(rhs, 5))$*/
 lhs:matrix([fx0, fy0, tau0, tau1, tau2])$
 
+grind(trigreduce(expand(symbolilze(rhs))));
+
+/*
 A:jacobian(args(rhs)[1], ddX)$
 b:expand(transpose(rhs) - A.transpose(matrix(ddX)))$
 grind(trigsimp(symbolilze(A)));
-grind(trigsimp(symbolilze(b)));
+grind(trigreduce(trigsimp(symbolilze(b))));
+*/
+
+
+
 
 /*
 grind(args(transpose(rhs)))$
