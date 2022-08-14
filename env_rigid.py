@@ -356,19 +356,8 @@ if __name__ == '__main__':
         state = step(systemd, state, u)
         #print("{}/{}".format(i, (T.shape[0])))
         org1.render(state)
-        #org2.render(history[:,i])
+        org2.render(history[:,i])
         #time.sleep(dt)
-
-
-
-
-
-
-
-
-
-
-
 
 
 
