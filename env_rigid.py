@@ -158,8 +158,8 @@ def step(model, s, u):
     T = np.array([0, dt])
     u = np.repeat(np.array(u).reshape(Nu,1), 2, axis=1)
     t, s = ct.input_output_response(model, T, U=u, X0=s, params={})
-    return clip(s[:,-1])
-    #return s[:,-1]
+    #return clip(s[:,-1])
+    return s[:,-1]
 
 def constant_steps(model, s, u, T):
     u = np.repeat(np.array(u).reshape(Nu,1), T.shape[0], axis=1)
@@ -186,6 +186,92 @@ def reset_state(np_random=None):
     #    s[IDX_th2] = -np.pi/3 + np_random.uniform(low=-np.pi/4, high=np.pi/4)
     return s
 
+class RabbitViewer():
+    def __init__(self):
+        from gym.envs.classic_control import rendering
+        self.viewer = rendering.Viewer(500,500)
+        wscale = 4.2
+        self.viewer.set_bounds(-wscale,wscale,-wscale,wscale)
+
+        fname = path.join(path.dirname(__file__), "clockwise.png")
+
+        rod0 = rendering.make_capsule(l0, .2)
+        rod0.set_color(.0, .3, .3)
+        self.t0 = rendering.Transform()
+        rod0.add_attr(self.t0)
+        self.viewer.add_geom(rod0)
+
+        self.img0 = rendering.Image(fname, 1., 1.)
+        self.it0 = rendering.Transform()
+        self.img0.add_attr(self.it0)
+
+        rod1 = rendering.make_capsule(l1, .1)
+        rod1.set_color(.2, .5, .0)
+        self.t1 = rendering.Transform()
+        rod1.add_attr(self.t1)
+        self.viewer.add_geom(rod1)
+
+        self.img1 = rendering.Image(fname, 1., 1.)
+        self.it1 = rendering.Transform()
+        self.img1.add_attr(self.it1)
+
+        rod2 = rendering.make_capsule(l2, .05)
+        rod2.set_color(.4, .0, .4)
+        self.t2 = rendering.Transform()
+        rod2.add_attr(self.t2)
+        self.viewer.add_geom(rod2)
+
+        self.img2 = rendering.Image(fname, .5, .5)
+        self.it2 = rendering.Transform()
+        self.img2.add_attr(self.it2)
+
+        head = rendering.make_circle(.2)
+        head.set_color(0.3,0.1,0.1)
+        self.t3 = rendering.Transform()
+        head.add_attr(self.t3)
+        self.viewer.add_geom(head)
+
+    def render(self, state):
+
+        img_scale = 0.3
+        #self.viewer.add_onetime(self.img0)
+        #self.viewer.add_onetime(self.img1)
+        #self.viewer.add_onetime(self.img2)
+
+        offset_t = np.array([0, RENDER_OFFSET_Y]) + state[IDX_x0:IDX_y0+1]
+        offset_r = state[IDX_th0]
+        self.t0.set_rotation(offset_r)
+        self.t0.set_translation(offset_t[0], offset_t[1])
+        self.it0.scale = (-state[IDX_dth0]*img_scale, np.abs(state[IDX_dth0]*img_scale))
+        self.it0.set_translation(offset_t[0], offset_t[1])
+
+        offset_t = offset_t + l0 * np.array([np.cos(offset_r), np.sin(offset_r)])
+        offset_r = offset_r + state[IDX_th1]
+        self.t1.set_rotation(offset_r)
+        self.t1.set_translation(offset_t[0], offset_t[1])
+        self.it1.scale = (-state[IDX_dth1]*img_scale, np.abs(state[IDX_dth1]*img_scale))
+        self.it1.set_translation(offset_t[0], offset_t[1])
+
+        offset_t = offset_t + l1 * np.array([np.cos(offset_r), np.sin(offset_r)])
+        offset_r = offset_r + state[IDX_th2]
+        self.t2.set_rotation(offset_r)
+        self.t2.set_translation(offset_t[0], offset_t[1])
+        self.it2.scale = (-state[IDX_dth2]*img_scale, np.abs(state[IDX_dth2]*img_scale))
+        self.it2.set_translation(offset_t[0], offset_t[1])
+
+        offset_t = offset_t + l2 * np.array([np.cos(offset_r), np.sin(offset_r)])
+        self.t3.set_translation(offset_t[0], offset_t[1])
+
+        #if self.frame_no < 3:
+        #    time.sleep(1)
+        #time.sleep(0.1)
+
+        return self.viewer.render(return_rgb_array = False)
+
+    def close(self):
+        if self.viewer:
+            self.viewer.close()
+            self.viewer = None
 
 class RabbitEnv(gym.Env):
 
@@ -236,84 +322,9 @@ class RabbitEnv(gym.Env):
     def render(self, mode='human'):
 
         if self.viewer is None:
-            from gym.envs.classic_control import rendering
-            self.viewer = rendering.Viewer(500,500)
-            wscale = 4.2
-            self.viewer.set_bounds(-wscale,wscale,-wscale,wscale)
+            self.viewer = RabbitViewer()
 
-            fname = path.join(path.dirname(__file__), "clockwise.png")
-
-            rod0 = rendering.make_capsule(l0, .2)
-            rod0.set_color(.0, .3, .3)
-            self.t0 = rendering.Transform()
-            rod0.add_attr(self.t0)
-            self.viewer.add_geom(rod0)
-
-            self.img0 = rendering.Image(fname, 1., 1.)
-            self.it0 = rendering.Transform()
-            self.img0.add_attr(self.it0)
-
-            rod1 = rendering.make_capsule(l1, .1)
-            rod1.set_color(.2, .5, .0)
-            self.t1 = rendering.Transform()
-            rod1.add_attr(self.t1)
-            self.viewer.add_geom(rod1)
-
-            self.img1 = rendering.Image(fname, 1., 1.)
-            self.it1 = rendering.Transform()
-            self.img1.add_attr(self.it1)
-
-            rod2 = rendering.make_capsule(l2, .05)
-            rod2.set_color(.4, .0, .4)
-            self.t2 = rendering.Transform()
-            rod2.add_attr(self.t2)
-            self.viewer.add_geom(rod2)
-
-            self.img2 = rendering.Image(fname, .5, .5)
-            self.it2 = rendering.Transform()
-            self.img2.add_attr(self.it2)
-
-            head = rendering.make_circle(.2)
-            head.set_color(0.3,0.1,0.1)
-            self.t3 = rendering.Transform()
-            head.add_attr(self.t3)
-            self.viewer.add_geom(head)
-
-        img_scale = 0.3
-        #self.viewer.add_onetime(self.img0)
-        #self.viewer.add_onetime(self.img1)
-        #self.viewer.add_onetime(self.img2)
-
-        offset_t = np.array([0, RENDER_OFFSET_Y]) + self.state[IDX_x0:IDX_y0+1]
-        offset_r = self.state[IDX_th0]
-        self.t0.set_rotation(offset_r)
-        self.t0.set_translation(offset_t[0], offset_t[1])
-        self.it0.scale = (-self.state[IDX_dth0]*img_scale, np.abs(self.state[IDX_dth0]*img_scale))
-        self.it0.set_translation(offset_t[0], offset_t[1])
-
-        offset_t = offset_t + l0 * np.array([np.cos(offset_r), np.sin(offset_r)])
-        offset_r = offset_r + self.state[IDX_th1]
-        self.t1.set_rotation(offset_r)
-        self.t1.set_translation(offset_t[0], offset_t[1])
-        self.it1.scale = (-self.state[IDX_dth1]*img_scale, np.abs(self.state[IDX_dth1]*img_scale))
-        self.it1.set_translation(offset_t[0], offset_t[1])
-
-        offset_t = offset_t + l1 * np.array([np.cos(offset_r), np.sin(offset_r)])
-        offset_r = offset_r + self.state[IDX_th2]
-        self.t2.set_rotation(offset_r)
-        self.t2.set_translation(offset_t[0], offset_t[1])
-        self.it2.scale = (-self.state[IDX_dth2]*img_scale, np.abs(self.state[IDX_dth2]*img_scale))
-        self.it2.set_translation(offset_t[0], offset_t[1])
-
-        offset_t = offset_t + l2 * np.array([np.cos(offset_r), np.sin(offset_r)])
-        self.t3.set_translation(offset_t[0], offset_t[1])
-
-
-        #if self.frame_no < 3:
-        #    time.sleep(1)
-        #time.sleep(0.1)
-
-        return self.viewer.render(return_rgb_array = mode=='rgb_array')
+        return self.viewer.render(self.state)
 
     def close(self):
         if self.viewer:
@@ -326,18 +337,31 @@ if __name__ == '__main__':
     dt = 0.03
     T = np.arange(0, 20, dt)
     u = np.array([0, 0])
-    history = constant_steps(env.model, env.state, u, T)
 
-    for i in range(history.shape[1]):
-        #if i == 1:
-        #    input('')
-        s = history[:,i]
+    history = constant_steps(env.model, env.state, u, T)
+    org1 = RabbitViewer()
+    org2 = RabbitViewer()
+
+    for i in range(T.shape[0]):
+        s = step(env.model, env.state, u)
+        print(s - history[:, i])
+        org1.render(s)
+        org2.render( history[:,i])
         env.state = s
-        ds = rhs(0, s, u)
-        show(s, ds, dt)
-        env.render()
-        #time.sleep(0.03)
+        #ds = rhs(0, s, u)
+        #show(s, ds, dt)
         time.sleep(0.1)
+
+    #for i in range(history.shape[1]):
+    #    #if i == 1:
+    #    #    input('')
+    #    s = history[:,i]
+    #    env.state = s
+    #    ds = rhs(0, s, u)
+    #    show(s, ds, dt)
+    #    env.render()
+    #    #time.sleep(0.03)
+    #    time.sleep(0.1)
 
 
     #while True:
