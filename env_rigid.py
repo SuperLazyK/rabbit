@@ -28,12 +28,18 @@ l0 =  1.
 l1 =  1.
 l2 =  1.
 
+g  = 9.8
+
+m0 = 1.
+m1 = 1.
+m2 = 2.
+
+I0 = 1.
+I1 = 1.
+I2 = 2.
+
 
 def rhs(t, s, u, params={}):
-    g  = params.get('g',     9.8)
-    m0 = params.get('m0',    1.)
-    m1 = params.get('m1',    1.)
-    m2 = params.get('m2',    2.)
     x0   = s[IDX_x0]
     y0   = s[IDX_y0]
     th0  = s[IDX_th0]
@@ -62,6 +68,74 @@ def rhs(t, s, u, params={}):
     tau1 = u[0]
     tau2 = u[1]
     extf = np.array([fx0, fy0, tau0, tau1, tau2]).reshape(5,1)
+
+    A = np.array(
+m2+m1+m0,0,
+        m2*((-l2*sin(th2+th1+th0))-l1*sin(th1+th0)-l0*sin(th0))
+          +(m1*((-l1*sin(th1+th0))-2*l0*sin(th0)))/2-(l0*m0*sin(th0))/2],
+        [m2*((-l2*sin(th2+th1+th0))-l1*sin(th1+th0))-(l1*m1*sin(th1+th0))/2],
+        [-l2*m2*sin(th2+th1+th0)]],
+       [[0],[m2+m1+m0],
+        [m2*(l2*cos(th2+th1+th0)+l1*cos(th1+th0)+l0*cos(th0))
+          +(m1*(l1*cos(th1+th0)+2*l0*cos(th0)))/2+(l0*m0*cos(th0))/2],
+        [m2*(l2*cos(th2+th1+th0)+l1*cos(th1+th0))+(l1*m1*cos(th1+th0))/2],
+        [l2*m2*cos(th2+th1+th0)]],
+       [[m2*((-l2*sin(th2+th1+th0))-l1*sin(th1+th0)-l0*sin(th0))
+          +(m1*((-l1*sin(th1+th0))-2*l0*sin(th0)))/2-(l0*m0*sin(th0))/2],
+        [m2*(l2*cos(th2+th1+th0)+l1*cos(th1+th0)+l0*cos(th0))
+          +(m1*(l1*cos(th1+th0)+2*l0*cos(th0)))/2+(l0*m0*cos(th0))/2],
+        [(m2*(2*((-l2*sin(th2+th1+th0))-l1*sin(th1+th0)-l0*sin(th0))^2
+             +2*(l2*cos(th2+th1+th0)+l1*cos(th1+th0)+l0*cos(th0))^2))
+          /2
+          +(m1*(((-l1*sin(th1+th0))-2*l0*sin(th0))^2/2
+               +(l1*cos(th1+th0)+2*l0*cos(th0))^2/2))
+           /2+(m0*((l0^2*sin(th0)^2)/2+(l0^2*cos(th0)^2)/2))/2+I2+I1+I0],
+        [(m2*(2*((-l2*sin(th2+th1+th0))-l1*sin(th1+th0))
+               *((-l2*sin(th2+th1+th0))-l1*sin(th1+th0)-l0*sin(th0))
+             +2*(l2*cos(th2+th1+th0)+l1*cos(th1+th0))
+               *(l2*cos(th2+th1+th0)+l1*cos(th1+th0)+l0*cos(th0))))
+          /2
+          +(m1*((l1*cos(th1+th0)*(l1*cos(th1+th0)+2*l0*cos(th0)))/2
+               -(l1*sin(th1+th0)*((-l1*sin(th1+th0))-2*l0*sin(th0)))/2))
+           /2+I2+I1],
+        [(m2*(2*l2*cos(th2+th1+th0)
+               *(l2*cos(th2+th1+th0)+l1*cos(th1+th0)+l0*cos(th0))
+             -2*l2*sin(th2+th1+th0)
+               *((-l2*sin(th2+th1+th0))-l1*sin(th1+th0)-l0*sin(th0))))
+          /2
+          +I2]],
+       [[m2*((-l2*sin(th2+th1+th0))-l1*sin(th1+th0))-(l1*m1*sin(th1+th0))/2],
+        [m2*(l2*cos(th2+th1+th0)+l1*cos(th1+th0))+(l1*m1*cos(th1+th0))/2],
+        [(m2*(2*((-l2*sin(th2+th1+th0))-l1*sin(th1+th0))
+               *((-l2*sin(th2+th1+th0))-l1*sin(th1+th0)-l0*sin(th0))
+             +2*(l2*cos(th2+th1+th0)+l1*cos(th1+th0))
+               *(l2*cos(th2+th1+th0)+l1*cos(th1+th0)+l0*cos(th0))))
+          /2
+          +(m1*((l1*cos(th1+th0)*(l1*cos(th1+th0)+2*l0*cos(th0)))/2
+               -(l1*sin(th1+th0)*((-l1*sin(th1+th0))-2*l0*sin(th0)))/2))
+           /2+I2+I1],
+        [(m2*(2*((-l2*sin(th2+th1+th0))-l1*sin(th1+th0))^2
+             +2*(l2*cos(th2+th1+th0)+l1*cos(th1+th0))^2))
+          /2
+          +(m1*((l1^2*sin(th1+th0)^2)/2+(l1^2*cos(th1+th0)^2)/2))/2+I2+I1],
+        [(m2*(2*l2*cos(th2+th1+th0)*(l2*cos(th2+th1+th0)+l1*cos(th1+th0))
+             -2*l2*sin(th2+th1+th0)*((-l2*sin(th2+th1+th0))-l1*sin(th1+th0))))
+          /2
+          +I2]],
+       [[-l2*m2*sin(th2+th1+th0)],[l2*m2*cos(th2+th1+th0)],
+        [(m2*(2*l2*cos(th2+th1+th0)
+               *(l2*cos(th2+th1+th0)+l1*cos(th1+th0)+l0*cos(th0))
+             -2*l2*sin(th2+th1+th0)
+               *((-l2*sin(th2+th1+th0))-l1*sin(th1+th0)-l0*sin(th0))))
+          /2
+          +I2],
+        [(m2*(2*l2*cos(th2+th1+th0)*(l2*cos(th2+th1+th0)+l1*cos(th1+th0))
+             -2*l2*sin(th2+th1+th0)*((-l2*sin(th2+th1+th0))-l1*sin(th1+th0))))
+          /2
+          +I2],
+        [(m2*(2*l2^2*sin(th2+th1+th0)^2+2*l2^2*cos(th2+th1+th0)^2))/2+I2]
+]
+
 
     A = np.array([
                 [                                            1.0*m0 + 1.0*m1 + 1.0*m2,                                                                   0,                                                      -1.0*l0*m0*s0 - 1.0*m1*(l0*s0 + l1*s01) - 1.0*m2*(l0*s0 + l1*s01 + l2*s012),                                                -1.0*l1*m1*s01 - 1.0*m2*(l1*s01 + l2*s012),             -1.0*l2*m2*s012],
