@@ -101,6 +101,8 @@ def rhs(t, s, u, params={}):
     #if True:
     if y0 == 0 and dd[1] <= 0: # foot is contact
         dd = np.zeros(5)
+        ds[IDX_x0] = 0
+        ds[IDX_y0] = 0
         assert np.linalg.matrix_rank(A[2:,2:]) == 3
         ddtheta = np.linalg.solve(A[2:,2:], extf[2:]-b[2:]).reshape(3)
         print("ddtheta", ddtheta)
@@ -115,6 +117,24 @@ def rhs(t, s, u, params={}):
     ds[IDX_dth2] = dd[4]
 
     return ds
+
+modelc = ct.NonlinearIOSystem(rhs, outfcn=None
+        #, dt=dt
+        , inputs=('tau1', 'tau2')
+        , states=('x', 'y', 'th0', 'th1', 'th2', 'dx', 'dy', 'dth0', 'dth1', 'dth2')
+        , name='rabit')
+
+
+def rhsd(t, s, u, params={}):
+    ds = rhs(t, s, u, params)
+    s = s + dt * ds
+    return s
+
+modeld = ct.NonlinearIOSystem(rhsd, outfcn=None
+        , dt=dt
+        , inputs=('tau1', 'tau2')
+        , states=('x', 'y', 'th0', 'th1', 'th2', 'dx', 'dy', 'dth0', 'dth1', 'dth2')
+        , name='rabit')
 
 def show(s, ds, dt):
     th0  = s[IDX_th0]
@@ -148,8 +168,8 @@ ob_high = np.array([ np.pi
 
 def clip(s):
     new_s = s.copy()
-    new_s[IDX_th0:IDX_th2+1] = np.clip(new_s[IDX_th0:IDX_th2+1], ob_low[0:3], ob_high[0:3])
-    new_s[IDX_dth0:IDX_dth2+1] = np.clip(new_s[IDX_dth0:IDX_dth2+1], ob_low[3:6], ob_high[3:6])
+    #new_s[IDX_th0:IDX_th2+1] = np.clip(new_s[IDX_th0:IDX_th2+1], ob_low[0:3], ob_high[0:3])
+    #new_s[IDX_dth0:IDX_dth2+1] = np.clip(new_s[IDX_dth0:IDX_dth2+1], ob_low[3:6], ob_high[3:6])
     new_s[IDX_y0] = np.max(new_s[IDX_y0], 0)
     return new_s
 
@@ -158,8 +178,8 @@ def step(model, s, u):
     T = np.array([0, dt])
     u = np.repeat(np.array(u).reshape(Nu,1), 2, axis=1)
     t, s = ct.input_output_response(model, T, U=u, X0=s, params={})
-    return clip(s[:,-1])
-    #return s[:,-1]
+    #return clip(s[:,-1])
+    return s[:,-1]
 
 def constant_steps(model, s, u, T):
     u = np.repeat(np.array(u).reshape(Nu,1), T.shape[0], axis=1)
@@ -185,6 +205,8 @@ def reset_state(np_random=None):
     #    s[IDX_th1] = np.pi/2  + np_random.uniform(low=-np.pi/10, high=np.pi/10)
     #    s[IDX_th2] = -np.pi/3 + np_random.uniform(low=-np.pi/4, high=np.pi/4)
     return s
+
+
 
 class RabbitViewer():
     def __init__(self):
@@ -273,95 +295,92 @@ class RabbitViewer():
             self.viewer.close()
             self.viewer = None
 
-class RabbitEnv(gym.Env):
 
-    metadata = {
-        'render.modes' : ['human', 'rgb_array'],
-        'video.frames_per_second' : 30
-    }
-
-    def __init__(self):
-        self.model = ct.NonlinearIOSystem(rhs, outfcn=None
-                        #, dt=dt
-                        , inputs=('tau1', 'tau2')
-                        , states=('x', 'y', 'th0', 'th1', 'th2', 'dx', 'dy', 'dth0', 'dth1', 'dth2')
-                        , name='rabit')
-
-        self.state = reset_state()
-        self.viewer = None
-        self.frame_no = 0
-
-        max_action = np.array([MAX_TORQUE, MAX_TORQUE])
-        self.action_space = spaces.Box(low=-max_action, high=max_action, dtype=np.float32)
-        self.observation_space = spaces.Box(low=ob_low, high=ob_high, dtype=np.float32)
-
-        self.seed()
-
-
-    def seed(self, seed=None):
-        self.np_random, seed = seeding.np_random(seed)
-        return [seed]
-
-    def reward(self):
-        #TODO
-        return 0
-
-
-    def step(self, u):
-        self.state = step(self.model, self.state, u)
-        self.frame_no = self.frame_no + 1
-        return obs(self.state), 0, False, {}
-
-
-    def reset(self):
-        self.state = reset_state(self.np_random)
-        self.frame_no = 0
-        return obs(self.state)
-
-
-    def render(self, mode='human'):
-
-        if self.viewer is None:
-            self.viewer = RabbitViewer()
-
-        return self.viewer.render(self.state)
-
-    def close(self):
-        if self.viewer:
-            self.viewer.close()
-            self.viewer = None
-
+#class RabbitEnv(gym.Env):
+#
+#    metadata = {
+#        'render.modes' : ['human', 'rgb_array'],
+#        'video.frames_per_second' : 30
+#    }
+#
+#    def __init__(self):
+#        self.model = ct.NonlinearIOSystem(rhs, outfcn=None
+#                        #, dt=dt
+#                        , inputs=('tau1', 'tau2')
+#                        , states=('x', 'y', 'th0', 'th1', 'th2', 'dx', 'dy', 'dth0', 'dth1', 'dth2')
+#                        , name='rabit')
+#
+#        self.state = reset_state()
+#        self.viewer = None
+#        self.frame_no = 0
+#
+#        max_action = np.array([MAX_TORQUE, MAX_TORQUE])
+#        self.action_space = spaces.Box(low=-max_action, high=max_action, dtype=np.float32)
+#        self.observation_space = spaces.Box(low=ob_low, high=ob_high, dtype=np.float32)
+#
+#        self.seed()
+#
+#
+#    def seed(self, seed=None):
+#        self.np_random, seed = seeding.np_random(seed)
+#        return [seed]
+#
+#    def reward(self):
+#        #TODO
+#        return 0
+#
+#
+#    def step(self, u):
+#        self.state = step(self.model, self.state, u)
+#        self.frame_no = self.frame_no + 1
+#        return obs(self.state), 0, False, {}
+#
+#
+#    def reset(self):
+#        self.state = reset_state(self.np_random)
+#        self.frame_no = 0
+#        return obs(self.state)
+#
+#
+#    def render(self, mode='human'):
+#
+#        if self.viewer is None:
+#            self.viewer = RabbitViewer()
+#
+#        return self.viewer.render(self.state)
+#
+#    def close(self):
+#        if self.viewer:
+#            self.viewer.close()
+#            self.viewer = None
+#
 if __name__ == '__main__':
-    env = RabbitEnv()
-    env.reset()
-    dt = 0.03
+    state = reset_state()
     T = np.arange(0, 20, dt)
     u = np.array([0, 0])
 
-    history = constant_steps(env.model, env.state, u, T)
+    history = constant_steps(modeld, state, u, T)
     org1 = RabbitViewer()
-    #org2 = RabbitViewer()
+    ##org2 = RabbitViewer()
 
-    for i in range(T.shape[0]):
-        s = step(env.model, env.state, u)
-        print(s - history[:, i])
-        org1.render(s)
-        #org2.render( history[:,i])
-        env.state = s
-        #ds = rhs(0, s, u)
-        #show(s, ds, dt)
-        time.sleep(0.1)
-
-    #for i in range(history.shape[1]):
-    #    #if i == 1:
-    #    #    input('')
-    #    s = history[:,i]
+    #for i in range(T.shape[0]):
+    #    s = step(env.model, env.state, u)
+    #    s[IDX_y0] = max (0, s[IDX_y0] )
+    #    print("{}/{}".format(i, (T.shape[0])))
+    #    print("y0", s[IDX_y0])
+    #    org1.render(s)
+    #    #org2.render( history[:,i])
     #    env.state = s
-    #    ds = rhs(0, s, u)
-    #    show(s, ds, dt)
-    #    env.render()
-    #    #time.sleep(0.03)
+    #    #ds = rhs(0, s, u)
+    #    #show(s, ds, dt)
     #    time.sleep(0.1)
+
+    for i in range(history.shape[1]):
+        #if i == 1:
+        #    input('')
+        s = history[:,i]
+        org1.render(s)
+        time.sleep(dt)
 
 
     #while True:
