@@ -98,8 +98,8 @@ def rhs(t, s, u, params={}):
 
     dd = np.linalg.solve(A, extf-b).reshape(5)
 
-    if True:
-    #if y0 == 0 and dd[1] <= 0: # foot is contact
+    #if True:
+    if y0 == 0 and dd[1] <= 0: # foot is contact
         dd = np.zeros(5)
         assert np.linalg.matrix_rank(A[2:,2:]) == 3
         ddtheta = np.linalg.solve(A[2:,2:], extf[2:]-b[2:]).reshape(3)
@@ -158,8 +158,8 @@ def step(model, s, u):
     T = np.array([0, dt])
     u = np.repeat(np.array(u).reshape(Nu,1), 2, axis=1)
     t, s = ct.input_output_response(model, T, U=u, X0=s, params={})
-    #return clip(s[:,-1])
-    return s[:,-1]
+    return clip(s[:,-1])
+    #return s[:,-1]
 
 def constant_steps(model, s, u, T):
     u = np.repeat(np.array(u).reshape(Nu,1), T.shape[0], axis=1)
@@ -340,13 +340,13 @@ if __name__ == '__main__':
 
     history = constant_steps(env.model, env.state, u, T)
     org1 = RabbitViewer()
-    org2 = RabbitViewer()
+    #org2 = RabbitViewer()
 
     for i in range(T.shape[0]):
         s = step(env.model, env.state, u)
         print(s - history[:, i])
         org1.render(s)
-        org2.render( history[:,i])
+        #org2.render( history[:,i])
         env.state = s
         #ds = rhs(0, s, u)
         #show(s, ds, dt)
