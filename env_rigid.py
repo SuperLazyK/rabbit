@@ -118,7 +118,7 @@ def rhs(t, s, u, params={}):
 
     return ds
 
-modelc = ct.NonlinearIOSystem(rhs, outfcn=None
+systemc = ct.NonlinearIOSystem(rhs, outfcn=None
         #, dt=dt
         , inputs=('tau1', 'tau2')
         , states=('x', 'y', 'th0', 'th1', 'th2', 'dx', 'dy', 'dth0', 'dth1', 'dth2')
@@ -131,7 +131,7 @@ def rhsd(t, s, u, params={}):
     s[IDX_y0] = max(s[IDX_y0], 0)
     return s
 
-modeld = ct.NonlinearIOSystem(rhsd, outfcn=None
+systemd = ct.NonlinearIOSystem(rhsd, outfcn=None
         , dt=dt
         , inputs=('tau1', 'tau2')
         , states=('x', 'y', 'th0', 'th1', 'th2', 'dx', 'dy', 'dth0', 'dth1', 'dth2')
@@ -175,16 +175,15 @@ def clip(s):
     return new_s
 
 
-def step(model, s, u):
+def step(system, s, u):
     T = np.array([0, dt])
     u = np.repeat(np.array(u).reshape(Nu,1), 2, axis=1)
-    t, s = ct.input_output_response(model, T, U=u, X0=s, params={})
-    #return clip(s[:,-1])
-    return s[:,-1]
+    t, s = ct.input_output_response(system, T, U=u, X0=s, params={})
+    return clip(s[:,-1])
 
-def constant_steps(model, s, u, T):
+def constant_steps(system, s, u, T):
     u = np.repeat(np.array(u).reshape(Nu,1), T.shape[0], axis=1)
-    t, s = ct.input_output_response(model, T, U=u, X0=s, params={})
+    t, s = ct.input_output_response(system, T, U=u, X0=s, params={})
     return s
 
 
@@ -305,22 +304,16 @@ class RabbitViewer():
 #    }
 #
 #    def __init__(self):
-#        self.model = ct.NonlinearIOSystem(rhs, outfcn=None
-#                        #, dt=dt
-#                        , inputs=('tau1', 'tau2')
-#                        , states=('x', 'y', 'th0', 'th1', 'th2', 'dx', 'dy', 'dth0', 'dth1', 'dth2')
-#                        , name='rabit')
+#        self.system = systemd
 #
 #        self.state = reset_state()
 #        self.viewer = None
-#        self.frame_no = 0
 #
 #        max_action = np.array([MAX_TORQUE, MAX_TORQUE])
 #        self.action_space = spaces.Box(low=-max_action, high=max_action, dtype=np.float32)
 #        self.observation_space = spaces.Box(low=ob_low, high=ob_high, dtype=np.float32)
 #
 #        self.seed()
-#
 #
 #    def seed(self, seed=None):
 #        self.np_random, seed = seeding.np_random(seed)
@@ -330,65 +323,43 @@ class RabbitViewer():
 #        #TODO
 #        return 0
 #
-#
 #    def step(self, u):
-#        self.state = step(self.model, self.state, u)
-#        self.frame_no = self.frame_no + 1
+#        self.state = step(self.system, self.state, u)
 #        return obs(self.state), 0, False, {}
 #
 #
 #    def reset(self):
 #        self.state = reset_state(self.np_random)
-#        self.frame_no = 0
 #        return obs(self.state)
 #
 #
 #    def render(self, mode='human'):
-#
 #        if self.viewer is None:
 #            self.viewer = RabbitViewer()
-#
 #        return self.viewer.render(self.state)
 #
 #    def close(self):
 #        if self.viewer:
 #            self.viewer.close()
 #            self.viewer = None
-#
+
 if __name__ == '__main__':
     state = reset_state()
     T = np.arange(0, 20, dt)
     u = np.array([0, 0])
 
-    history = constant_steps(modeld, state, u, T)
+    #history = constant_steps(systemd, state, u, T)
     org1 = RabbitViewer()
-    ##org2 = RabbitViewer()
+    #org2 = RabbitViewer()
 
-    #for i in range(T.shape[0]):
-    #    s = step(env.model, env.state, u)
-    #    s[IDX_y0] = max (0, s[IDX_y0] )
-    #    print("{}/{}".format(i, (T.shape[0])))
-    #    print("y0", s[IDX_y0])
-    #    org1.render(s)
-    #    #org2.render( history[:,i])
-    #    env.state = s
-    #    #ds = rhs(0, s, u)
-    #    #show(s, ds, dt)
-    #    time.sleep(0.1)
-
-    for i in range(history.shape[1]):
-        #if i == 1:
-        #    input('')
-        s = history[:,i]
-        org1.render(s)
-        time.sleep(dt)
+    while True:
+        state = step(systemd, state, u)
+        #print("{}/{}".format(i, (T.shape[0])))
+        org1.render(state)
+        #org2.render(history[:,i])
+        #time.sleep(dt)
 
 
-    #while True:
-        #step(np.array([0, 0]))
-
-        #for i in range(1000):
-        #    env.step()
 
 
 
