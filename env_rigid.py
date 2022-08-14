@@ -87,7 +87,7 @@ def rhs(t, s, u, params={}):
     dd = np.linalg.solve(A, extf-b).reshape(5)
 
     if y0 == 0 and dd[1] <= 0: # foot is contact
-        print("foot is contact to the floor")
+        print("{:0.2f} foot is contact to the floor".format(t))
         dd = np.zeros(5)
         ds[IDX_x0] = 0
         ds[IDX_y0] = 0
@@ -97,7 +97,7 @@ def rhs(t, s, u, params={}):
         #fxy = b[:2].reshape((2,)) - A[:2,2:] @ dd[2:]
         #fy = fxy[1]
     else:
-        print("foot is in the air")
+        print("{:0.2f} foot is in the air".format(t))
 
 
     ds[IDX_dx]   = dd[0]
@@ -165,8 +165,8 @@ def clip(s):
     return new_s
 
 
-def step(system, s, u):
-    T = np.array([0, dt])
+def step(system, s, u, t=0):
+    T = np.array([t, t+dt])
     u = np.repeat(np.array(u).reshape(Nu,1), 2, axis=1)
     t, s = ct.input_output_response(system, T, U=u, X0=s, params={})
     return clip(s[:,-1])
@@ -342,12 +342,14 @@ if __name__ == '__main__':
     org1 = RabbitViewer()
     #org2 = RabbitViewer()
 
+    t = 0
     while True:
-        state = step(systemd, state, u)
-        #print("{}/{}".format(i, (T.shape[0])))
+        state = rhsd(t, state, u)
+        state = clip(state)
         org1.render(state)
         #org2.render(history[:,i])
         time.sleep(dt)
+        t = t + dt
 
 
 
