@@ -53,8 +53,8 @@ def rhs(t, s, u, params={}):
     dth2 = s[IDX_dth2]
     fx0  = 0
     fy0  = 0
-    tau0 = 0
-    tau1 = u[0]
+    tau0 = -u[0]
+    tau1 = u[0] - u[1]
     tau2 = u[1]
     extf = np.array([fx0, fy0, tau0, tau1, tau2]).reshape(5,1)
 
@@ -86,17 +86,19 @@ def rhs(t, s, u, params={}):
 
     dd = np.linalg.solve(A, extf-b).reshape(5)
 
-    #if True:
     if y0 == 0 and dd[1] <= 0: # foot is contact
+        print("foot is contact to the floor")
         dd = np.zeros(5)
         ds[IDX_x0] = 0
         ds[IDX_y0] = 0
         assert np.linalg.matrix_rank(A[2:,2:]) == 3
         ddtheta = np.linalg.solve(A[2:,2:], extf[2:]-b[2:]).reshape(3)
-        print("ddtheta", ddtheta)
         dd[2:] = ddtheta
-        fxy = b[:2].reshape((2,)) - A[:2,2:] @ dd[2:]
-        fy = fxy[1]
+        #fxy = b[:2].reshape((2,)) - A[:2,2:] @ dd[2:]
+        #fy = fxy[1]
+    else:
+        print("foot is in the air")
+
 
     ds[IDX_dx]   = dd[0]
     ds[IDX_dy]   = dd[1]
