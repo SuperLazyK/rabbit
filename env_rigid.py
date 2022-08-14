@@ -3,6 +3,7 @@ import gym
 from gym import spaces
 from gym.utils import seeding
 import numpy as np
+from numpy import sin, cos
 from os import path
 import time
 import control as ct
@@ -69,89 +70,19 @@ def rhs(t, s, u, params={}):
     tau2 = u[1]
     extf = np.array([fx0, fy0, tau0, tau1, tau2]).reshape(5,1)
 
-    A = np.array(
-m2+m1+m0,0,
-        m2*((-l2*sin(th2+th1+th0))-l1*sin(th1+th0)-l0*sin(th0))
-          +(m1*((-l1*sin(th1+th0))-2*l0*sin(th0)))/2-(l0*m0*sin(th0))/2],
-        [m2*((-l2*sin(th2+th1+th0))-l1*sin(th1+th0))-(l1*m1*sin(th1+th0))/2],
-        [-l2*m2*sin(th2+th1+th0)]],
-       [[0],[m2+m1+m0],
-        [m2*(l2*cos(th2+th1+th0)+l1*cos(th1+th0)+l0*cos(th0))
-          +(m1*(l1*cos(th1+th0)+2*l0*cos(th0)))/2+(l0*m0*cos(th0))/2],
-        [m2*(l2*cos(th2+th1+th0)+l1*cos(th1+th0))+(l1*m1*cos(th1+th0))/2],
-        [l2*m2*cos(th2+th1+th0)]],
-       [[m2*((-l2*sin(th2+th1+th0))-l1*sin(th1+th0)-l0*sin(th0))
-          +(m1*((-l1*sin(th1+th0))-2*l0*sin(th0)))/2-(l0*m0*sin(th0))/2],
-        [m2*(l2*cos(th2+th1+th0)+l1*cos(th1+th0)+l0*cos(th0))
-          +(m1*(l1*cos(th1+th0)+2*l0*cos(th0)))/2+(l0*m0*cos(th0))/2],
-        [(m2*(2*((-l2*sin(th2+th1+th0))-l1*sin(th1+th0)-l0*sin(th0))^2
-             +2*(l2*cos(th2+th1+th0)+l1*cos(th1+th0)+l0*cos(th0))^2))
-          /2
-          +(m1*(((-l1*sin(th1+th0))-2*l0*sin(th0))^2/2
-               +(l1*cos(th1+th0)+2*l0*cos(th0))^2/2))
-           /2+(m0*((l0^2*sin(th0)^2)/2+(l0^2*cos(th0)^2)/2))/2+I2+I1+I0],
-        [(m2*(2*((-l2*sin(th2+th1+th0))-l1*sin(th1+th0))
-               *((-l2*sin(th2+th1+th0))-l1*sin(th1+th0)-l0*sin(th0))
-             +2*(l2*cos(th2+th1+th0)+l1*cos(th1+th0))
-               *(l2*cos(th2+th1+th0)+l1*cos(th1+th0)+l0*cos(th0))))
-          /2
-          +(m1*((l1*cos(th1+th0)*(l1*cos(th1+th0)+2*l0*cos(th0)))/2
-               -(l1*sin(th1+th0)*((-l1*sin(th1+th0))-2*l0*sin(th0)))/2))
-           /2+I2+I1],
-        [(m2*(2*l2*cos(th2+th1+th0)
-               *(l2*cos(th2+th1+th0)+l1*cos(th1+th0)+l0*cos(th0))
-             -2*l2*sin(th2+th1+th0)
-               *((-l2*sin(th2+th1+th0))-l1*sin(th1+th0)-l0*sin(th0))))
-          /2
-          +I2]],
-       [[m2*((-l2*sin(th2+th1+th0))-l1*sin(th1+th0))-(l1*m1*sin(th1+th0))/2],
-        [m2*(l2*cos(th2+th1+th0)+l1*cos(th1+th0))+(l1*m1*cos(th1+th0))/2],
-        [(m2*(2*((-l2*sin(th2+th1+th0))-l1*sin(th1+th0))
-               *((-l2*sin(th2+th1+th0))-l1*sin(th1+th0)-l0*sin(th0))
-             +2*(l2*cos(th2+th1+th0)+l1*cos(th1+th0))
-               *(l2*cos(th2+th1+th0)+l1*cos(th1+th0)+l0*cos(th0))))
-          /2
-          +(m1*((l1*cos(th1+th0)*(l1*cos(th1+th0)+2*l0*cos(th0)))/2
-               -(l1*sin(th1+th0)*((-l1*sin(th1+th0))-2*l0*sin(th0)))/2))
-           /2+I2+I1],
-        [(m2*(2*((-l2*sin(th2+th1+th0))-l1*sin(th1+th0))^2
-             +2*(l2*cos(th2+th1+th0)+l1*cos(th1+th0))^2))
-          /2
-          +(m1*((l1^2*sin(th1+th0)^2)/2+(l1^2*cos(th1+th0)^2)/2))/2+I2+I1],
-        [(m2*(2*l2*cos(th2+th1+th0)*(l2*cos(th2+th1+th0)+l1*cos(th1+th0))
-             -2*l2*sin(th2+th1+th0)*((-l2*sin(th2+th1+th0))-l1*sin(th1+th0))))
-          /2
-          +I2]],
-       [[-l2*m2*sin(th2+th1+th0)],[l2*m2*cos(th2+th1+th0)],
-        [(m2*(2*l2*cos(th2+th1+th0)
-               *(l2*cos(th2+th1+th0)+l1*cos(th1+th0)+l0*cos(th0))
-             -2*l2*sin(th2+th1+th0)
-               *((-l2*sin(th2+th1+th0))-l1*sin(th1+th0)-l0*sin(th0))))
-          /2
-          +I2],
-        [(m2*(2*l2*cos(th2+th1+th0)*(l2*cos(th2+th1+th0)+l1*cos(th1+th0))
-             -2*l2*sin(th2+th1+th0)*((-l2*sin(th2+th1+th0))-l1*sin(th1+th0))))
-          /2
-          +I2],
-        [(m2*(2*l2^2*sin(th2+th1+th0)^2+2*l2^2*cos(th2+th1+th0)^2))/2+I2]
-]
+    A = np.array([ [m2+m1+m0,0, m2*((-l2*sin(th2+th1+th0))-l1*sin(th1+th0)-l0*sin(th0)) +(m1*((-l1*sin(th1+th0))-2*l0*sin(th0)))/2-(l0*m0*sin(th0))/2, m2*((-l2*sin(th2+th1+th0))-l1*sin(th1+th0))-(l1*m1*sin(th1+th0))/2, -l2*m2*sin(th2+th1+th0)]
+                 , [0,m2+m1+m0, m2*(l2*cos(th2+th1+th0)+l1*cos(th1+th0)+l0*cos(th0)) +(m1*(l1*cos(th1+th0)+2*l0*cos(th0)))/2+(l0*m0*cos(th0))/2, m2*(l2*cos(th2+th1+th0)+l1*cos(th1+th0))+(l1*m1*cos(th1+th0))/2, l2*m2*cos(th2+th1+th0)]
+                 , [m2*((-l2*sin(th2+th1+th0))-l1*sin(th1+th0)-l0*sin(th0)) +(m1*((-l1*sin(th1+th0))-2*l0*sin(th0)))/2-(l0*m0*sin(th0))/2, m2*(l2*cos(th2+th1+th0)+l1*cos(th1+th0)+l0*cos(th0)) +(m1*(l1*cos(th1+th0)+2*l0*cos(th0)))/2+(l0*m0*cos(th0))/2, (m2*(2*((-l2*sin(th2+th1+th0))-l1*sin(th1+th0)-l0*sin(th0))**2 +2*(l2*cos(th2+th1+th0)+l1*cos(th1+th0)+l0*cos(th0))**2)) /2 +(m1*(((-l1*sin(th1+th0))-2*l0*sin(th0))**2/2 +(l1*cos(th1+th0)+2*l0*cos(th0))**2/2)) /2+(m0*((l0**2*sin(th0)**2)/2+(l0**2*cos(th0)**2)/2))/2+I2+I1+I0, (m2*(2*((-l2*sin(th2+th1+th0))-l1*sin(th1+th0)) *((-l2*sin(th2+th1+th0))-l1*sin(th1+th0)-l0*sin(th0)) +2*(l2*cos(th2+th1+th0)+l1*cos(th1+th0)) *(l2*cos(th2+th1+th0)+l1*cos(th1+th0)+l0*cos(th0)))) /2 +(m1*((l1*cos(th1+th0)*(l1*cos(th1+th0)+2*l0*cos(th0)))/2 -(l1*sin(th1+th0)*((-l1*sin(th1+th0))-2*l0*sin(th0)))/2)) /2+I2+I1, (m2*(2*l2*cos(th2+th1+th0) *(l2*cos(th2+th1+th0)+l1*cos(th1+th0)+l0*cos(th0)) -2*l2*sin(th2+th1+th0) *((-l2*sin(th2+th1+th0))-l1*sin(th1+th0)-l0*sin(th0)))) /2 +I2]
+                 , [m2*((-l2*sin(th2+th1+th0))-l1*sin(th1+th0))-(l1*m1*sin(th1+th0))/2, m2*(l2*cos(th2+th1+th0)+l1*cos(th1+th0))+(l1*m1*cos(th1+th0))/2, (m2*(2*((-l2*sin(th2+th1+th0))-l1*sin(th1+th0)) *((-l2*sin(th2+th1+th0))-l1*sin(th1+th0)-l0*sin(th0)) +2*(l2*cos(th2+th1+th0)+l1*cos(th1+th0)) *(l2*cos(th2+th1+th0)+l1*cos(th1+th0)+l0*cos(th0)))) /2 +(m1*((l1*cos(th1+th0)*(l1*cos(th1+th0)+2*l0*cos(th0)))/2 -(l1*sin(th1+th0)*((-l1*sin(th1+th0))-2*l0*sin(th0)))/2)) /2+I2+I1, (m2*(2*((-l2*sin(th2+th1+th0))-l1*sin(th1+th0))**2 +2*(l2*cos(th2+th1+th0)+l1*cos(th1+th0))**2)) /2 +(m1*((l1**2*sin(th1+th0)**2)/2+(l1**2*cos(th1+th0)**2)/2))/2+I2+I1, (m2*(2*l2*cos(th2+th1+th0)*(l2*cos(th2+th1+th0)+l1*cos(th1+th0)) -2*l2*sin(th2+th1+th0)*((-l2*sin(th2+th1+th0))-l1*sin(th1+th0)))) /2 +I2]
+                 , [-l2*m2*sin(th2+th1+th0),l2*m2*cos(th2+th1+th0), (m2*(2*l2*cos(th2+th1+th0) *(l2*cos(th2+th1+th0)+l1*cos(th1+th0)+l0*cos(th0)) -2*l2*sin(th2+th1+th0) *((-l2*sin(th2+th1+th0))-l1*sin(th1+th0)-l0*sin(th0)))) /2 +I2, (m2*(2*l2*cos(th2+th1+th0)*(l2*cos(th2+th1+th0)+l1*cos(th1+th0)) -2*l2*sin(th2+th1+th0)*((-l2*sin(th2+th1+th0))-l1*sin(th1+th0)))) /2 +I2,(m2*(2*l2**2*sin(th2+th1+th0)**2+2*l2**2*cos(th2+th1+th0)**2))/2+I2]
+                 ])
 
-
-    A = np.array([
-                [                                            1.0*m0 + 1.0*m1 + 1.0*m2,                                                                   0,                                                      -1.0*l0*m0*s0 - 1.0*m1*(l0*s0 + l1*s01) - 1.0*m2*(l0*s0 + l1*s01 + l2*s012),                                                -1.0*l1*m1*s01 - 1.0*m2*(l1*s01 + l2*s012),             -1.0*l2*m2*s012],
-                [                                                                   0,                                                        m0 + m1 + m2,                                                                   c0*l0*m0 + m1*(c0*l0 + c01*l1) + m2*(c0*l0 + c01*l1 + c012*l2),                                                         c01*l1*m1 + m2*(c01*l1 + c012*l2),                  c012*l2*m2],
-                [-l0*m0*s0 - l0*m1*s0 - l0*m2*s0 - l1*m1*s01 - l1*m2*s01 - l2*m2*s012, c0*l0*m0 + c0*l0*m1 + c0*l0*m2 + c01*l1*m1 + c01*l1*m2 + c012*l2*m2, 2*c1*l0*l1*m1 + 2*c1*l0*l1*m2 + 2*c12*l0*l2*m2 + 2*c2*l1*l2*m2 + l0**2*m0 + l0**2*m1 + l0**2*m2 + l1**2*m1 + l1**2*m2 + l2**2*m2, c1*l0*l1*m1 + c1*l0*l1*m2 + c12*l0*l2*m2 + 2*c2*l1*l2*m2 + l1**2*m1 + l1**2*m2 + l2**2*m2, l2*m2*(c12*l0 + c2*l1 + l2)],
-                [                     -1.0*l1*m1*s01 - 1.0*l1*m2*s01 - 1.0*l2*m2*s012,                      1.0*c01*l1*m1 + 1.0*c01*l1*m2 + 1.0*c012*l2*m2,              1.0*c1*l0*l1*m1 + 1.0*c1*l0*l1*m2 + 1.0*c12*l0*l2*m2 + 2.0*c2*l1*l2*m2 + 1.0*l1**2*m1 + 1.0*l1**2*m2 + 1.0*l2**2*m2,                              2.0*c2*l1*l2*m2 + 1.0*l1**2*m1 + 1.0*l1**2*m2 + 1.0*l2**2*m2,      1.0*l2*m2*(c2*l1 + l2)],
-                [                                                     -1.0*l2*m2*s012,                                                      1.0*c012*l2*m2,                                                                                                  1.0*l2*m2*(c12*l0 + c2*l1 + l2),                                                                    1.0*l2*m2*(c2*l1 + l2),                1.0*l2**2*m2]
-            ])
-
-    b = np.array([
-                [     -1.0*c0*dth0**2*l0*m0 - 1.0*c0*dth0**2*l0*m1 - 1.0*c0*dth0**2*l0*m2 - 1.0*c01*dth0**2*l1*m1 - 1.0*c01*dth0**2*l1*m2 - 2.0*c01*dth0*dth1*l1*m1 - 2.0*c01*dth0*dth1*l1*m2 - 1.0*c01*dth1**2*l1*m1 - 1.0*c01*dth1**2*l1*m2 - 1.0*c012*dth0**2*l2*m2 - 2.0*c012*dth0*dth1*l2*m2 - 2.0*c012*dth0*dth2*l2*m2 - 1.0*c012*dth1**2*l2*m2 - 2.0*c012*dth1*dth2*l2*m2 - 1.0*c012*dth2**2*l2*m2],
-                [                                  -dth0**2*l0*m0*s0 - dth0**2*l0*m1*s0 - dth0**2*l0*m2*s0 - dth0**2*l1*m1*s01 - dth0**2*l1*m2*s01 - dth0**2*l2*m2*s012 - 2*dth0*dth1*l1*m1*s01 - 2*dth0*dth1*l1*m2*s01 - 2*dth0*dth1*l2*m2*s012 - 2*dth0*dth2*l2*m2*s012 - dth1**2*l1*m1*s01 - dth1**2*l1*m2*s01 - dth1**2*l2*m2*s012 - 2*dth1*dth2*l2*m2*s012 - dth2**2*l2*m2*s012 + g*m0 + g*m1 + g*m2],
-                [c0*g*l0*m0 + c0*g*l0*m1 + c0*g*l0*m2 + c01*g*l1*m1 + c01*g*l1*m2 + c012*g*l2*m2 - 2*dth0*dth1*l0*l1*m1*s1 - 2*dth0*dth1*l0*l1*m2*s1 - 2*dth0*dth1*l0*l2*m2*s12 - 2*dth0*dth2*l0*l2*m2*s12 - 2*dth0*dth2*l1*l2*m2*s2 - dth1**2*l0*l1*m1*s1 - dth1**2*l0*l1*m2*s1 - dth1**2*l0*l2*m2*s12 - 2*dth1*dth2*l0*l2*m2*s12 - 2*dth1*dth2*l1*l2*m2*s2 - dth2**2*l0*l2*m2*s12 - dth2**2*l1*l2*m2*s2],
-                [                                                                                                                                                                   1.0*c01*g*l1*m1 + 1.0*c01*g*l1*m2 + 1.0*c012*g*l2*m2 + 1.0*dth0**2*l0*l1*m1*s1 + 1.0*dth0**2*l0*l1*m2*s1 + 1.0*dth0**2*l0*l2*m2*s12 - 2.0*dth0*dth2*l1*l2*m2*s2 - 2.0*dth1*dth2*l1*l2*m2*s2 - 1.0*dth2**2*l1*l2*m2*s2],
-                [                                                                                                                                                                                                                                                                                   l2*m2*(1.0*c012*g + 1.0*dth0**2*l0*s12 + 1.0*dth0**2*l1*s2 + 2.0*dth0*dth1*l1*s2 + 1.0*dth1**2*l1*s2)]
-            ])
+    b = np.array([ [(-dth2**2*l2*m2*cos(th2+th1+th0))-2*dth1*dth2*l2*m2*cos(th2+th1+th0) -2*dth0*dth2*l2*m2*cos(th2+th1+th0) -dth1**2*l2*m2*cos(th2+th1+th0) -2*dth0*dth1*l2*m2*cos(th2+th1+th0) -dth0**2*l2*m2*cos(th2+th1+th0) -dth1**2*l1*m2*cos(th1+th0) -2*dth0*dth1*l1*m2*cos(th1+th0) -dth0**2*l1*m2*cos(th1+th0) -(dth1**2*l1*m1*cos(th1+th0))/2 -dth0*dth1*l1*m1*cos(th1+th0) -(dth0**2*l1*m1*cos(th1+th0))/2 -dth0**2*l0*m2*cos(th0) -dth0**2*l0*m1*cos(th0) -(dth0**2*l0*m0*cos(th0))/2]
+                 , [(-dth2**2*l2*m2*sin(th2+th1+th0))-2*dth1*dth2*l2*m2*sin(th2+th1+th0) -2*dth0*dth2*l2*m2*sin(th2+th1+th0) -dth1**2*l2*m2*sin(th2+th1+th0) -2*dth0*dth1*l2*m2*sin(th2+th1+th0) -dth0**2*l2*m2*sin(th2+th1+th0) -dth1**2*l1*m2*sin(th1+th0) -2*dth0*dth1*l1*m2*sin(th1+th0) -dth0**2*l1*m2*sin(th1+th0) -(dth1**2*l1*m1*sin(th1+th0))/2 -dth0*dth1*l1*m1*sin(th1+th0) -(dth0**2*l1*m1*sin(th1+th0))/2 -dth0**2*l0*m2*sin(th0) -dth0**2*l0*m1*sin(th0) -(dth0**2*l0*m0*sin(th0))/2+g*m2+g*m1 +g*m0]
+                 , [(-dth2**2*l1*l2*m2*cos(th1+th0)*sin(th2+th1+th0)) -2*dth1*dth2*l1*l2*m2*cos(th1+th0)*sin(th2+th1+th0) -2*dth0*dth2*l1*l2*m2*cos(th1+th0)*sin(th2+th1+th0) -dth2**2*l0*l2*m2*cos(th0)*sin(th2+th1+th0) -2*dth1*dth2*l0*l2*m2*cos(th0)*sin(th2+th1+th0) -2*dth0*dth2*l0*l2*m2*cos(th0)*sin(th2+th1+th0) -dth1**2*l0*l2*m2*cos(th0)*sin(th2+th1+th0) -2*dth0*dth1*l0*l2*m2*cos(th0)*sin(th2+th1+th0) +dth2**2*l1*l2*m2*sin(th1+th0)*cos(th2+th1+th0) +2*dth1*dth2*l1*l2*m2*sin(th1+th0)*cos(th2+th1+th0) +2*dth0*dth2*l1*l2*m2*sin(th1+th0)*cos(th2+th1+th0) +dth2**2*l0*l2*m2*sin(th0)*cos(th2+th1+th0) +2*dth1*dth2*l0*l2*m2*sin(th0)*cos(th2+th1+th0) +2*dth0*dth2*l0*l2*m2*sin(th0)*cos(th2+th1+th0) +dth1**2*l0*l2*m2*sin(th0)*cos(th2+th1+th0) +2*dth0*dth1*l0*l2*m2*sin(th0)*cos(th2+th1+th0) +g*l2*m2*cos(th2+th1+th0)-dth1**2*l0*l1*m2*cos(th0)*sin(th1+th0) -2*dth0*dth1*l0*l1*m2*cos(th0)*sin(th1+th0) -(dth1**2*l0*l1*m1*cos(th0)*sin(th1+th0))/2 -dth0*dth1*l0*l1*m1*cos(th0)*sin(th1+th0) +dth1**2*l0*l1*m2*sin(th0)*cos(th1+th0) +2*dth0*dth1*l0*l1*m2*sin(th0)*cos(th1+th0) +(dth1**2*l0*l1*m1*sin(th0)*cos(th1+th0))/2 +dth0*dth1*l0*l1*m1*sin(th0)*cos(th1+th0)+g*l1*m2*cos(th1+th0) +(g*l1*m1*cos(th1+th0))/2+g*l0*m2*cos(th0)+g*l0*m1*cos(th0) +(g*l0*m0*cos(th0))/2]
+                 , [(-dth2**2*l1*l2*m2*cos(th1+th0)*sin(th2+th1+th0)) -2*dth1*dth2*l1*l2*m2*cos(th1+th0)*sin(th2+th1+th0) -2*dth0*dth2*l1*l2*m2*cos(th1+th0)*sin(th2+th1+th0) +dth0**2*l0*l2*m2*cos(th0)*sin(th2+th1+th0) +dth2**2*l1*l2*m2*sin(th1+th0)*cos(th2+th1+th0) +2*dth1*dth2*l1*l2*m2*sin(th1+th0)*cos(th2+th1+th0) +2*dth0*dth2*l1*l2*m2*sin(th1+th0)*cos(th2+th1+th0) -dth0**2*l0*l2*m2*sin(th0)*cos(th2+th1+th0)+g*l2*m2*cos(th2+th1+th0) +dth0**2*l0*l1*m2*cos(th0)*sin(th1+th0) +(dth0**2*l0*l1*m1*cos(th0)*sin(th1+th0))/2 -dth0**2*l0*l1*m2*sin(th0)*cos(th1+th0) -(dth0**2*l0*l1*m1*sin(th0)*cos(th1+th0))/2+g*l1*m2*cos(th1+th0) +(g*l1*m1*cos(th1+th0))/2]
+                 , [dth1**2*l1*l2*m2*cos(th1+th0)*sin(th2+th1+th0) +2*dth0*dth1*l1*l2*m2*cos(th1+th0)*sin(th2+th1+th0) +dth0**2*l1*l2*m2*cos(th1+th0)*sin(th2+th1+th0) +dth0**2*l0*l2*m2*cos(th0)*sin(th2+th1+th0) -dth1**2*l1*l2*m2*sin(th1+th0)*cos(th2+th1+th0) -2*dth0*dth1*l1*l2*m2*sin(th1+th0)*cos(th2+th1+th0) -dth0**2*l1*l2*m2*sin(th1+th0)*cos(th2+th1+th0) -dth0**2*l0*l2*m2*sin(th0)*cos(th2+th1+th0)+g*l2*m2*cos(th2+th1+th0)] 
+                 ])
 
     ds = np.zeros_like(s)
     ds[IDX_x0] = s[IDX_dx]

@@ -103,8 +103,8 @@ lhs:matrix([fx0, fy0, tau0, tau1, tau2])$
 
 A:jacobian(args(rhs)[1], ddX)$
 b:expand(transpose(rhs) - A.transpose(matrix(ddX)))$
-grind(symbolilze(A));
-grind(symbolilze(b));
+grind(trigsimp(symbolilze(A)));
+grind(trigsimp(symbolilze(b)));
 
 /*
 grind(args(transpose(rhs)))$
