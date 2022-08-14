@@ -1,5 +1,6 @@
 /* grind(dth0+dth1); */
 
+declare ("'", alphabetic);
 depends([x0, y0] , t);
 depends([th0, th1, th2] , t);
 
@@ -72,89 +73,17 @@ U2 : yc2 * m2 * g;
 K2_trs : 1/2 * m2 * vc2;
 K2_rot : 0;
 
-X : transpose(matrix([x0, y0, th0, th1, th2]));
-dX : transpose(matrix([dx0, dy0, dth0, dth1, dth2]));
-ddX : transpose(matrix([ddx0, ddy0, ddth0, ddth1, ddth2]));
+X : [x0, y0, th0, th1, th2];
+dX : [dx0, dy0, dth0, dth1, dth2];
+ddX : [ddx0, ddy0, ddth0, ddth1, ddth2];
 
-L = K0_trs + K0_rot + K1_trs + K1_rot + K2_trs + K2_rot - U0 - U1 - U2;
-diff(xc0,dx0);
+L : K0_trs + K0_rot + K1_trs + K1_rot + K2_trs + K2_rot - U0 - U1 - U2;
+rhs: diff(jacobian([L],dX), t) - jacobian([L], X);
+/*grind(col(rhs, 5));*/
+lhs:matrix([fx0, fy0, tau0, tau1, tau2]);
 
-jacobian(L, dX);
-
-/*rhs: diff(jacobian(L, dX), t) - jacobian(L, X);*/
-/*rhs: diff(diff(L, dX), t) - diff(L, X);*/
-/*lhs:matrix([fx0, fy0, tau0, tau1, tau2]); */
+grind(subst([diff(x0,t,2)=x0''], rhs));
 /*
-
-
-def sprint(exp):
-    #print(replace_sym(exp))
-    pprint(replace_sym(exp))
-    #pprint(replace_sym(exp), use_unicode=False)
-
-def cached_simplify(filename, exp):
-    if not os.path.isfile(filename):
-        save(filename, simplify(exp))
-    ret = load(filename)
-    print("-----------")
-    print(filename)
-    print("-----------")
-    sprint(ret)
-    return ret
-
-
-def sub_param(exp):
-    return exp.subs(
-        [ (l0,  1.  )
-        , (l1,  1.  )
-        , (l2,  1.  )
-        , (m0,  1.  )
-        , (m1,  1.  )
-        , (m2,  2.  )
-        , (g,   9.8  )
-        ])
-
-def sub_ddthsym(exp):
-    return exp.subs(
-        [ (ddth0, symddth0)
-        , (ddth1, symddth1)
-        , (ddth2, symddth2)
-        , (ddx0 , 0)
-        , (ddy0 , 0)
-        ])
-
-def sub_state(exp, vth0, vth1, vth2, vdth0, vdth1, vdth2):
-    vx0 = 0
-    vy0 = 0
-    vdx0 = 0
-    vdy0 = 0
-
-    return exp.subs(
-        [ (dx0,  vx0  )
-        , (dy0,  vy0  )
-        , (dth0, vdth0)
-        , (dth1, vdth1)
-        , (dth2, vdth2)
-        , (vx0, vx0)
-        , (vy0, vy0)
-        , (cos(th0),         np.cos(vth0))
-        , (cos(th1),         np.cos(vth1))
-        , (cos(th2),         np.cos(vth2))
-        , (cos(th0+th1),     np.cos(vth0+vth1))
-        , (cos(th1+th2),     np.cos(vth1+vth2))
-        , (cos(th0+th1+th2), np.cos(vth0+vth1+vth2))
-        , (sin(th0),         np.sin(vth0))
-        , (sin(th1),         np.sin(vth1))
-        , (sin(th2),         np.sin(vth2))
-        , (sin(th0+th1),     np.sin(vth0+vth1))
-        , (sin(th1+th2),     np.sin(vth1+vth2))
-        , (sin(th0+th1+th2), np.sin(vth0+vth1+vth2))
-        , (x0, vx0)
-        , (y0, vy0)
-        , (th0, vth0)
-        , (th1, vth1)
-        , (th2, vth2)
-        ])
 
 def replace_sym(exp):
 
@@ -188,67 +117,6 @@ def replace_sym(exp):
         , (th2, symbols("th2"))
         ])
 
-dx1 = diff(x1, t)
-dy1 = diff(y1, t)
-
-dx2 = diff(x2, t)
-dy2 = diff(y2, t)
-
-# only depnd on x0' y0'
-
-extF = cached_simplify("extF.txt", extF)
-
-
-#---------------------
-# simulation
-#---------------------
-
-if False:
-
-# foot-contact--mode
-    rhs = extF[2:]
-    x = [ddth0, ddth1, ddth2]
-    A = Matrix(rhs).col(0).jacobian(Matrix(x))
-    b = Matrix(rhs) - A * Matrix(x) # - Matrix([tau0, tau1, tau2])
-    print("==========")
-    cached_simplify("A.txt", A)
-    print("A", sub_state(sub_ddthsym(sub_param(A)), np.pi/4, np.pi/2, -np.pi/3, 0.01, 0, 0), Matrix([0, 0, 0]))
-    print("==========")
-    cached_simplify("b.txt", b)
-    print("b", sub_state(sub_ddthsym(sub_param(b)), np.pi/4, np.pi/2, -np.pi/3, 0.01, 0, 0), Matrix([0, 0, 0]))
-    print("==========")
-    simeq = Eq(sub_state(sub_ddthsym(sub_param(A * Matrix(x) + b)), np.pi/4, np.pi/2, -np.pi/3, 0.01, 0, 0), Matrix([0, 0, 0]))
-    #print("==========")
-    #print(simeq)
-    #print("==========")
-    #print(x)
-    #print("==========")
-    print(solve(simeq, sub_ddthsym(Matrix(x))))
-    #print("==========")
-else:
-
-# foot-in-the-air-mode
-    rhs = extF
-    #simeq_c = Eq(Matrix(rhs), Matrix(extF))
-    x = [ddx0, ddy0, ddth0, ddth1, ddth2]
-    A = Matrix(rhs).col(0).jacobian(Matrix(x))
-    b = Matrix(rhs) - A * Matrix(x)
-    print("==========")
-    cached_simplify("A-2.txt", A)
-    print("==========")
-    cached_simplify("A-det", A.det())
-    print("==========")
-    print("==========")
-    cached_simplify("b-2.txt", b)
-    print("==========")
-    #f_a_mode = f.subs([ (fx0, 0)
-    #              , (fy0, 0)
-    #              , (tau0, 0)
-    #              ])
-
-    #sprint(f_a_mode)
-    #simulation_c_mode=f_a_mode, ddX)
-    #cached_simplify("simulation_a_mode.txt", simulation_c_mode)
 
 
 */
