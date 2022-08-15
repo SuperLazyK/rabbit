@@ -37,14 +37,14 @@ y1: y0 + l0 * sin(th0)$
 x2: x1 + l1 * cos(th1)$
 y2: y1 + l1 * sin(th1)$
 
-xc0: x1$
-yc0: y1$
+xc1: x1$
+yc1: y1$
 
-xc1: x2$
-yc1: y2$
+xc2: x2$
+yc2: y2$
 
-xc2: x2 + l2 * cos(th2)$
-yc2: y2 + l2 * sin(th2)$
+xc3: x2 + l2 * cos(th2)$
+yc3: y2 + l2 * sin(th2)$
 
 /*----------*/
 /* dynamics */
@@ -64,42 +64,42 @@ th2'': diff(th2', t)$
 x0'': diff(x0', t)$
 y0'': diff(y0', t)$
 
-xc0': diff(xc0, t)$
-yc0': diff(yc0, t)$
-
 xc1': diff(xc1, t)$
 yc1': diff(yc1, t)$
 
 xc2': diff(xc2, t)$
 yc2': diff(yc2, t)$
 
+xc3': diff(xc3, t)$
+yc3': diff(yc3, t)$
+
 /*----------*/
 /* Lagrange */
 /*----------*/
 
-vco: x0'**2 + y0'**2$
-vc0: xc0'**2 + yc0'**2$
+vc0: x0'**2 + y0'**2$
 vc1: xc1'**2 + yc1'**2$
 vc2: xc2'**2 + yc2'**2$
+vc3: xc3'**2 + yc3'**2$
 
-/* mb:0$ */
+/* m0:0$ */
 
-Uo: y0 * mb * g$
-Ko_trs: 1/2 * mb * vco$
+Uo: y0 * m0 * g$
+Ko_trs: 1/2 * m0 * vc0$
 Ko_rot: 0$
 
-U0: yc0 * m0 * g$
-K0_trs: 1/2 * m0 * vc0$
+U0: yc1 * m1 * g$
+K0_trs: 1/2 * m1 * vc1$
 K0_rot: 0$
 
 
-U1 : yc1 * m1 * g$
-K1_trs : 1/2 * m1 * vc1$
+U1 : yc2 * m2 * g$
+K1_trs : 1/2 * m2 * vc2$
 K1_rot : 0$
 
 
-U2 : yc2 * m2 * g$
-K2_trs : 1/2 * m2 * vc2$
+U2 : yc3 * m3 * g$
+K2_trs : 1/2 * m3 * vc3$
 K2_rot : 0$
 
 X : [x0, y0, th0, th1, th2]$
