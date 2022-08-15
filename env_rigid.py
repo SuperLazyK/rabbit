@@ -258,14 +258,14 @@ class RabbitViewer():
         self.it0.set_translation(offset_t[0], offset_t[1])
 
         offset_t = offset_t + l0 * np.array([np.cos(offset_r), np.sin(offset_r)])
-        offset_r = offset_r + state[IDX_th1]
+        offset_r = state[IDX_th1]
         self.t1.set_rotation(offset_r)
         self.t1.set_translation(offset_t[0], offset_t[1])
         self.it1.scale = (-state[IDX_dth1]*img_scale, np.abs(state[IDX_dth1]*img_scale))
         self.it1.set_translation(offset_t[0], offset_t[1])
 
         offset_t = offset_t + l1 * np.array([np.cos(offset_r), np.sin(offset_r)])
-        offset_r = offset_r + state[IDX_th2]
+        offset_r = state[IDX_th2]
         self.t2.set_rotation(offset_r)
         self.t2.set_translation(offset_t[0], offset_t[1])
         self.it2.scale = (-state[IDX_dth2]*img_scale, np.abs(state[IDX_dth2]*img_scale))
