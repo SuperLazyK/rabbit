@@ -83,7 +83,7 @@ def rhs(t, s, u, params={}):
     dd = np.linalg.solve(A, extf-b).reshape(5)
 
     if y0 == 0 and dd[1] <= 0: # foot is contact
-        print("{:0.2f} foot is contact to the floor".format(t))
+        #print("{:0.2f} foot is contact to the floor".format(t))
         dd = np.zeros(5)
         ds[IDX_x0] = 0
         ds[IDX_y0] = 0
@@ -93,7 +93,8 @@ def rhs(t, s, u, params={}):
         #fxy = b[:2].reshape((2,)) - A[:2,2:] @ dd[2:]
         #fy = fxy[1]
     else:
-        print("{:0.2f} foot is in the air".format(t))
+        pass
+        #print("{:0.2f} foot is in the air".format(t))
 
 
     ds[IDX_dx]   = dd[0]
@@ -265,6 +266,10 @@ class RabbitViewer():
         head.add_attr(self.t3)
         self.viewer.add_geom(head)
 
+        horizon = rendering.Line((-500, 0), (500, 0))
+        self.viewer.add_geom(horizon)
+
+
     def render(self, state):
 
         img_scale = 0.3
@@ -355,24 +360,23 @@ if __name__ == '__main__':
     T = np.arange(0, 20, dt)
     u = np.array([0, 0])
 
-    history = constant_steps(systemc, state, u, T)
-    org2 = RabbitViewer()
+    #history = constant_steps(systemc, state, u, T)
+    #org2 = RabbitViewer()
     t = 0
-    for i in range(history.shape[1]):
-        org2.render(history[:,i])
-        print(history[:,i])
-        show(t, history[:,i])
-        time.sleep(dt*5)
-        t = t + dt
-
-    #org1 = RabbitViewer()
-    #while True:
-    #    state = rhsd(t, state, u)
-    #    state = clip(state)
-    #    #org1.render(state)
-    #    #show(t, state)
+    #for i in range(history.shape[1]):
+    #    org2.render(history[:,i])
+    #    show(t, history[:,i])
     #    time.sleep(dt*5)
     #    t = t + dt
+
+    org1 = RabbitViewer()
+    while True:
+        state = rhsd(t, state, u)
+        state = clip(state)
+        org1.render(state)
+        #show(t, state)
+        time.sleep(dt*5)
+        t = t + dt
 
 
 
