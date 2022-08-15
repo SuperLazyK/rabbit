@@ -1,10 +1,31 @@
-/* 3 mass point leads det A = 0 */
+/* 4 mass point */
+/* 3 mass point leads det A = 0 for no-constraint*/
+
+/*
+A:matrix([1,2], [3,4]);
+x:matrix([x], [y]);
+
+disp(A);
+disp(x);
+disp(A . x);
+*/
 
 declare ("'", alphabetic)$
 depends([x0, y0] , t)$
 depends([th0, th1, th2] , t)$
 
 size(M):=[length(M),length(args(M))]$
+symbolilze(M):= subst([ diff(x0,t,2)=ddx0
+                            , diff(y0,t,2)=ddy0
+                            , diff(th0,t,2)=ddth0
+                            , diff(th1,t,2)=ddth1
+                            , diff(th2,t,2)=ddth2
+                            , diff(x0,t,1)=dx0
+                            , diff(y0,t,1)=dy0
+                            , diff(th0,t,1)=dth0
+                            , diff(th1,t,1)=dth1
+                            , diff(th2,t,1)=dth2
+                    ], M)$
 
 /*------------*/
 /* Kinematics */
@@ -13,8 +34,8 @@ size(M):=[length(M),length(args(M))]$
 x1: x0 + l0 * cos(th0)$
 y1: y0 + l0 * sin(th0)$
 
-x2: x1 + l1 * cos(th0 + th1)$
-y2: y1 + l1 * sin(th0 + th1)$
+x2: x1 + l1 * cos(th1)$
+y2: y1 + l1 * sin(th1)$
 
 xc0: x1$
 yc0: y1$
@@ -22,8 +43,8 @@ yc0: y1$
 xc1: x2$
 yc1: y2$
 
-xc2: x2 + l2 * cos(th0 + th1 + th2)$
-yc2: y2 + l2 * sin(th0 + th1 + th2)$
+xc2: x2 + l2 * cos(th2)$
+yc2: y2 + l2 * sin(th2)$
 
 /*----------*/
 /* dynamics */
@@ -61,10 +82,10 @@ vc0: xc0'**2 + yc0'**2$
 vc1: xc1'**2 + yc1'**2$
 vc2: xc2'**2 + yc2'**2$
 
-mo:0$
+/* mb:0$ */
 
-Uo: y0 * mo * g$
-Ko_trs: 1/2 * mo * vco$
+Uo: y0 * mb * g$
+Ko_trs: 1/2 * mb * vco$
 Ko_rot: 0$
 
 U0: yc0 * m0 * g$
@@ -90,23 +111,13 @@ rhs: diff(jacobian([L],dX), t) - jacobian([L], X)$
 /*grind(col(rhs, 5))$*/
 lhs:matrix([fx0, fy0, tau0, tau1, tau2])$
 
-/*
-rhs1 = grind(subst([ diff(x0,t,2)=ddx0
-            , diff(y0,t,2)=ddy0
-            , diff(th0,t,2)=ddth0
-            , diff(th1,t,2)=ddth1
-            , diff(th2,t,2)=ddth2
-            , diff(th0,t,1)=dth0
-            , diff(th1,t,1)=dth1
-            , diff(th2,t,1)=dth2
-    ], rhs))$
-*/
+/* grind(expand(trigreduce(expand(symbolilze(rhs)))));*/
 
-grind(args(transpose(rhs)))$
-A:jacobian(args(rhs), ddX)$
-A:jacobian(args(transpose(rhs)), ddX)$
-size(A)$
+A:jacobian(args(rhs)[1], ddX)$
+b:expand(transpose(rhs) - A.transpose(matrix(ddX)))$
+fortran(expand(trigsimp(symbolilze(A))));
+fortran(expand(trigreduce(trigsimp(symbolilze(b)))));
 
-disp(grind(expand(determinant(A))))$
+/* disp(grind(expand(determinant(A))))$ */
 
 

@@ -103,26 +103,13 @@ rhs: diff(jacobian([L],dX), t) - jacobian([L], X)$
 /*grind(col(rhs, 5))$*/
 lhs:matrix([fx0, fy0, tau0, tau1, tau2])$
 
-grind(expand(trigreduce(expand(symbolilze(rhs)))));
+/* grind(expand(trigreduce(expand(symbolilze(rhs)))));*/
 
-/*
 A:jacobian(args(rhs)[1], ddX)$
 b:expand(transpose(rhs) - A.transpose(matrix(ddX)))$
-grind(trigsimp(symbolilze(A)));
-grind(trigreduce(trigsimp(symbolilze(b))));
-*/
+grind(expand(trigsimp(symbolilze(A))));
+grind(expand(trigreduce(trigsimp(symbolilze(b)))));
 
-
-
-
-/*
-grind(args(transpose(rhs)))$
-disp(grind(A))$
-*/
-
-
-/*disp(grind(expand(determinant(A))))$*/
-
-
+/* disp(grind(expand(determinant(A))))$ */
 
 
