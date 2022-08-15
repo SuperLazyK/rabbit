@@ -30,10 +30,10 @@ l2 =  1.
 
 g  = 9.8
 
-m0 = 0.1.
-m1 = 0.5
-m2 = 0.3.
-m3 = 0.5.
+m0 = 0.1
+m1 = 1
+m2 = 0.5
+m3 = 1
 
 
 def rhs(t, s, u, params={}):
@@ -344,7 +344,7 @@ if __name__ == '__main__':
         state = clip(state)
         org1.render(state)
         #org2.render(history[:,i])
-        time.sleep(dt)
+        time.sleep(0.1)
         t = t + dt
 
 
