@@ -65,7 +65,7 @@ def rhs(t, s, u, params={}):
                  ])
 
     b = np.array([ [(-dth2**2*l2*m3*cos(th2))-dth1**2*l1*m3*cos(th1)-dth1**2*l1*m2*cos(th1)-dth0**2*l0*m3*cos(th0)-dth0**2*l0*m2*cos(th0)-dth0**2*l0*m1*cos(th0)]
-                 , [(-dth2**2*l2*m3*sin(th2))-dth1**2*l1*m3*sin(th1)-dth1**2*l1*m2*sin(th1)-dth0**2*l0*m3*sin(th0)-dth0**2*l0*m2*sin(th0)-dth0**2*l0*m1*sin(th0)+g*m3+g*m2+g*m1-g*m0]
+                 , [(-dth2**2*l2*m3*sin(th2))-dth1**2*l1*m3*sin(th1)-dth1**2*l1*m2*sin(th1)-dth0**2*l0*m3*sin(th0)-dth0**2*l0*m2*sin(th0)-dth0**2*l0*m1*sin(th0)+g*m3+g*m2+g*m1+g*m0]
                  , [(-dth2**2*l0*l2*m3*sin(th2-th0))-dth1**2*l0*l1*m3*sin(th1-th0)-dth1**2*l0*l1*m2*sin(th1-th0)+g*l0*m3*cos(th0)+g*l0*m2*cos(th0)+g*l0*m1*cos(th0)]
                  , [(-dth2**2*l1*l2*m3*sin(th2-th1))+dth0**2*l0*l1*m3*sin(th1-th0)+dth0**2*l0*l1*m2*sin(th1-th0)+g*l1*m3*cos(th1)+g*l1*m2*cos(th1)]
                  , [dth1**2*l1*l2*m3*sin(th2-th1)+dth0**2*l0*l2*m3*sin(th2-th0)+g*l2*m3*cos(th2)]
