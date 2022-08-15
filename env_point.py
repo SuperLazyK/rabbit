@@ -123,15 +123,41 @@ systemd = ct.NonlinearIOSystem(rhsd, outfcn=None
         , states=('x', 'y', 'th0', 'th1', 'th2', 'dx', 'dy', 'dth0', 'dth1', 'dth2')
         , name='rabit')
 
-def show(s, ds, dt):
-    th0  = s[IDX_th0]
-    th1  = s[IDX_th1]
-    th2  = s[IDX_th2]
-    dth0 = s[IDX_dth0]   * dt
-    dth1 = s[IDX_dth1]   * dt
-    dth2 = s[IDX_dth2]   * dt
-    print("{:.2f} {:.2f} {:.2f} : {:.2f} {:.2f} {:.2f} : {:.4f} {:.4f} {:.4f} : ".format(
-        th0, th1, th2, dth0, dth1, dth2, ds[2],ds[3],ds[4]))
+def node_pos(s):
+    th0 = s[IDX_th0]
+    th1 = s[IDX_th1]
+    th2 = s[IDX_th2]
+
+    p0 = s[IDX_x0:IDX_y0+1].copy()
+
+    p1 = p0 + l0 * np.array([np.cos(th0), np.sin(th0)])
+
+    p2 = p1 + l1 * np.array([np.cos(th1), np.sin(th1)])
+
+    p3 = p2 + l2 * np.array([np.cos(th2), np.sin(th2)])
+
+    return p0, p1, p2, p3
+
+def node_vel(s):
+    th0 = s[IDX_th0]
+    th1 = s[IDX_th1]
+    th2 = s[IDX_th2]
+    dth0 = s[IDX_dth0]
+    dth1 = s[IDX_dth1]
+    dth2 = s[IDX_dth2]
+    v0 = s[IDX_dx:IDX_dy+1]
+    v1 = v0 + np.array([-sin(th0), cos(th0)]) * l0 * dth0
+    v2 = v1 + np.array([-sin(th1), cos(th1)]) * l1 * dth1
+    v3 = v2 + np.array([-sin(th2), cos(th2)]) * l2 * dth2
+
+    return v0, v1, v2, v3
+
+def show(t, s):
+    p0, p1, p2, p3 = node_pos(s)
+    v0, v1, v2, v3 = node_vel(s)
+    energy = p0[1] * m0 * g + p1[1] * m1 * g + p2[1] * m2 * g + p3[1] * m3 * g + m0 * v0 @ v0 / 2 + m1 * v1 @ v1 / 2 + m2 * v2 @ v2 / 2 + m3 * v3 @ v3 / 2
+    print("{:.4f} {:.4f}".format(t, energy))
+
 
 def obs(s):
     # sensor 6-IMU? estimated th0 is noisy...
@@ -165,7 +191,7 @@ def step(system, s, u, t=0):
     T = np.array([t, t+dt])
     u = np.repeat(np.array(u).reshape(Nu,1), 2, axis=1)
     t, s = ct.input_output_response(system, T, U=u, X0=s, params={})
-    return clip(s[:,-1])
+    return s[:, -1]
 
 def constant_steps(system, s, u, T):
     u = np.repeat(np.array(u).reshape(Nu,1), T.shape[0], axis=1)
@@ -242,33 +268,28 @@ class RabbitViewer():
     def render(self, state):
 
         img_scale = 0.3
-        #self.viewer.add_onetime(self.img0)
+        p0, p1, p2, p3 = node_pos(state)
+
+        th0 = state[IDX_th0]
+        th1 = state[IDX_th1]
+        th2 = state[IDX_th2]
         #self.viewer.add_onetime(self.img1)
         #self.viewer.add_onetime(self.img2)
 
-        offset_t = np.array([0, RENDER_OFFSET_Y]) + state[IDX_x0:IDX_y0+1]
-        offset_r = state[IDX_th0]
-        self.t0.set_rotation(offset_r)
-        self.t0.set_translation(offset_t[0], offset_t[1])
-        self.it0.scale = (-state[IDX_dth0]*img_scale, np.abs(state[IDX_dth0]*img_scale))
-        self.it0.set_translation(offset_t[0], offset_t[1])
+        self.t0.set_rotation(th0)
+        self.t0.set_translation(p0[0], p0[1])
 
-        offset_t = offset_t + l0 * np.array([np.cos(offset_r), np.sin(offset_r)])
-        offset_r = state[IDX_th1]
-        self.t1.set_rotation(offset_r)
-        self.t1.set_translation(offset_t[0], offset_t[1])
-        self.it1.scale = (-state[IDX_dth1]*img_scale, np.abs(state[IDX_dth1]*img_scale))
-        self.it1.set_translation(offset_t[0], offset_t[1])
+        self.t1.set_rotation(th1)
+        self.t1.set_translation(p1[0], p1[1])
+        #self.it1.scale = (last_u[0]*img_scale, np.abs(last_u[0]*img_scale))
+        #self.it1.set_translation(p1[0], p1[1])
 
-        offset_t = offset_t + l1 * np.array([np.cos(offset_r), np.sin(offset_r)])
-        offset_r = state[IDX_th2]
-        self.t2.set_rotation(offset_r)
-        self.t2.set_translation(offset_t[0], offset_t[1])
-        self.it2.scale = (-state[IDX_dth2]*img_scale, np.abs(state[IDX_dth2]*img_scale))
-        self.it2.set_translation(offset_t[0], offset_t[1])
+        self.t2.set_rotation(th2)
+        self.t2.set_translation(p2[0], p2[1])
+        #self.it2.scale = (last_u[1]*img_scale, np.abs(last_u[1]*img_scale))
+        #self.it2.set_translation(p2[0], p2[1])
 
-        offset_t = offset_t + l2 * np.array([np.cos(offset_r), np.sin(offset_r)])
-        self.t3.set_translation(offset_t[0], offset_t[1])
+        self.t3.set_translation(p3[0], p3[1])
 
         #if self.frame_no < 3:
         #    time.sleep(1)
@@ -334,18 +355,39 @@ if __name__ == '__main__':
     T = np.arange(0, 20, dt)
     u = np.array([0, 0])
 
-    #history = constant_steps(systemd, state, u, T)
-    org1 = RabbitViewer()
-    #org2 = RabbitViewer()
-
+    history = constant_steps(systemc, state, u, T)
+    org2 = RabbitViewer()
     t = 0
-    while True:
-        state = rhsd(t, state, u)
-        state = clip(state)
-        org1.render(state)
-        #org2.render(history[:,i])
-        time.sleep(0.1)
+    for i in range(history.shape[1]):
+        org2.render(history[:,i])
+        print(history[:,i])
+        show(t, history[:,i])
+        time.sleep(dt*5)
         t = t + dt
+
+    #org1 = RabbitViewer()
+    #while True:
+    #    state = rhsd(t, state, u)
+    #    state = clip(state)
+    #    #org1.render(state)
+    #    #show(t, state)
+    #    time.sleep(dt*5)
+    #    t = t + dt
+
+
+
+    ##history = constant_steps(systemd, state, u, T)
+    #org1 = RabbitViewer()
+    ##org2 = RabbitViewer()
+
+    #t = 0
+    #while True:
+    #    state = rhsd(t, state, u)
+    #    state = clip(state)
+    #    org1.render(state)
+    #    #org2.render(history[:,i])
+    #    time.sleep(0.1)
+    #    t = t + dt
 
 
 
