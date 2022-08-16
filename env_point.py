@@ -1,5 +1,6 @@
 
 import pygame
+import pygame.locals as pl
 import gym
 from gym import spaces
 from gym.utils import seeding
@@ -353,13 +354,26 @@ if __name__ == '__main__':
     #    t = t + dt
 
     org1 = RabbitViewer()
+    start = False
     while True:
-        state = rhsd(t, state, u)
-        state = clip(state)
-        org1.render(state)
-        #show(t, state)
+        for event in pygame.event.get():
+            if event.type == pl.QUIT:
+                org1.close()
+                sys.exit()
+            if event.type == pl.KEYDOWN:
+                if event.key == pl.K_ESCAPE:
+                    pygame.quit()
+                    sys.exit()
+            elif event.type == pl.MOUSEBUTTONDOWN:
+                start = True
+
         time.sleep(dt*5)
-        t = t + dt
+        org1.render(state)
+        if start:
+            state = rhsd(t, state, u)
+            state = clip(state)
+            #show(t, state)
+            t = t + dt
 
 
 
