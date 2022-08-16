@@ -112,9 +112,23 @@ systemc = ct.NonlinearIOSystem(rhs, outfcn=None
         , name='rabit')
 
 
+def rk4(f, t, s, u, params, dt):
+
+    k1 = f(t,        s,             u, params)
+    k2 = f(t + dt/2, s + dt/2 * k1, u, params)
+    k3 = f(t + dt/2, s + dt/2 * k2, u, params)
+    k4 = f(t + dt,   s + dt * k3,   u, params)
+    print(k1, k2, k3, k4)
+
+    return s + (k1 + 2*k2 + 2*k3 + k4)/6 * dt
+
 def rhsd(t, s, u, params={}):
-    ds = rhs(t, s, u, params)
-    s = s + dt * ds
+    if False:
+        ds = rhs(t, s, u, params)
+        s = s + dt * ds
+    else:
+        s = rk4(rhs, t, s, u, params, dt)
+        print(s)
     s[IDX_y0] = max(s[IDX_y0], 0)
     return s
 
