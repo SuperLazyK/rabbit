@@ -177,11 +177,10 @@ def node_vel(s):
 
     return v0, v1, v2, v3
 
-def show(t, s):
+def energy(s):
     p0, p1, p2, p3 = node_pos(s)
     v0, v1, v2, v3 = node_vel(s)
-    energy = p0[1] * m0 * g + p1[1] * m1 * g + p2[1] * m2 * g + p3[1] * m3 * g + m0 * v0 @ v0 / 2 + m1 * v1 @ v1 / 2 + m2 * v2 @ v2 / 2 + m3 * v3 @ v3 / 2
-    print("{:.4f} {:.4f}".format(t, energy))
+    return p0[1] * m0 * g + p1[1] * m1 * g + p2[1] * m2 * g + p3[1] * m3 * g + m0 * v0 @ v0 / 2 + m1 * v1 @ v1 / 2 + m2 * v2 @ v2 / 2 + m3 * v3 @ v3 / 2
 
 
 def obs(s):
@@ -261,10 +260,10 @@ class RabbitViewer():
 
         p0, p1, p2, p3 = node_pos(state)
 
-        p0 = conv(p0)
-        p1 = conv(p1)
-        p2 = conv(p2)
-        p3 = conv(p3)
+        p0o = conv(p0)
+        p1o = conv(p1)
+        p2o = conv(p2)
+        p3o = conv(p3)
 
         th0 = state[IDX_th0]
         th1 = state[IDX_th1]
@@ -272,16 +271,16 @@ class RabbitViewer():
 
         self.screen.fill(WHITE)
 
-        pygame.draw.circle(self.screen, GRAY , p0, 5)
-        pygame.draw.circle(self.screen, BLUE , p1, 10)
-        pygame.draw.circle(self.screen, GREEN, p2, 10)
-        pygame.draw.circle(self.screen, RED  , p3, 20)
-        pygame.draw.line(self.screen, BLACK, p0, p1, width=3)
-        pygame.draw.line(self.screen, BLACK, p1, p2, width=3)
-        pygame.draw.line(self.screen, BLACK, p2, p3, width=3)
+        pygame.draw.circle(self.screen, GRAY , p0o, 5)
+        pygame.draw.circle(self.screen, BLUE , p1o, 10)
+        pygame.draw.circle(self.screen, GREEN, p2o, 10)
+        pygame.draw.circle(self.screen, RED  , p3o, 20)
+        pygame.draw.line(self.screen, BLACK, p0o, p1o, width=3)
+        pygame.draw.line(self.screen, BLACK, p1o, p2o, width=3)
+        pygame.draw.line(self.screen, BLACK, p2o, p3o, width=3)
 
         pygame.draw.line(self.screen, BLACK, [0,SCREEN_SIZE[1]/2], [SCREEN_SIZE[0], SCREEN_SIZE[1]/2])
-        text = font.render("{:.02f}".format(t), True, BLACK)
+        text = font.render("t={:.02f} E={:.01f} y0={:.02f}".format(t,energy(state), p0[1]), True, BLACK)
         self.screen.blit(text, [300, 50])
         pygame.display.flip()
         self.clock.tick(60)
@@ -356,18 +355,32 @@ if __name__ == '__main__':
 
     org1 = RabbitViewer()
     start = False
+    slowrate = 1
+    pygame.event.clear()
     while True:
         for event in pygame.event.get():
             if event.type == pl.QUIT:
                 org1.close()
                 sys.exit()
             if event.type == pl.KEYDOWN:
-                pass
+                keyname = pygame.key.name(event.key)
+                if keyname == 'q':
+                    print("??")
+                    org1.close()
+                    sys.exit()
+                elif keyname == 's':
+                    start = True
+                    state = reset_state()
+                    t = 0
+                elif keyname == 'd':
+                    slowrate = 5
+                elif keyname == 'u':
+                    slowrate = 1
             elif event.type == pl.MOUSEBUTTONDOWN:
-                start = True
+                start = start ^ True
 
         org1.render(state, t)
-        time.sleep(dt)
+        time.sleep(slowrate * dt)
         if start:
             state = rhsd(t, state, u)
             state = clip(state)
