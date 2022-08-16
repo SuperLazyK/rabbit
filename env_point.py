@@ -131,14 +131,10 @@ def rk4(f, t, s, u, params, dt):
     k3 = f(t + dt/2, s + dt/2 * k2, u, params)
     k4 = f(t + dt,   s + dt * k3,   u, params)
 
-    return s + (k1 + 2*k2 + 2*k3 + k4)/6 * dt
+    return (k1 + 2*k2 + 2*k3 + k4)/6
 
 def rhsd(t, s, u, params={}):
-    if False:
-        ds = rhs(t, s, u, params)
-        s = s + dt * ds
-    else:
-        s = rk4(rhs, t, s, u, params, dt)
+    s = s + rk4(rhs, t, s, u, params, dt) * dt
     s[IDX_y0] = max(s[IDX_y0], 0)
     return s
 
@@ -256,7 +252,7 @@ class RabbitViewer():
         self.clock = pygame.time.Clock()
 
 
-    def render(self, state, t):
+    def render(self, state, ds, t):
 
         p0, p1, p2, p3 = node_pos(state)
 
@@ -280,7 +276,7 @@ class RabbitViewer():
         pygame.draw.line(self.screen, BLACK, p2o, p3o, width=3)
 
         pygame.draw.line(self.screen, BLACK, [0,SCREEN_SIZE[1]/2], [SCREEN_SIZE[0], SCREEN_SIZE[1]/2])
-        text = font.render("t={:.02f} E={:.01f} y0={:.02f}".format(t,energy(state), p0[1]), True, BLACK)
+        text = font.render("t={:.02f} E={:.01f} y0={:.02f} ddy0={:.02f} ".format(t,energy(state), p0[1], ds[IDX_dy]), True, BLACK)
         self.screen.blit(text, [300, 50])
         pygame.display.flip()
         self.clock.tick(60)
@@ -358,6 +354,7 @@ if __name__ == '__main__':
     slowrate = 1
     pygame.event.clear()
     while True:
+        ds = rk4(rhs, t, state, u, {}, dt)
         for event in pygame.event.get():
             if event.type == pl.QUIT:
                 org1.close()
@@ -373,15 +370,17 @@ if __name__ == '__main__':
                     state = reset_state()
                     t = 0
                 elif keyname == 'd':
-                    slowrate = 5
+                    slowrate = 20
                 elif keyname == 'u':
                     slowrate = 1
             elif event.type == pl.MOUSEBUTTONDOWN:
                 start = start ^ True
 
-        org1.render(state, t)
+        org1.render(state, ds, t)
         time.sleep(slowrate * dt)
         if start:
+            state = state + ds * dt
+            state[IDX_y0] = max(state[IDX_y0], 0)
             state = rhsd(t, state, u)
             state = clip(state)
             #show(t, state)
