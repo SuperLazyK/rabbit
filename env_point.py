@@ -256,7 +256,7 @@ class RabbitViewer():
         self.clock = pygame.time.Clock()
 
 
-    def render(self, state):
+    def render(self, state, t):
 
         p0, p1, p2, p3 = node_pos(state)
 
@@ -280,8 +280,8 @@ class RabbitViewer():
         pygame.draw.line(self.screen, BLACK, p2, p3, width=3)
 
         pygame.draw.line(self.screen, BLACK, [0,250], [500, 250])
-        #text = font.render("Sideways text", True, BLACK)
-        #self.screen.blit(text, [100, 50])
+        text = font.render("{:.02f}".format(t), True, BLACK)
+        self.screen.blit(text, [300, 50])
         pygame.display.flip()
         self.clock.tick(60)
 
@@ -361,14 +361,12 @@ if __name__ == '__main__':
                 org1.close()
                 sys.exit()
             if event.type == pl.KEYDOWN:
-                if event.key == pl.K_ESCAPE:
-                    pygame.quit()
-                    sys.exit()
+                pass
             elif event.type == pl.MOUSEBUTTONDOWN:
                 start = True
 
+        org1.render(state, t)
         time.sleep(dt*5)
-        org1.render(state)
         if start:
             state = rhsd(t, state, u)
             state = clip(state)
