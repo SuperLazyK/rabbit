@@ -11,6 +11,14 @@ import control as ct
 import sys
 
 pygame.init()
+BLACK = (0, 0, 0)
+WHITE = (255, 255, 255)
+RED = (128, 0, 0)
+BLUE = (0, 128, 0)
+GREEN = (0, 0, 128)
+GRAY = (80, 80, 80)
+
+font = pygame.font.SysFont('Calibri', 25, True, False)
 
 IDX_x0   = 0
 IDX_y0   = 1
@@ -24,7 +32,6 @@ IDX_dth1 = 8
 IDX_dth2 = 9
 Nu = 2
 dt = 0.01
-RENDER_OFFSET_Y = 0
 MAX_TORQUE=2.
 
 l0 =  1.
@@ -235,6 +242,10 @@ def reset_state(np_random=None):
     return s
 
 
+def conv(p):
+    p[1] = -p[1]
+    ret = 60 * p + np.array([250, 250])
+    return ret
 
 class RabbitViewer():
     def __init__(self):
@@ -244,93 +255,32 @@ class RabbitViewer():
         self.clock = pygame.time.Clock()
 
 
-
-
-
-        #self.viewer = rendering.Viewer(500,500)
-        #wscale = 4.2
-        #self.viewer.set_bounds(-wscale,wscale,-wscale,wscale)
-
-        #fname = path.join(path.dirname(__file__), "clockwise.png")
-
-        #rod0 = rendering.make_capsule(l0, .2)
-        #rod0.set_color(.0, .3, .3)
-        #self.t0 = rendering.Transform()
-        #rod0.add_attr(self.t0)
-        #self.viewer.add_geom(rod0)
-
-        #self.img0 = rendering.Image(fname, 1., 1.)
-        #self.it0 = rendering.Transform()
-        #self.img0.add_attr(self.it0)
-
-        #rod1 = rendering.make_capsule(l1, .1)
-        #rod1.set_color(.2, .5, .0)
-        #self.t1 = rendering.Transform()
-        #rod1.add_attr(self.t1)
-        #self.viewer.add_geom(rod1)
-
-        #self.img1 = rendering.Image(fname, 1., 1.)
-        #self.it1 = rendering.Transform()
-        #self.img1.add_attr(self.it1)
-
-        #rod2 = rendering.make_capsule(l2, .05)
-        #rod2.set_color(.4, .0, .4)
-        #self.t2 = rendering.Transform()
-        #rod2.add_attr(self.t2)
-        #self.viewer.add_geom(rod2)
-
-        #self.img2 = rendering.Image(fname, .5, .5)
-        #self.it2 = rendering.Transform()
-        #self.img2.add_attr(self.it2)
-
-        #head = rendering.make_circle(.2)
-        #head.set_color(0.3,0.1,0.1)
-        #self.t3 = rendering.Transform()
-        #head.add_attr(self.t3)
-        #self.viewer.add_geom(head)
-
-        #horizon = rendering.Line((-500, 0), (500, 0))
-        #self.viewer.add_geom(horizon)
-
-
     def render(self, state):
 
-        BLACK = (0, 0, 0)
-        WHITE = (255, 255, 255)
-        font = pygame.font.SysFont('Calibri', 25, True, False)
-        #img_scale = 0.3
-        #p0, p1, p2, p3 = node_pos(state)
+        p0, p1, p2, p3 = node_pos(state)
 
-        #th0 = state[IDX_th0]
-        #th1 = state[IDX_th1]
-        #th2 = state[IDX_th2]
-        ##self.viewer.add_onetime(self.img1)
-        ##self.viewer.add_onetime(self.img2)
+        p0 = conv(p0)
+        p1 = conv(p1)
+        p2 = conv(p2)
+        p3 = conv(p3)
 
-        #self.t0.set_rotation(th0)
-        #self.t0.set_translation(p0[0], p0[1])
+        th0 = state[IDX_th0]
+        th1 = state[IDX_th1]
+        th2 = state[IDX_th2]
 
-        #self.t1.set_rotation(th1)
-        #self.t1.set_translation(p1[0], p1[1])
-        ##self.it1.scale = (last_u[0]*img_scale, np.abs(last_u[0]*img_scale))
-        ##self.it1.set_translation(p1[0], p1[1])
-
-        #self.t2.set_rotation(th2)
-        #self.t2.set_translation(p2[0], p2[1])
-        ##self.it2.scale = (last_u[1]*img_scale, np.abs(last_u[1]*img_scale))
-        ##self.it2.set_translation(p2[0], p2[1])
-
-        #self.t3.set_translation(p3[0], p3[1])
-
-        ##if self.frame_no < 3:
-        ##    time.sleep(1)
-        ##time.sleep(0.1)
-
-        #return self.viewer.render(return_rgb_array = False)
         self.screen.fill(WHITE)
-        pygame.draw.line(self.screen, BLACK, [100,50], [100, 150])
-        text = font.render("Sideways text", True, BLACK)
-        self.screen.blit(text, [100, 50])
+
+        pygame.draw.circle(self.screen, GRAY , p0, 5)
+        pygame.draw.circle(self.screen, BLUE , p1, 10)
+        pygame.draw.circle(self.screen, GREEN, p2, 10)
+        pygame.draw.circle(self.screen, RED  , p3, 20)
+        pygame.draw.line(self.screen, BLACK, p0, p1, width=3)
+        pygame.draw.line(self.screen, BLACK, p1, p2, width=3)
+        pygame.draw.line(self.screen, BLACK, p2, p3, width=3)
+
+        pygame.draw.line(self.screen, BLACK, [0,250], [500, 250])
+        #text = font.render("Sideways text", True, BLACK)
+        #self.screen.blit(text, [100, 50])
         pygame.display.flip()
         self.clock.tick(60)
 
