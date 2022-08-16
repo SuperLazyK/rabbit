@@ -18,6 +18,7 @@ RED = (128, 0, 0)
 BLUE = (0, 128, 0)
 GREEN = (0, 0, 128)
 GRAY = (80, 80, 80)
+SCREEN_SIZE=(1300, 500)
 
 font = pygame.font.SysFont('Calibri', 25, True, False)
 
@@ -245,13 +246,13 @@ def reset_state(np_random=None):
 
 def conv(p):
     p[1] = -p[1]
-    ret = 60 * p + np.array([250, 250])
+    ret = 60 * p + np.array(SCREEN_SIZE)/2
     return ret
 
 class RabbitViewer():
     def __init__(self):
 
-        self.screen = pygame.display.set_mode((500, 500))
+        self.screen = pygame.display.set_mode(SCREEN_SIZE)
         pygame.display.set_caption("rabbot-4-mass-point")
         self.clock = pygame.time.Clock()
 
@@ -279,7 +280,7 @@ class RabbitViewer():
         pygame.draw.line(self.screen, BLACK, p1, p2, width=3)
         pygame.draw.line(self.screen, BLACK, p2, p3, width=3)
 
-        pygame.draw.line(self.screen, BLACK, [0,250], [500, 250])
+        pygame.draw.line(self.screen, BLACK, [0,SCREEN_SIZE[1]/2], [SCREEN_SIZE[0], SCREEN_SIZE[1]/2])
         text = font.render("{:.02f}".format(t), True, BLACK)
         self.screen.blit(text, [300, 50])
         pygame.display.flip()
@@ -366,7 +367,7 @@ if __name__ == '__main__':
                 start = True
 
         org1.render(state, t)
-        time.sleep(dt*5)
+        time.sleep(dt)
         if start:
             state = rhsd(t, state, u)
             state = clip(state)
