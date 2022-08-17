@@ -19,6 +19,7 @@ BLUE = (0, 128, 0)
 GREEN = (0, 0, 128)
 GRAY = (80, 80, 80)
 SCREEN_SIZE=(1300, 500)
+SCALE=60
 
 font = pygame.font.SysFont('Calibri', 25, True, False)
 
@@ -242,9 +243,13 @@ def reset_state(np_random=None):
     return s
 
 
+def flip(p):
+    ret = p.copy()
+    ret[1] = -ret[1]
+    return ret
+
 def conv(p):
-    p[1] = -p[1]
-    ret = 60 * p + np.array(SCREEN_SIZE)/2
+    ret = flip(SCALE * p) + np.array(SCREEN_SIZE)/2
     return ret
 
 class RabbitViewer():
