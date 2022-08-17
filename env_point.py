@@ -204,6 +204,9 @@ def clip(s):
     #new_s[IDX_th0:IDX_th2+1] = np.clip(new_s[IDX_th0:IDX_th2+1], ob_low[0:3], ob_high[0:3])
     #new_s[IDX_dth0:IDX_dth2+1] = np.clip(new_s[IDX_dth0:IDX_dth2+1], ob_low[3:6], ob_high[3:6])
     new_s[IDX_y0] = max(new_s[IDX_y0], 0)
+    if new_s[IDX_y0] == 0:
+        new_s[IDX_dy] = 0
+        new_s[IDX_dx] = 0
     return new_s
 
 
