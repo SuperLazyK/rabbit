@@ -203,7 +203,7 @@ def clip(s):
     new_s = s.copy()
     #new_s[IDX_th0:IDX_th2+1] = np.clip(new_s[IDX_th0:IDX_th2+1], ob_low[0:3], ob_high[0:3])
     #new_s[IDX_dth0:IDX_dth2+1] = np.clip(new_s[IDX_dth0:IDX_dth2+1], ob_low[3:6], ob_high[3:6])
-    new_s[IDX_y0] = np.max(new_s[IDX_y0], 0)
+    new_s[IDX_y0] = max(new_s[IDX_y0], 0)
     return new_s
 
 
@@ -380,8 +380,7 @@ if __name__ == '__main__':
         time.sleep(slowrate * dt)
         if start:
             state = state + ds * dt
-            state[IDX_y0] = max(state[IDX_y0], 0)
-            state = rhsd(t, state, u)
+            #state[IDX_y0] = max(state[IDX_y0], 0)
             state = clip(state)
             #show(t, state)
             t = t + dt
