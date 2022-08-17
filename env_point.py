@@ -360,7 +360,6 @@ if __name__ == '__main__':
             if event.type == pl.KEYDOWN:
                 keyname = pygame.key.name(event.key)
                 if keyname == 'q':
-                    print("??")
                     org1.close()
                     sys.exit()
                 elif keyname == 's':
