@@ -203,7 +203,7 @@ ob_high = np.array([ np.pi
 def clip(s):
     new_s = s.copy()
     #new_s[IDX_th0:IDX_th2+1] = np.clip(new_s[IDX_th0:IDX_th2+1], ob_low[0:3], ob_high[0:3])
-    #new_s[IDX_dth0:IDX_dth2+1] = np.clip(new_s[IDX_dth0:IDX_dth2+1], ob_low[3:6], ob_high[3:6])
+    new_s[IDX_dth0:IDX_dth2+1] = np.clip(new_s[IDX_dth0:IDX_dth2+1], ob_low[3:6], ob_high[3:6])
     new_s[IDX_y0] = max(new_s[IDX_y0], 0)
     if new_s[IDX_y0] == 0:
         new_s[IDX_dy] = 0
@@ -252,6 +252,7 @@ def conv(p):
     ret = flip(SCALE * p) + np.array(SCREEN_SIZE)/2
     return ret
 
+
 class RabbitViewer():
     def __init__(self):
 
@@ -291,9 +292,6 @@ class RabbitViewer():
 
     def close(self):
         pygame.quit()
-        #if self.viewer:
-        #    self.viewer.close()
-        #    self.viewer = None
 
 
 #class RabbitEnv(gym.Env):
@@ -348,15 +346,7 @@ if __name__ == '__main__':
     T = np.arange(0, 20, dt)
     u = np.array([0, 0])
 
-    #history = constant_steps(systemc, state, u, T)
-    #org2 = RabbitViewer()
     t = 0
-    #for i in range(history.shape[1]):
-    #    org2.render(history[:,i])
-    #    show(t, history[:,i])
-    #    time.sleep(dt*5)
-    #    t = t + dt
-
     org1 = RabbitViewer()
     start = False
     slowrate = 1
@@ -388,25 +378,6 @@ if __name__ == '__main__':
         time.sleep(slowrate * dt)
         if start:
             state = state + ds * dt
-            #state[IDX_y0] = max(state[IDX_y0], 0)
             state = clip(state)
-            #show(t, state)
             t = t + dt
-
-
-
-    ##history = constant_steps(systemd, state, u, T)
-    #org1 = RabbitViewer()
-    ##org2 = RabbitViewer()
-
-    #t = 0
-    #while True:
-    #    state = rhsd(t, state, u)
-    #    state = clip(state)
-    #    org1.render(state)
-    #    #org2.render(history[:,i])
-    #    time.sleep(0.1)
-    #    t = t + dt
-
-
 
