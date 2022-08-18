@@ -184,20 +184,21 @@ def obs(s):
     # sensor 6-IMU? estimated th0 is noisy...
     return np.concatenate([s[IDX_th0:IDX_th2+1], s[IDX_dth0:IDX_dth2+1]], axis=-1)
 
+MAX_ANGV=30
 ob_low = np.array([ 0
                   , 0
                   , -np.pi
-                  , -8
-                  , -8
-                  , -8
+                  , -MAX_ANGV
+                  , -MAX_ANGV
+                  , -MAX_ANGV
           ], dtype=np.float32)
 
 ob_high = np.array([ np.pi
                    , np.pi
                    , np.pi
-                   , 8
-                   , 8
-                   , 8
+                   , MAX_ANGV
+                   , MAX_ANGV
+                   , MAX_ANGV
             ], dtype=np.float32)
 
 def clip(s):
@@ -294,56 +295,64 @@ class RabbitViewer():
         pygame.quit()
 
 
-#class RabbitEnv(gym.Env):
-#
-#    metadata = {
-#        'render.modes' : ['human', 'rgb_array'],
-#        'video.frames_per_second' : 30
-#    }
-#
-#    def __init__(self):
-#        self.system = systemd
-#
-#        self.state = reset_state()
-#        self.viewer = None
-#
-#        max_action = np.array([MAX_TORQUE, MAX_TORQUE])
-#        self.action_space = spaces.Box(low=-max_action, high=max_action, dtype=np.float32)
-#        self.observation_space = spaces.Box(low=ob_low, high=ob_high, dtype=np.float32)
-#
-#        self.seed()
-#
-#    def seed(self, seed=None):
-#        self.np_random, seed = seeding.np_random(seed)
-#        return [seed]
-#
-#    def reward(self):
-#        #TODO
-#        return 0
-#
-#    def step(self, u):
-#        self.state = step(self.system, self.state, u)
-#        return obs(self.state), 0, False, {}
-#
-#
-#    def reset(self):
-#        self.state = reset_state(self.np_random)
-#        return obs(self.state)
-#
-#
-#    def render(self, mode='human'):
-#        if self.viewer is None:
-#            self.viewer = RabbitViewer()
-#        return self.viewer.render(self.state)
-#
-#    def close(self):
-#        if self.viewer:
-#            self.viewer.close()
-#            self.viewer = None
+class RabbitEnv(gym.Env):
+
+    metadata = {
+        'render.modes' : ['human', 'rgb_array'],
+        'video.frames_per_second' : 30
+    }
+
+    def __init__(self):
+        self.system = systemd
+
+        self.reset(False)
+        self.viewer = None
+
+        max_action = np.array([MAX_TORQUE, MAX_TORQUE])
+        self.action_space = spaces.Box(low=-max_action, high=max_action, dtype=np.float32)
+        self.observation_space = spaces.Box(low=ob_low, high=ob_high, dtype=np.float32)
+        self.ui = False
+
+        self.seed()
+
+    def seed(self, seed=None):
+        self.np_random, seed = seeding.np_random(seed)
+        return [seed]
+
+    def reward(self):
+        #TODO
+        return 0
+
+    def step(self, u):
+        ds = rk4(rhs, self.t, self.state, u, {}, dt)
+        self.last_u = u
+        self.last_ds = ds
+
+        state = state + ds * dt
+        state = clip(state)
+        t = t + dt
+
+        return obs(self.state), 0, False, {}
+
+
+    def reset(self, random=True):
+        self.state = reset_state(self.np_random)
+        self.t = 0
+        return obs(self.state)
+
+
+    def render(self, mode='human'):
+        if self.viewer is None:
+            self.viewer = RabbitViewer()
+        return self.viewer.render(self.state)
+
+    def close(self):
+        if self.viewer:
+            self.viewer.close()
+            self.viewer = None
 
 if __name__ == '__main__':
     state = reset_state()
-    T = np.arange(0, 20, dt)
     u = np.array([0, 0])
 
     t = 0
@@ -351,6 +360,7 @@ if __name__ == '__main__':
     start = False
     slowrate = 1
     pygame.event.clear()
+
     while True:
         ds = rk4(rhs, t, state, u, {}, dt)
         for event in pygame.event.get():
