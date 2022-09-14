@@ -7,26 +7,16 @@ from gym.utils import seeding
 import numpy as np
 from numpy import sin, cos
 from os import path
+import os
 import time
 import control as ct
 import sys
-
-pygame.init()
-BLACK = (0, 0, 0)
-WHITE = (255, 255, 255)
-RED = (128, 0, 0)
-BLUE = (0, 128, 0)
-GREEN = (0, 0, 128)
-GRAY = (80, 80, 80)
-SCREEN_SIZE=(1300, 500)
-SCALE=60
-
-font = pygame.font.SysFont('Calibri', 25, True, False)
 
 
 #----------------------------
 # Dynamics
 #----------------------------
+delta = 0.01
 
 IDX_x0   = 0
 IDX_y0   = 1
@@ -38,21 +28,22 @@ IDX_dy   = 6
 IDX_dth0 = 7
 IDX_dth1 = 8
 IDX_dth2 = 9
-delta = 0.01
 
-MAX_TORQUE=10.0
-MAX_ANGV=30
+MAX_TORQUE1=40.0
+MAX_TORQUE2=20.0
+MAX_ANGV=10
 
 l0 =  1.
 l1 =  1.
 l2 =  1.
 
 g  = 9.8
+#g  = 1
 
 m0 = 0.1
-m1 = 1
+m1 = 0.5
 m2 = 0.5
-m3 = 1
+m3 = 0.3
 
 def calcAb(s, u):
     x0   = s[IDX_x0]
@@ -177,8 +168,8 @@ def collision_time(s, ds, dt):
         return None
 
 # rough approximation of torque
-def torque_trade_off(tau, dtheta):
-    a = (MAX_ANGV - min(MAX_ANGV, abs(dtheta))) * MAX_TORQUE / MAX_ANGV
+def torque_trade_off(tau, dtheta, max_t, max_v):
+    a = (max_v - min(max_v, abs(dtheta))) * max_t / max_v
     if abs(tau) > a:
         return a if tau >= 0 else -a
     else:
@@ -186,8 +177,8 @@ def torque_trade_off(tau, dtheta):
 
 def limit_torque(s, u):
     ret = u.copy()
-    ret[0] = torque_trade_off(u[0], s[IDX_dth1])
-    ret[1] = torque_trade_off(u[1], s[IDX_dth2])
+    #ret[0] = torque_trade_off(u[0], s[IDX_dth1], MAX_TORQUE1, MAX_ANGV)
+    #ret[1] = torque_trade_off(u[1], s[IDX_dth2], MAX_TORQUE2, MAX_ANGV)
     return ret
 
 def limit_th(s):
@@ -214,7 +205,7 @@ def step(t, s, u, dt):
             s = s + ds * colt
             s[IDX_y0] = 0
             s = collision_impulse(s, u)
-            return  "collision", limit_th(t + colt, s)
+            return  "collision", t + colt, limit_th(s)
         else:
             return "free", t + dt, limit_th(s + ds * dt)
     else:
@@ -249,11 +240,16 @@ def node_vel(s):
 
     return v0, v1, v2, v3
 
+def energyU(s):
+    p0, p1, p2, p3 = node_pos(s)
+    return p0[1] * m0 * g + p1[1] * m1 * g + p2[1] * m2 * g + p3[1] * m3 * g
+
+def energyT(s):
+    v0, v1, v2, v3 = node_vel(s)
+    return m0 * v0 @ v0 / 2 + m1 * v1 @ v1 / 2 + m2 * v2 @ v2 / 2 + m3 * v3 @ v3 / 2
 
 def energy(s):
-    p0, p1, p2, p3 = node_pos(s)
-    v0, v1, v2, v3 = node_vel(s)
-    return p0[1] * m0 * g + p1[1] * m1 * g + p2[1] * m2 * g + p3[1] * m3 * g + m0 * v0 @ v0 / 2 + m1 * v1 @ v1 / 2 + m2 * v2 @ v2 / 2 + m3 * v3 @ v3 / 2
+    return energyU(s) + energyT(s)
 
 def print_energy(s):
     p0, p1, p2, p3 = node_pos(s)
@@ -291,8 +287,8 @@ def print_state(s):
     print(f"dth2:{s[IDX_dth2]:.2f}")
 
 
-def print_info(mode, t, s, u):
-    print(f"--{t:.2f}--{mode:}")
+def print_info(mode, t, s, u,r):
+    print(f"--{t:.2f}--{mode:}-- reward: {r:}")
     print_state(s)
     print_energy(s)
     print("")
@@ -303,6 +299,26 @@ def print_info(mode, t, s, u):
 # Rendering
 #----------------------------
 
+pygame.init()
+
+BLACK = (0, 0, 0)
+WHITE = (255, 255, 255)
+YELLOW = (128, 128, 0)
+RED = (128, 0, 0)
+BLUE = (0, 128, 0)
+GREEN = (0, 0, 128)
+GRAY = (80, 80, 80)
+
+VRED = (128, 30, 30)
+VBLUE = (30, 128, 30)
+VGREEN = (0, 30, 128)
+VGRAY = (90, 90, 90)
+
+SCREEN_SIZE=(1300, 500)
+SCALE=50
+RSCALE=1/SCALE
+
+font = pygame.font.SysFont('Calibri', 25, True, False)
 
 
 def flip(p):
@@ -310,43 +326,81 @@ def flip(p):
     ret[1] = -ret[1]
     return ret
 
-def conv(p):
+def conv_pos(p):
     ret = flip(SCALE * p) + np.array(SCREEN_SIZE)/2
     return ret
-
 
 class RabbitViewer():
     def __init__(self):
         self.screen = pygame.display.set_mode(SCREEN_SIZE)
         pygame.display.set_caption("rabbot-4-mass-point")
         self.clock = pygame.time.Clock()
+        self.rotate = pygame.image.load("clockwise.png")
+
+        self.alter = pygame.image.load("clockwise.png")
+        image_pixel_array = pygame.PixelArray(self.alter)
+        image_pixel_array.replace(BLACK, RED)
 
 
-    def render(self, state, t):
+
+    def render_rotation(self, u, pos, max_torq, max_scale=SCALE, default_img=True):
+        a = abs(u)
+        scale = (a*max_scale/max_torq, a*max_scale/max_torq)
+        imgu = pygame.transform.scale(self.rotate if default_img else self.alter, scale)
+        if u > 0:
+            imgu = pygame.transform.flip(imgu, True, False)
+
+        self.screen.blit(imgu, pos - np.array(scale)/2)
+
+
+    def render(self, state, t, u, r):
 
         p0, p1, p2, p3 = node_pos(state)
+        v0, v1, v2, v3 = node_vel(state)
 
-        p0o = conv(p0)
-        p1o = conv(p1)
-        p2o = conv(p2)
-        p3o = conv(p3)
+        p0o = conv_pos(p0)
+        p1o = conv_pos(p1)
+        p2o = conv_pos(p2)
+        p3o = conv_pos(p3)
+
+        v0o = conv_pos(p0 + 20 * delta * v0)
+        v1o = conv_pos(p1 + 20 * delta * v1)
+        v2o = conv_pos(p2 + 20 * delta * v2)
+        v3o = conv_pos(p3 + 20 * delta * v3)
 
         th0 = state[IDX_th0]
         th1 = state[IDX_th1]
         th2 = state[IDX_th2]
 
+        dth0 = state[IDX_dth0]
+        dth1 = state[IDX_dth1]
+        dth2 = state[IDX_dth2]
+
+
         self.screen.fill(WHITE)
 
-        pygame.draw.circle(self.screen, GRAY , p0o, 5)
-        pygame.draw.circle(self.screen, BLUE , p1o, 10)
-        pygame.draw.circle(self.screen, GREEN, p2o, 10)
-        pygame.draw.circle(self.screen, RED  , p3o, 20)
-        pygame.draw.line(self.screen, BLACK, p0o, p1o, width=3)
-        pygame.draw.line(self.screen, BLACK, p1o, p2o, width=3)
-        pygame.draw.line(self.screen, BLACK, p2o, p3o, width=3)
+        pygame.draw.circle(self.screen, GRAY , p0o, 150 * RSCALE)
+        pygame.draw.circle(self.screen, BLUE , p1o, 300 * RSCALE)
+        pygame.draw.circle(self.screen, GREEN, p2o, 300 * RSCALE)
+        pygame.draw.circle(self.screen, YELLOW  , p3o, 450 * RSCALE)
+        pygame.draw.line(self.screen, BLACK, p0o, p1o, width=int(100 * RSCALE))
+        pygame.draw.line(self.screen, BLACK, p1o, p2o, width=int(100 * RSCALE))
+        pygame.draw.line(self.screen, BLACK, p2o, p3o, width=int(100 * RSCALE))
+
+        #pygame.draw.line(self.screen, VGRAY , p0o, v0o, width=int(100 * RSCALE))
+        #pygame.draw.line(self.screen, VBLUE , p1o, v1o, width=int(100 * RSCALE))
+        #pygame.draw.line(self.screen, VGREEN, p2o, v2o, width=int(100 * RSCALE))
+        #pygame.draw.line(self.screen, VRED  , p3o, v3o, width=int(100 * RSCALE))
+
+        self.render_rotation(u[0], p1o + np.array([100, 0]), MAX_TORQUE1, default_img=False)
+        self.render_rotation(u[1], p2o + np.array([100, 0]), MAX_TORQUE2, default_img=False)
+
+        #self.render_rotation(dth0, p0o, MAX_ANGV)
+        self.render_rotation(dth1-dth0, p1o, MAX_ANGV)
+        self.render_rotation(dth2-dth1, p2o, MAX_ANGV)
 
         pygame.draw.line(self.screen, BLACK, [0,SCREEN_SIZE[1]/2], [SCREEN_SIZE[0], SCREEN_SIZE[1]/2])
-        text = font.render("t={:.02f} E={:.01f} y0={:.02f} ".format(t,energy(state), p0[1]), True, BLACK)
+        text = font.render("t={:.02f} E={:.01f} r={:.02f} ".format(t,energy(state), r), True, BLACK)
         self.screen.blit(text, [300, 50])
         pygame.display.flip()
         self.clock.tick(60)
@@ -360,6 +414,8 @@ class RabbitViewer():
 # Env (I/O + Reward)
 #----------------------------
 
+def pow2(v):
+    return v @ v
 
 def obs(s):
     # sensor 6-IMU? estimated th0 is noisy...
@@ -368,6 +424,7 @@ def obs(s):
 
 def reset_state(np_random=None):
     s = np.zeros(10, dtype=np.float32)
+    #s[IDX_x0]   = -10.
     s[IDX_x0]   = 0.
     s[IDX_y0]   = 0.
     s[IDX_th0]  = np.pi/4
@@ -375,30 +432,30 @@ def reset_state(np_random=None):
     s[IDX_th2]  = np.pi*5/12
     s[IDX_dx  ] = 0.
     s[IDX_dy  ] = 0.
-    s[IDX_dth0] = 0.01
-    s[IDX_dth1] = 0.01
-    s[IDX_dth2] = 0.01
+    s[IDX_dth0] = 0
+    s[IDX_dth1] = 0
+    s[IDX_dth2] = 0
 
-    if np_random is not None:
-        s[IDX_th0] = s[IDX_th0] + np_random.uniform(low=-np.pi/10, high=np.pi/10)
-        s[IDX_th1] = s[IDX_th1] + np_random.uniform(low=-np.pi/10, high=np.pi/10)
-        s[IDX_th2] = s[IDX_th2] + np_random.uniform(low=-np.pi/4, high=np.pi/4)
+    #if np_random is not None:
+    #    s[IDX_th0] = s[IDX_th0] + np_random.uniform(low=-np.pi/10, high=np.pi/10)
+    #    s[IDX_th1] = s[IDX_th1] + np_random.uniform(low=-np.pi/10, high=np.pi/10)
+    #    s[IDX_th2] = s[IDX_th2] + np_random.uniform(low=-np.pi/4, high=np.pi/4)
 
     return s
 
 def game_over(s):
     p0, p1, p2, p3 = node_pos(s)
     if p0[1] < 0:
-        print(f"GAME OVER p0={p0:}")
+        #print(f"GAME OVER p0={p0:}")
         return True
     if p1[1] < 0:
-        print(f"GAME OVER p1={p1:}")
+        #print(f"GAME OVER p1={p1:}")
         return True
     if p2[1] < 0:
-        print(f"GAME OVER p2={p2:}")
+        #print(f"GAME OVER p2={p2:}")
         return True
     if p3[1] < 0:
-        print(f"GAME OVER p3={p3:}")
+        #print(f"GAME OVER p3={p3:}")
         return True
     return False
 
@@ -414,39 +471,78 @@ class RabbitEnv(gym.Env):
         self.reset(False)
         self.viewer = None
 
-        max_action = np.array([MAX_TORQUE, MAX_TORQUE])
+        max_action = np.array([MAX_TORQUE1, MAX_TORQUE2])
         max_obs    = np.array([ np.pi/2 , np.pi/2 , np.pi/2 , MAX_ANGV , MAX_ANGV , MAX_ANGV ], dtype=np.float32)
 
-        self.action_space = spaces.Box(low=-max_action, high=max_action, dtype=np.float32)
+        self.action_space = spaces.Discrete(4)
+        #self.action_space = spaces.Box(low=-max_action, high=max_action, dtype=np.float32)
         self.observation_space = spaces.Box(low=-max_obs, high=max_obs, dtype=np.float32)
 
         self.seed()
+
+        self.step_render= int(os.environ.get('RENDER', "0"))
 
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
 
-    def step(self, u):
-        t, s = self.history[-1]
+    def step(self, act):
+        #u = u * np.array([MAX_TORQUE1, MAX_TORQUE2])
+        if act == 0:
+            u = np.array([-MAX_TORQUE1, -MAX_TORQUE2])
+        elif act == 1:
+            u = np.array([-MAX_TORQUE1, MAX_TORQUE2])
+        elif act == 2:
+            u = np.array([MAX_TORQUE1, -MAX_TORQUE2])
+        else:
+            u = np.array([MAX_TORQUE1, MAX_TORQUE2])
+        _, t, s, _, _ = self.history[-1]
         mode, t, s = step(t, s, u, delta)
-        print_info(mode, t, s, u)
-        self.history.append((t, s))
-        return obs(s), self.reward(s,u), game_over(s), {}
+        th = s[IDX_th0:IDX_th2+1] - np.pi/2
+        dth = s[IDX_dth0:IDX_dth2+1]
+        p0, p1, p2, p3 = node_pos(s)
+        c_x   = (p0[0]/20) ** 2
+        #print("reward", r_x, r_att, r_vel, r_u, r_y)
+        c_att = pow2(th/np.pi)
+        c_vel = pow2(dth/MAX_ANGV)
+        c_u   = pow2(u/np.array([MAX_TORQUE1, MAX_TORQUE2]))
+        c_U = energyU(s)
+        c_T = energyT(s)
+        #print("reward", c_x, c_att, c_vel, c_u,)
+        #r = 5 - 2*c_x - 1*c_u - 1*c_att - 1*c_vel
+        #r = 5 - 2*c_x  - 1*c_att - 1*c_vel
+        r =11 - 10*c_att - 1*c_vel - 0.1 * c_u
+        #r = 30 + 4 * c_U - c_T
+        done = game_over(s)
+
+        if self.step_render != 0:
+            self.render(-1)
+
+        self.history.append((mode, t, s, u, r))
+
+        return obs(s), r, done, {}
+
+    def reset_frame(self, frame):
+        self.history = self.history[:frame+1]
 
     def reset(self, random=True):
         s = reset_state(self.np_random if random else None)
-        self.history = [(0, s)]
+        self.history = [("start", 0, s, np.array([0,0]), 0)]
+        return obs(s)
 
     def render(self, mode='human', frame=-1):
         if self.viewer is None:
             self.viewer = RabbitViewer()
-        print("render",frame)
-        t, s = self.history[frame]
-        return self.viewer.render(s, t)
+        mode, t, s, u, r = self.history[frame]
+        return self.viewer.render(s, t, u, r)
 
-    def reward(self, s, u):
-        costs = 0 # angle_normalize(th) ** 2 + 0.1 * thdot**2 + 0.001 * (u**2)
-        return -costs
+    def frames(self):
+        return len(self.history)
+
+    def info(self, frame=-1):
+        mode, t, s, u, r = self.history[frame]
+        print_info(mode, t, s, u, r)
+
 
     def close(self):
         if self.viewer:
@@ -461,12 +557,15 @@ class RabbitEnv(gym.Env):
 def main():
     env = RabbitEnv()
     u = np.array([0, 0])
+    act = 0
     wait_rate = 0
     frame = 0
     start = False
     pygame.event.clear()
+
     while True:
-        n = len(env.history)
+        prev_frame = frame
+        n = env.frames()
         for event in pygame.event.get():
             if event.type == pl.QUIT:
                 env.close()
@@ -481,8 +580,8 @@ def main():
                 #    sys.exit()
                 if keyname == 'r':
                     frame = 0
-                    s = env.reset(random=True)
-                    n = len(env.history)
+                    s = env.reset()
+                    n = env.frames()
                 elif keyname == 's':
                     start = start ^ True
                 elif keyname == 'd':
@@ -490,13 +589,29 @@ def main():
                 elif keyname == 'u':
                     wait_rate = max(0, wait_rate - 1)
                 elif keyname == 'h':
-                    u = -np.array([MAX_TORQUE, 0])
+                    u = -np.array([1, 0])
+                    #act = (act&2) + 0
+                    act = 0
+                    stepOne = True
+                    start = True
                 elif keyname == 'l':
-                    u = np.array([MAX_TORQUE, 0])
+                    u = np.array([1, 0])
+                    #act = (act&2) + 1
+                    act = 1
+                    stepOne = True
+                    start = True
                 elif keyname == 'j':
-                    u = -np.array([0, MAX_TORQUE])
+                    u = -np.array([0, 1])
+                    #act = (act&1)
+                    act = 2
+                    stepOne = True
+                    start = True
                 elif keyname == 'k':
-                    u = np.array([0, MAX_TORQUE])
+                    u = np.array([0, 1])
+                    #act = (act&1)+2
+                    act = 3
+                    stepOne = True
+                    start = True
                 elif keyname == ';':
                     u = np.array([0, 0])
                 elif keyname == 'n':
@@ -513,13 +628,21 @@ def main():
                     else:
                         frame = max(frame - 1, 0)
 
-        env.render(frame= -1 if frame == n-1 else frame)
+        env.render(frame=frame)
+
         if start:
-            if frame == n-1:
-                _, _, done, _ = env.step(u)
+            if stepOne:
+                env.reset_frame(frame)
+                _, _, done, _ = env.step(act)
+                start = False
+            elif frame == n-1:
+                #_, _, done, _ = env.step(u)
+                _, _, done, _ = env.step(act)
                 if done:
                     start = False
             frame = frame + 1
+        if prev_frame != frame:
+            env.info(frame= -1 if frame == n-1 else frame)
         time.sleep(wait_rate * delta)
 
 if __name__ == '__main__':
