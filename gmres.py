@@ -5,18 +5,17 @@ import sys
 def gen_fun_Ax(A):
     return lambda x: A @ x
 
+# k = 0,1,2...
 def arnoldi(fun_Ax, Q, k, epsilon):
-    q = fun_Ax(Q[:,k]) # Krylov Vector
-
-    #for i in range(k): # Modified Gram-Schmidt, keeping the Hessenberg matrix
-    #    h(i) = transpose(q) * Q[:, i]
-    #    q = q - h(i) * Q(:, i);
-
-    H[0:k+1, k] = q @ Q[:,0:k+1]
-    q = q - Q[:,0:k+1] @ H[0:k+1]
-    h[k + 1] = np.linalg.norm(q);
+    h = np.zeros(k+2)
+    q = fun_Ax(Q[:,k]) # a new Krylov Vector
+    h[:k+1] = q @ Q[:,0:k+1]
+    q = q - Q[:,0:k+1] @ h[:k+1]
+    h[k+1] = np.linalg.norm(q);
     assert h[k + 1] > epsilon, "fail to orthogonalize"
     q = q / h[k + 1]
+    print(h)
+    print(q)
     return h, q
 
 # x0 = U'
@@ -42,8 +41,9 @@ def gmres(fun_Ax, b, x0, epsilon=0.001, k=None):
     if error <= epsilon:
         return x0
 
-    sn = np.zeros(k)
-    cs = np.zeros(k)
+    #sn = np.zeros(k)
+    #cs = np.zeros(k)
+
     e1 = np.zeros(k+1)
     e1[0] = 1
 
@@ -54,24 +54,27 @@ def gmres(fun_Ax, b, x0, epsilon=0.001, k=None):
     beta = r_norm * e1
 
     for i in range(k):
-        H[:i+1, i], Q[:, i+1] = arnoldi(fun_Ax, Q, i)
+        H[:i+2, i], Q[:, i+1] = arnoldi(fun_Ax, Q, i, epsilon)
+        print(H)
+        print(Q)
 
-        H[:i+1, i], cs[i], sn[i] = apply_givens_rotation(H[:i+1,i], cs, sn, i)
+    #    #H[:i+1, i], cs[i], sn[i] = apply_givens_rotation(H[:i+1,i], cs, sn, i)
+    #    ##check H is triangle
 
-        beta[i + 1] = -sn[i] * beta[i];
-        beta[i]     = cs[i] * beta[i];
+    #    #beta[i + 1] = -sn[i] * beta[i];
+    #    #beta[i]     = cs[i] * beta[i];
 
-        error = abs(beta[i + 1]) / b_norm;
-        if error <= epsilon:
-            break;
+    #    #error = abs(beta[i + 1]) / b_norm;
+    #    #if error <= epsilon:
+    #    #    break;
 
-    y = scipy.solve_tri(H[:i, :i], beta[:i])
-    x = x0 + Q[:, :i] @ y;
+    #y = scipy.solve_tri(H[:i, :i], beta[:i])
+    #x = x0 + Q[:, :i] @ y;
 
-    return xxx
+    #return xxx
 
 if __name__ == '__main__':
-    A = np.array([[1, 0], [0, 1]])
-    b = np.array([1, 2])
-    x0 = np.array([0,0])
-    gmres(gen_fun_Ax(A), b, x0, k=2)
+    A = np.array([[3, 0, 0], [0, 2, 0], [0, 0, 1]])
+    b = np.array([1, 2, 3])
+    x0 = np.array([0,0,0])
+    gmres(gen_fun_Ax(A), b, x0, k=3)
