@@ -6,6 +6,10 @@ def gen_fun_Ax(A):
     return lambda x: A @ x
 
 # k = 0,1,2...
+def givens(h, Omega, b, k):
+    return h, np.array([-s * b, c * b])
+
+# k = 0,1,2...
 def arnoldi(fun_Ax, Q, k, epsilon):
     h = np.zeros(k+2)
     q = fun_Ax(Q[:,k]) # a new Krylov Vector
@@ -41,37 +45,32 @@ def gmres(fun_Ax, b, x0, epsilon=0.001, k=None):
     if error <= epsilon:
         return x0
 
-    #sn = np.zeros(k)
-    #cs = np.zeros(k)
-
-    e1 = np.zeros(k+1)
-    e1[0] = 1
+    #e1 = np.zeros(k+1)
+    #e1[0] = 1
 
     Q = np.zeros((n, k), dtype=np.float64)
     Q[:,0] = r / r_norm;
 
-    H = np.zeros((k+1, k), dtype=np.float64)
-    beta = r_norm * e1
+    Htilda = np.zeros((k+1, k), dtype=np.float64)
+    Omega  = np.array([[1]], dtype=np.float64)
+    Rtilda = np.zeros((k+1 ,k), dtype=np.float64)
 
     for i in range(k):
-        H[:i+2, i], Q[:, i+1] = arnoldi(fun_Ax, Q, i, epsilon)
-        print(H)
-        print(Q)
+        h, Q[:, i+1] = arnoldi(fun_Ax, Q, i, epsilon)
+        extOmega = extend_omega(Omega)
+        s, c, gamma = givens(h, extOmega)
+        G = genG(i, s, c)
+        Omega = G @ extOmega
+        Htilda[:i+2, i] = h
+        R[:i+1, i] = Omega h 
 
-    #    #H[:i+1, i], cs[i], sn[i] = apply_givens_rotation(H[:i+1,i], cs, sn, i)
-    #    ##check H is triangle
+        #if gamma <= epsilon:
+        #    break;
 
-    #    #beta[i + 1] = -sn[i] * beta[i];
-    #    #beta[i]     = cs[i] * beta[i];
+    y = scipy.linalg.solve_triangular(R[:i+1,:i+1], g[:i+1])
+    x = x0 + Q[:, :i+1] @ y;
 
-    #    #error = abs(beta[i + 1]) / b_norm;
-    #    #if error <= epsilon:
-    #    #    break;
-
-    #y = scipy.solve_tri(H[:i, :i], beta[:i])
-    #x = x0 + Q[:, :i] @ y;
-
-    #return xxx
+    return x
 
 if __name__ == '__main__':
     A = np.array([[3, 0, 0], [0, 2, 0], [0, 0, 1]])
