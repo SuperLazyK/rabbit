@@ -3,6 +3,9 @@ import scipy
 import scipy.linalg
 import sys
 
+def debug(x,y):
+    print(x,y)
+
 def gen_fun_Ax(A):
     return lambda x: A @ x
 
@@ -80,8 +83,9 @@ def gmres(fun_Ax, b, x0, epsilon=0.001, k=None):
     # i-th Q : m x (i+1)
     # i-th Omega : (i+1) x (i+1)
     # i-th H~ : (i+2) x (i+1)
+    # i-th R~ : (i+2) x (i+1)
     for i in range(k):
-        print("i =", i)
+        debug("i =", i)
 
         # step1: calc i-th H colmn and (i+1)-th Q colmn
         h, q = arnoldi(fun_Ax, Q, i, epsilon)
@@ -89,25 +93,32 @@ def gmres(fun_Ax, b, x0, epsilon=0.001, k=None):
         if q is not None:
             Q[:, i+1] = q
 
-        print("i-th: H = \n", Htilda[:i+2,:i+1])
+        debug("i-th: H = \n", Htilda[:i+2,:i+1])
 
         # step2: minimize ||beta * e1 - H~ @ y||
         extOmega = extendMat(Omega)
         c, s = givens(h, extOmega)
         G = genG(i, s, c)
         Omega = G @ extOmega # ith- Omega
-        gamma = abs(beta *  Omega[-1,:] @ e1[:i+2])
-
-        print("i-th Omega = ", Omega)
-        print("i-th gamma = ", gamma)
+        gtilda = Omega @ e1[:i+2]
+        gamma = gtilda[-1]
         Rtilda[:i+2, i] = Omega @ h 
-        if gamma * invb <= epsilon:
-            g = Omega[-1,:] @ e1[:i+2]
-            y = scipy.linalg.solve_triangular(Rtilda[:i+1,:i+1], g)
-            break;
 
-    #x = x0 + Q[:, :i+1] @ y;
-    # return x
+        debug("i-th Omega = \n", Omega)
+        debug("i-th g~ = ", gtilda)
+        debug("i-th gamma = ", gamma)
+        debug("i-th R~ = \n", Rtilda[:i+2,:i+1])
+
+        y = scipy.linalg.solve_triangular(Rtilda[:i+1,:i+1], gtilda[:-1])
+        residual = beta *  abs(gamma) * invb
+        debug("i-th y =", y)
+        debug("i-th residual =", residual)
+        if residual <= epsilon:
+            break;
+    x = x0 + Q[:, :i+1] @ y;
+    debug("x =", x)
+    debug("r = ", fun_Ax(x) - b)
+    return x
 
 if __name__ == '__main__':
     A = np.array([[3, 0, 0], [0, 2, 0], [0, 0, 1]])
