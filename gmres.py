@@ -1,5 +1,6 @@
 import numpy as np
 import scipy
+import scipy.linalg
 import sys
 
 def gen_fun_Ax(A):
@@ -31,9 +32,12 @@ def arnoldi(fun_Ax, Q, k, epsilon):
     h[:k+1] = q @ Q[:,0:k+1]
     q = q - Q[:,0:k+1] @ h[:k+1]
     h[k+1] = np.linalg.norm(q);
-    assert h[k + 1] > epsilon, f"fail to orthogonalize {h[k+1]}"
-    q = q / h[k + 1]
-    return h, q
+    print(h[k+1])
+    if abs(h[k+1]) < 1.0e-8:
+        return  h, None
+    else:
+        q = q / h[k + 1]
+        return h, q
 
 # x0 = U'
 # b = - xi F(U, x, t)
@@ -53,43 +57,54 @@ def gmres(fun_Ax, b, x0, epsilon=0.001, k=None):
 
     invb = 1.0 / b_norm
 
-    e = np.zeros(k+1, dtype=np.float64)
-    e[0] = 1
+    e1 = np.zeros(k+1, dtype=np.float64)
+    e1[0] = 1
 
     r = b - fun_Ax(x0)
     r_norm = np.linalg.norm(r);
     beta = r_norm
+    q1 = r / r_norm
 
     if beta * invb <= epsilon:
         return x0
 
     Q = np.zeros((n, k), dtype=np.float64)
-    Q[:,0] = r / r_norm;
+    Q[:,0] = q1
 
     Htilda = np.zeros((k+1, k), dtype=np.float64)
     Omega  = np.array([[1]], dtype=np.float64)
     Rtilda = np.zeros((k+1 ,k), dtype=np.float64)
 
+    # i = 0..k-1
     # i-th y : R^(i+1)
     # i-th Q : m x (i+1)
+    # i-th Omega : (i+1) x (i+1)
+    # i-th H~ : (i+2) x (i+1)
     for i in range(k):
-        print(i)
-        h, Q[:, i+1] = arnoldi(fun_Ax, Q, i, epsilon)
-        print(h)
-        print(Q)
-        sys.exit(0)
-        #extOmega = extendMat(Omega)
-        #c, s = givens(h, extOmega)
-        #G = genG(i, s, c)
-        #print(Q)
-        #Omega = G @ extOmega
-        #Htilda[:i+2, i] = h
-        #Rtilda[:i+2, i] = Omega @ h 
-        #gamma = beta *  Omega[-1,:] @ e[:i+2]
-        #print(gamma, invb)
-        #if abs(gamma)/invb <= epsilon:
-        #    y = scipy.linalg.solve_triangular(Rtilda[:i+1,:i+1], g[:i+1])
-        #    break;
+        print("i =", i)
+
+        # step1: calc i-th H colmn and (i+1)-th Q colmn
+        h, q = arnoldi(fun_Ax, Q, i, epsilon)
+        Htilda[:i+2, i] = h
+        if q is not None:
+            Q[:, i+1] = q
+
+        print("i-th: H = \n", Htilda[:i+2,:i+1])
+
+        # step2: minimize ||beta * e1 - H~ @ y||
+        extOmega = extendMat(Omega)
+        c, s = givens(h, extOmega)
+        G = genG(i, s, c)
+        Omega = G @ extOmega # ith- Omega
+        gamma = abs(beta *  Omega[-1,:] @ e1[:i+2])
+
+        print("i-th Omega = ", Omega)
+        print("i-th gamma = ", gamma)
+        Rtilda[:i+2, i] = Omega @ h 
+        if gamma * invb <= epsilon:
+            g = Omega[-1,:] @ e1[:i+2]
+            y = scipy.linalg.solve_triangular(Rtilda[:i+1,:i+1], g)
+            break;
 
     #x = x0 + Q[:, :i+1] @ y;
     # return x
