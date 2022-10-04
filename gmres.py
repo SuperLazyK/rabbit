@@ -5,9 +5,25 @@ import sys
 def gen_fun_Ax(A):
     return lambda x: A @ x
 
+def extendMat(M):
+    (m,n) = M.shape
+    ret = np.eye(m+1, dtype=M.dtype)
+    ret[:m, :n] = M
+    return ret
+
 # k = 0,1,2...
-def givens(h, Omega, b, k):
-    return h, np.array([-s * b, c * b])
+def givens(h, extOmega):
+    rhosigma = extOmega[-2:,:] @ h
+    rho = rhosigma[0]
+    sigma = rhosigma[1]
+    r = np.linalg.norm(rhosigma)
+    assert r > 0
+    return rho/r, sigma/r, r
+
+def genG(n, s, c):
+    ret = np.eye(n+2, dtype=np.float64)
+    ret[n:,n:] = np.array([[c, s],[-s, c]])
+    return ret
 
 # k = 0,1,2...
 def arnoldi(fun_Ax, Q, k, epsilon):
@@ -16,10 +32,8 @@ def arnoldi(fun_Ax, Q, k, epsilon):
     h[:k+1] = q @ Q[:,0:k+1]
     q = q - Q[:,0:k+1] @ h[:k+1]
     h[k+1] = np.linalg.norm(q);
-    assert h[k + 1] > epsilon, "fail to orthogonalize"
+    assert h[k + 1] > epsilon, f"fail to orthogonalize {h[k+1]}"
     q = q / h[k + 1]
-    print(h)
-    print(q)
     return h, q
 
 # x0 = U'
@@ -56,18 +70,20 @@ def gmres(fun_Ax, b, x0, epsilon=0.001, k=None):
     Rtilda = np.zeros((k+1 ,k), dtype=np.float64)
 
     for i in range(k):
+        print(i)
         h, Q[:, i+1] = arnoldi(fun_Ax, Q, i, epsilon)
-        extOmega = extend_omega(Omega)
-        s, c, gamma = givens(h, extOmega)
+        extOmega = extendMat(Omega)
+        c, s, ri = givens(h, extOmega)
         G = genG(i, s, c)
         Omega = G @ extOmega
+        print(ri)
         Htilda[:i+2, i] = h
-        R[:i+1, i] = Omega h 
+        Rtilda[:i+2, i] = Omega @ h 
 
-        #if gamma <= epsilon:
-        #    break;
+        if ri <= epsilon:
+            break;
 
-    y = scipy.linalg.solve_triangular(R[:i+1,:i+1], g[:i+1])
+    y = scipy.linalg.solve_triangular(Rtilda[:i+1,:i+1], g[:i+1])
     x = x0 + Q[:, :i+1] @ y;
 
     return x
