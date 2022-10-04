@@ -101,23 +101,26 @@ def gmres(fun_Ax, b, x0, epsilon=0.001, k=None):
         G = genG(i, s, c)
         Omega = G @ extOmega # ith- Omega
         gtilda = Omega @ e1[:i+2]
-        gamma = gtilda[-1]
         Rtilda[:i+2, i] = Omega @ h 
 
         debug("i-th Omega = \n", Omega)
         debug("i-th g~ = ", gtilda)
-        debug("i-th gamma = ", gamma)
         debug("i-th R~ = \n", Rtilda[:i+2,:i+1])
+        #debug("i-th R~ = \n", Omega @ Htilda[:i+2,:i+1])
 
+        # check Omega H = R
         y = scipy.linalg.solve_triangular(Rtilda[:i+1,:i+1], gtilda[:-1])
-        residual = beta *  abs(gamma) * invb
+        residual = beta *  abs(gtilda[-1]) * invb
         debug("i-th y =", y)
         debug("i-th residual =", residual)
         if residual <= epsilon:
             break;
+
     x = x0 + Q[:, :i+1] @ y;
+
     debug("x =", x)
     debug("r = ", fun_Ax(x) - b)
+
     return x
 
 if __name__ == '__main__':
