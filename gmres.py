@@ -17,8 +17,7 @@ def givens(h, extOmega):
     rho = rhosigma[0]
     sigma = rhosigma[1]
     r = np.linalg.norm(rhosigma)
-    assert r > 0
-    return rho/r, sigma/r, r
+    return rho/r, sigma/r
 
 def genG(n, s, c):
     ret = np.eye(n+2, dtype=np.float64)
@@ -52,15 +51,17 @@ def gmres(fun_Ax, b, x0, epsilon=0.001, k=None):
     if b_norm <= epsilon:
         return np.zeros_like(x0)
 
+    invb = 1.0 / b_norm
+
+    e = np.zeros(k+1, dtype=np.float64)
+    e[0] = 1
+
     r = b - fun_Ax(x0)
     r_norm = np.linalg.norm(r);
-    error = r_norm / b_norm
+    beta = r_norm
 
-    if error <= epsilon:
+    if beta * invb <= epsilon:
         return x0
-
-    #e1 = np.zeros(k+1)
-    #e1[0] = 1
 
     Q = np.zeros((n, k), dtype=np.float64)
     Q[:,0] = r / r_norm;
@@ -69,24 +70,29 @@ def gmres(fun_Ax, b, x0, epsilon=0.001, k=None):
     Omega  = np.array([[1]], dtype=np.float64)
     Rtilda = np.zeros((k+1 ,k), dtype=np.float64)
 
+    # i-th y : R^(i+1)
+    # i-th Q : m x (i+1)
     for i in range(k):
         print(i)
         h, Q[:, i+1] = arnoldi(fun_Ax, Q, i, epsilon)
-        extOmega = extendMat(Omega)
-        c, s, ri = givens(h, extOmega)
-        G = genG(i, s, c)
-        Omega = G @ extOmega
-        print(ri)
-        Htilda[:i+2, i] = h
-        Rtilda[:i+2, i] = Omega @ h 
+        print(h)
+        print(Q)
+        sys.exit(0)
+        #extOmega = extendMat(Omega)
+        #c, s = givens(h, extOmega)
+        #G = genG(i, s, c)
+        #print(Q)
+        #Omega = G @ extOmega
+        #Htilda[:i+2, i] = h
+        #Rtilda[:i+2, i] = Omega @ h 
+        #gamma = beta *  Omega[-1,:] @ e[:i+2]
+        #print(gamma, invb)
+        #if abs(gamma)/invb <= epsilon:
+        #    y = scipy.linalg.solve_triangular(Rtilda[:i+1,:i+1], g[:i+1])
+        #    break;
 
-        if ri <= epsilon:
-            break;
-
-    y = scipy.linalg.solve_triangular(Rtilda[:i+1,:i+1], g[:i+1])
-    x = x0 + Q[:, :i+1] @ y;
-
-    return x
+    #x = x0 + Q[:, :i+1] @ y;
+    # return x
 
 if __name__ == '__main__':
     A = np.array([[3, 0, 0], [0, 2, 0], [0, 0, 1]])
