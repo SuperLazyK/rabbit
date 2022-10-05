@@ -125,7 +125,6 @@ def gmres(fun_Ax, b, x0, epsilon=0.001, k=None):
     #debug("check H y =", Htilda[:i+2,:i+1] @ y)
     #debug("check H y - beta e1 =", Htilda[:i+2,:i+1] @ y - beta * e1[:i+2])
     #debug("check: r = ", fun_Ax(x) - b)
-
     return x
 
 if __name__ == '__main__':
