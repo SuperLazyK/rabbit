@@ -54,10 +54,10 @@ def gmres(fun_Ax, b, x0, epsilon=0.001, k=None):
 
     b_norm = np.linalg.norm(b);
 
-    if b_norm <= epsilon:
+    if b_norm == 0:
         return np.zeros_like(x0)
 
-    invb = 1.0 / b_norm
+    epsilon = epsilon / b_norm # scaling factor for error analysis
 
     e1 = np.zeros(k+1, dtype=np.float64)
     e1[0] = 1
@@ -67,7 +67,7 @@ def gmres(fun_Ax, b, x0, epsilon=0.001, k=None):
     beta = r_norm
     q1 = r0 / r_norm
 
-    if beta * invb <= epsilon:
+    if beta <= epsilon:
         return x0
 
     Q = np.zeros((n, k), dtype=np.float64)
@@ -107,7 +107,7 @@ def gmres(fun_Ax, b, x0, epsilon=0.001, k=None):
         c, s = givens(h, extOmega)
         G = genG(i, s, c)
         Omega = G @ extOmega # ith- Omega
-        gtilda = Omega @ e1[:i+2]
+        gtilda = beta * Omega @ e1[:i+2]
         Rtilda[:i+2, i] = Omega @ h 
 
         debug("i-th Omega = \n", Omega)
@@ -115,18 +115,18 @@ def gmres(fun_Ax, b, x0, epsilon=0.001, k=None):
         debug("i-th R~ = \n", Rtilda[:i+2,:i+1])
         debug("check Omega H~ \n", Omega @ Htilda[:i+2,:i+1])
 
-        # check Omega H = R
-        y = scipy.linalg.solve_triangular(Rtilda[:i+1,:i+1], gtilda[:-1])
-        r = beta *  abs(gtilda[-1]) * invb
-        x = x0 + Q[:, :i+1] @ y;
-        debug("i-th y =", y)
+        r = abs(gtilda[-1])
         debug("i-th r =", r)
-        debug("i-th x =", x)
-        debug("check H y =", Htilda[:i+2,:i+1] @ y)
-        debug("r = ", fun_Ax(x) - b)
-        debug("r = ", fun_Ax(Q[:, :i+1] @ y) - r0)
-        if r <= epsilon:
+
+        if r <= epsilon or i == k-1:
+            y = scipy.linalg.solve_triangular(Rtilda[:i+1,:i+1], gtilda[:-1])
+            x = x0 + Q[:, :i+1] @ y;
+            debug("i-th y =", y)
+            debug("check H y =", Htilda[:i+2,:i+1] @ y)
+            debug("check H y - beta e1 =", Htilda[:i+2,:i+1] @ y - beta * e1[:i+2])
+            debug("check: r = ", fun_Ax(x) - b)
             return x
+
     return x
 
 if __name__ == '__main__':
