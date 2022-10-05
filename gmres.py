@@ -84,10 +84,8 @@ def gmres(fun_Ax, b, x0, epsilon=0.001, k=None):
     # i-th H~ : (i+2) x (i+1)
     # i-th R~ : (i+2) x (i+1)
     for i in range(k):
-        print("------------")
-        debug("i =", i)
-        print("------------")
-        debug("i-th Q = \n", Q[:, :i+1])
+        #debug("i =", i)
+        #debug("i-th Q = \n", Q[:, :i+1])
 
         # step1: calc i-th H colmn and (i+1)-th Q colmn
         h, q = arnoldi(fun_Ax, Q[:, :i+1], i, epsilon)
@@ -95,12 +93,12 @@ def gmres(fun_Ax, b, x0, epsilon=0.001, k=None):
         if q is not None:
             Q[:, i+1] = q
 
-        debug("i-th: H = \n", Htilda[:i+2,:i+1])
-        debug("check A Qn\n", fun_Ax(Q[:, :i+1]))
-        if q is not None:
-            debug("check Qn+1 H~\n", Q[:, :i+2] @ Htilda[:i+2,:i+1])
-        else:
-            debug("check Qn H~\n", Q[:, :i+1] @ Htilda[:i+1,:i+1])
+        #debug("i-th: H = \n", Htilda[:i+2,:i+1])
+        #debug("check A Qn\n", fun_Ax(Q[:, :i+1]))
+        #if q is not None:
+        #    debug("check Qn+1 H~\n", Q[:, :i+2] @ Htilda[:i+2,:i+1])
+        #else:
+        #    debug("check Qn H~\n", Q[:, :i+1] @ Htilda[:i+1,:i+1])
 
         # step2: minimize ||beta * e1 - H~ @ y||
         extOmega = extendMat(Omega)
@@ -110,22 +108,23 @@ def gmres(fun_Ax, b, x0, epsilon=0.001, k=None):
         gtilda = beta * Omega @ e1[:i+2]
         Rtilda[:i+2, i] = Omega @ h 
 
-        debug("i-th Omega = \n", Omega)
-        debug("i-th g~ = ", gtilda)
-        debug("i-th R~ = \n", Rtilda[:i+2,:i+1])
-        debug("check Omega H~ \n", Omega @ Htilda[:i+2,:i+1])
+        #debug("i-th Omega = \n", Omega)
+        #debug("i-th g~ = ", gtilda)
+        #debug("i-th R~ = \n", Rtilda[:i+2,:i+1])
+        #debug("check Omega H~ \n", Omega @ Htilda[:i+2,:i+1])
 
         r = abs(gtilda[-1])
-        debug("i-th r =", r)
+        #debug("i-th r =", r)
 
         if r <= epsilon or i == k-1:
-            y = scipy.linalg.solve_triangular(Rtilda[:i+1,:i+1], gtilda[:-1])
-            x = x0 + Q[:, :i+1] @ y;
-            debug("i-th y =", y)
-            debug("check H y =", Htilda[:i+2,:i+1] @ y)
-            debug("check H y - beta e1 =", Htilda[:i+2,:i+1] @ y - beta * e1[:i+2])
-            debug("check: r = ", fun_Ax(x) - b)
-            return x
+            break
+
+    y = scipy.linalg.solve_triangular(Rtilda[:i+1,:i+1], gtilda[:-1])
+    x = x0 + Q[:, :i+1] @ y;
+    #debug("i-th y =", y)
+    #debug("check H y =", Htilda[:i+2,:i+1] @ y)
+    #debug("check H y - beta e1 =", Htilda[:i+2,:i+1] @ y - beta * e1[:i+2])
+    #debug("check: r = ", fun_Ax(x) - b)
 
     return x
 
@@ -133,4 +132,7 @@ if __name__ == '__main__':
     A = np.array([[3, 0, 0], [0, 2, 0], [0, 0, 1]])
     b = np.array([1, 2, 3])
     x0 = np.array([0,0,0])
-    gmres(gen_fun_Ax(A), b, x0, k=3)
+    x = gmres(gen_fun_Ax(A), b, x0, k=3)
+    print(x)
+    print(np.linalg.norm(A @ x - b))
+
