@@ -31,11 +31,10 @@ def genG(n, s, c):
 # k = 0,1,2...
 def arnoldi(fun_Ax, Q, k, epsilon):
     h = np.zeros(k+2)
-    q = fun_Ax(Q[:,k]) # a new Krylov Vector
-    h[:k+1] = q @ Q[:,0:k+1]
-    q = q - Q[:,0:k+1] @ h[:k+1]
+    new = fun_Ax(Q[:,k]) # a new Krylov Vector
+    h[:k+1] = new @ Q[:,0:k+1]
+    q = new - Q[:,0:k+1] @ h[:k+1]
     h[k+1] = np.linalg.norm(q);
-    print(h[k+1])
     if abs(h[k+1]) < 1.0e-8:
         return  h, None
     else:
@@ -63,10 +62,10 @@ def gmres(fun_Ax, b, x0, epsilon=0.001, k=None):
     e1 = np.zeros(k+1, dtype=np.float64)
     e1[0] = 1
 
-    r = b - fun_Ax(x0)
-    r_norm = np.linalg.norm(r);
+    r0 = b - fun_Ax(x0)
+    r_norm = np.linalg.norm(r0);
     beta = r_norm
-    q1 = r / r_norm
+    q1 = r0 / r_norm
 
     if beta * invb <= epsilon:
         return x0
@@ -85,15 +84,23 @@ def gmres(fun_Ax, b, x0, epsilon=0.001, k=None):
     # i-th H~ : (i+2) x (i+1)
     # i-th R~ : (i+2) x (i+1)
     for i in range(k):
+        print("------------")
         debug("i =", i)
+        print("------------")
+        debug("i-th Q = \n", Q[:, :i+1])
 
         # step1: calc i-th H colmn and (i+1)-th Q colmn
-        h, q = arnoldi(fun_Ax, Q, i, epsilon)
+        h, q = arnoldi(fun_Ax, Q[:, :i+1], i, epsilon)
         Htilda[:i+2, i] = h
         if q is not None:
             Q[:, i+1] = q
 
         debug("i-th: H = \n", Htilda[:i+2,:i+1])
+        debug("check A Qn\n", fun_Ax(Q[:, :i+1]))
+        if q is not None:
+            debug("check Qn+1 H~\n", Q[:, :i+2] @ Htilda[:i+2,:i+1])
+        else:
+            debug("check Qn H~\n", Q[:, :i+1] @ Htilda[:i+1,:i+1])
 
         # step2: minimize ||beta * e1 - H~ @ y||
         extOmega = extendMat(Omega)
@@ -106,21 +113,20 @@ def gmres(fun_Ax, b, x0, epsilon=0.001, k=None):
         debug("i-th Omega = \n", Omega)
         debug("i-th g~ = ", gtilda)
         debug("i-th R~ = \n", Rtilda[:i+2,:i+1])
-        #debug("i-th R~ = \n", Omega @ Htilda[:i+2,:i+1])
+        debug("check Omega H~ \n", Omega @ Htilda[:i+2,:i+1])
 
         # check Omega H = R
         y = scipy.linalg.solve_triangular(Rtilda[:i+1,:i+1], gtilda[:-1])
-        residual = beta *  abs(gtilda[-1]) * invb
+        r = beta *  abs(gtilda[-1]) * invb
+        x = x0 + Q[:, :i+1] @ y;
         debug("i-th y =", y)
-        debug("i-th residual =", residual)
-        if residual <= epsilon:
-            break;
-
-    x = x0 + Q[:, :i+1] @ y;
-
-    debug("x =", x)
-    debug("r = ", fun_Ax(x) - b)
-
+        debug("i-th r =", r)
+        debug("i-th x =", x)
+        debug("check H y =", Htilda[:i+2,:i+1] @ y)
+        debug("r = ", fun_Ax(x) - b)
+        debug("r = ", fun_Ax(Q[:, :i+1] @ y) - r0)
+        if r <= epsilon:
+            return x
     return x
 
 if __name__ == '__main__':
