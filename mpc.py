@@ -8,7 +8,7 @@ import numpy as np
 # lambda for f
 # T(t) : T(t0) = 0
 
-def mpc_track_u(f, phi, L, t0, max_u, T, N, dt=0.01, trick_coeff=0.01):
+def mpc_track_u(f, phi, L, t0, max_u, T, N, xi, dt, trick_coeff=0.01):
     dTau = T / N
     return
 
@@ -20,8 +20,10 @@ def ex8_1():
     phi = lambda x : x[0]**2 + x[1]**2
     L = lambda x, u : 1/2 * (x[0]**2 + x[1]**2 + u**2)
     max_u = np.array([0.5])
-    #mpc_track_u()
-    print(1)
+    N = 10
+    xi = 100
+    dt = 0.01
+    u = mpc_track_u(f, phi, L, t0, max_u, T, N, xi, dt)
 
 if __name__ == '__main__':
     ex8_1()
