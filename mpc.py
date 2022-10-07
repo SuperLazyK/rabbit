@@ -1,4 +1,5 @@
 import numpy as np
+import scipy
 
 # euler lagrange equation
 # x^* : x_ast
@@ -8,22 +9,51 @@ import numpy as np
 # lambda for f
 # T(t) : T(t0) = 0
 
-def mpc_track_u(f, phi, L, t0, max_u, T, N, xi, dt, trick_coeff=0.01):
+def mpc_track_u(f, phi, L, dfdu, dLdu, t0, max_u, T, N, xi, dt, x0, u0, max_u_penalty, dphidx=None):
+
     dTau = T / N
+    m = u0.shape[0] # dim of u
+    n = u0.shape[0] # dim of x
+    # v: slack variable for C to change eq from ineq
+    # rho: lagrange param for C : (m,)
+    # l : costate
+    C = lambda u,v : np.array([u[i] ** 2 + v[i] ** 2 - max_u[i] ** 2 for i in range(m)])
+
+    H = lambda x, l, u, v, rho: L(x, u) - max_u_penalty @ v + l @ f(x,u) + rho @ C(u, v)
+    dHduv = lambda x, l, u, v, rho: xxxx
+
+    # step0: calc u0
+    if dphidx is not None:
+        l = dphidx(x0)
+        # scipy.optimize.newton(dHduv) # ** How to decide rho v **
+        pass
+
+    # step1: forward calculation for x
+
+    # step2: calc last lambda
+
+    # step3: backward calculation for lambda
+
+    # step4: calc u
+
     return
 
 
 def ex8_1():
     t0 = 0
     T = lambda t : (1 - exp (-0.5 * (t-t0)))
-    f = lambda x, u : np.array(x[1], (1 - x[0]**2 - x[1]**2) * x[1] - x[0] + u)
+    f = lambda x, u : np.array([x[1], (1 - x[0]**2 - x[1]**2) * x[1] - x[0] + u])
     phi = lambda x : x[0]**2 + x[1]**2
     L = lambda x, u : 1/2 * (x[0]**2 + x[1]**2 + u**2)
+    dLdu = lambda x, u : u
+    dfdu = lambda x, u : np.array([0, 1])
     max_u = np.array([0.5])
     N = 10
     xi = 100
     dt = 0.01
-    u = mpc_track_u(f, phi, L, t0, max_u, T, N, xi, dt)
+    u0 = np.zeros(1)
+    max_u_penalty = np.array([0.01])
+    us = mpc_track_u(f, phi, L, dfdu, dLdu, t0, max_u, T, N, xi, dt, u0)
 
 if __name__ == '__main__':
     ex8_1()
