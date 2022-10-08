@@ -37,13 +37,14 @@ def mpc_track_u(f, phi, L, dfdu, dLdu, x0, u0, t0,
             return np.concatenate([dHdu, dHdv, dHdr])
         return _dHduvr
 
-    # step0: calc u0
-    if dphidx is not None:
-        l0_est = dphidx(x0)
-        dHduvr = dHduvr_fixed_xl(x0, l0_est)
-        sol = scipy.optimize.root(dHduvr, np.zeros(m + m + m), method='hybr')
-        print(sol)
-        #u0 = sol[0:m]
+    # failure
+    ## step0: calc u0
+    #if dphidx is not None:
+    #    l0_est = dphidx(x0)
+    #    dHduvr = dHduvr_fixed_xl(x0, l0_est)
+    #    sol = scipy.optimize.root(dHduvr, np.zeros(m + m + m), method='hybr')
+    #    print(sol)
+    #    #u0 = sol[0:m]
 
     ## step1: forward calculation for x
 
