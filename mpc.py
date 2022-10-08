@@ -8,25 +8,31 @@ import scipy
 # J = phi(xf) + integral (L(x,u) - trick_coeff * v) dt
 # lambda for f
 # T(t) : T(t0) = 0
-
+# v: slack variable for C to change eq from ineq
+# rho: lagrange param for C : (m,)
+# l : costate
+# m : dim of u
+# n : dim of x
 def mpc_track_u(f, phi, L, dfdu, dLdu, x0, u0, t0, 
         max_u, T, dtau, xi, dt, max_u_penalty, dphidx=None):
 
-    m = u0.shape[0] # dim of u
-    n = u0.shape[0] # dim of x
-    # v: slack variable for C to change eq from ineq
-    # rho: lagrange param for C : (m,)
-    # l : costate
-    C = lambda u,v : np.array([u[i] ** 2 + v[i] ** 2 - max_u[i] ** 2 for i in range(m)])
+    m = u0.shape[0]
+    n = u0.shape[0]
 
+    C = lambda u,v : np.array([u[i] ** 2 + v[i] ** 2 - max_u[i] ** 2 for i in range(m)])
     H = lambda x, l, u, v, rho: L(x, u) - max_u_penalty @ v + l @ f(x,u) + rho @ C(u, v)
-    dHduv = lambda x, l, u, v, rho: xxxx
+
+    def dHduvr_fixed_xl (x, l):
+        def _dHduvr(u, v, rho):
+            np.array([ , ]) # TODO
+        return _dHuvr
 
     # step0: calc u0
     if dphidx is not None:
-        l = dphidx(x0)
-        # scipy.optimize.newton(dHduv) # ** How to decide rho v **
-        pass
+        l0_est = dphidx(x0)
+        dHduvr = dHduvr_fixed_xl(x0, l0_est)
+        sol = scipy.optimize.root(dHduvr, np.zeros(m + m + m), method='hybr')
+        u0 = sol[0:m]
 
     ## step1: forward calculation for x
 
