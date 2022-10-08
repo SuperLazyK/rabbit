@@ -20,11 +20,17 @@ def mpc_track_u(f, phi, L, dfdu, dLdu, x0, u0, t0,
     n = u0.shape[0]
 
     C = lambda u,v : np.array([u[i] ** 2 + v[i] ** 2 - max_u[i] ** 2 for i in range(m)])
+    dCdu = lambda u, v : 2 * np.diag(u)
+    dCdv = lambda u, v :  -2 * np.diag(v)
+
     H = lambda x, l, u, v, rho: L(x, u) - max_u_penalty @ v + l @ f(x,u) + rho @ C(u, v)
 
     def dHduvr_fixed_xl (x, l):
         def _dHduvr(u, v, rho):
-            np.array([ , ]) # TODO
+            dHdu = dLdu(x, u) + l @ dfdu(x, u) + rho @ dCdu(u, v)
+            dHdv = -max_u_penalty + rho @ dCdu(u, v)
+            dHdr = C(u, v)
+            return np.concatenate([dHdu, dHdv, dHdr])
         return _dHuvr
 
     # step0: calc u0
