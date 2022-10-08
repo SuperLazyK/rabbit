@@ -1,10 +1,11 @@
 import numpy as np
-import scipy
+import scipy.optimize
 
 # euler lagrange equation
 # x^* : x_ast
 # x' = f(x, u)
-# u <= max_u <=> u^2 + v^2 = max_u^2 with slack var : v
+# slack var : v
+# C: u <= max_u <=> u^2 + v^2 = max_u^2
 # J = phi(xf) + integral (L(x,u) - trick_coeff * v) dt
 # lambda for f
 # T(t) : T(t0) = 0
@@ -26,19 +27,23 @@ def mpc_track_u(f, phi, L, dfdu, dLdu, x0, u0, t0,
     H = lambda x, l, u, v, rho: L(x, u) - max_u_penalty @ v + l @ f(x,u) + rho @ C(u, v)
 
     def dHduvr_fixed_xl (x, l):
-        def _dHduvr(u, v, rho):
+        def _dHduvr(uvr):
+            u = uvr[:m]
+            v = uvr[m:2*m]
+            rho =uvr[2*m:] 
             dHdu = dLdu(x, u) + l @ dfdu(x, u) + rho @ dCdu(u, v)
             dHdv = -max_u_penalty + rho @ dCdu(u, v)
             dHdr = C(u, v)
             return np.concatenate([dHdu, dHdv, dHdr])
-        return _dHuvr
+        return _dHduvr
 
     # step0: calc u0
     if dphidx is not None:
         l0_est = dphidx(x0)
         dHduvr = dHduvr_fixed_xl(x0, l0_est)
         sol = scipy.optimize.root(dHduvr, np.zeros(m + m + m), method='hybr')
-        u0 = sol[0:m]
+        print(sol)
+        #u0 = sol[0:m]
 
     ## step1: forward calculation for x
 
