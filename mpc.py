@@ -9,9 +9,9 @@ import scipy
 # lambda for f
 # T(t) : T(t0) = 0
 
-def mpc_track_u(f, phi, L, dfdu, dLdu, t0, max_u, T, N, xi, dt, x0, u0, max_u_penalty, dphidx=None):
+def mpc_track_u(f, phi, L, dfdu, dLdu, x0, u0, t0, 
+        max_u, T, dtau, xi, dt, max_u_penalty, dphidx=None):
 
-    dTau = T / N
     m = u0.shape[0] # dim of u
     n = u0.shape[0] # dim of x
     # v: slack variable for C to change eq from ineq
@@ -28,13 +28,13 @@ def mpc_track_u(f, phi, L, dfdu, dLdu, t0, max_u, T, N, xi, dt, x0, u0, max_u_pe
         # scipy.optimize.newton(dHduv) # ** How to decide rho v **
         pass
 
-    # step1: forward calculation for x
+    ## step1: forward calculation for x
 
-    # step2: calc last lambda
+    ## step2: calc last lambda
 
-    # step3: backward calculation for lambda
+    ## step3: backward calculation for lambda
 
-    # step4: calc u
+    ## step4: calc u
 
     return
 
@@ -47,13 +47,16 @@ def ex8_1():
     L = lambda x, u : 1/2 * (x[0]**2 + x[1]**2 + u**2)
     dLdu = lambda x, u : u
     dfdu = lambda x, u : np.array([0, 1])
+    dphidx = lambda x : np.array([2 * x[0], 2 * x[1]])
     max_u = np.array([0.5])
-    N = 10
     xi = 100
     dt = 0.01
+    dtau = 0.01
     u0 = np.zeros(1)
+    x0 = np.array([2, 0])
     max_u_penalty = np.array([0.01])
-    us = mpc_track_u(f, phi, L, dfdu, dLdu, t0, max_u, T, N, xi, dt, u0)
+    us = mpc_track_u(f, phi, L, dfdu, dLdu, x0, u0, t0,
+            max_u, T, dtau, xi, dt, max_u_penalty, dphidx)
 
 if __name__ == '__main__':
     ex8_1()
