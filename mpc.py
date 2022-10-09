@@ -39,15 +39,17 @@ def mpc_track_u(f, phi, L, dfdu, dfdx, dLdu, dLdx, x0, t0, t1,
     H = lambda x, l, u, v, rho: L(x, u) - max_u_penalty @ v + l @ f(x,u) + rho @ C(u, v)
     dHdx = lambda x, l, u: dLdx(x,u) - l @ dfdx(x,u)
 
+    def dHdu(x, u, l, v, rho):
+        return dLdu(x, u) + l @ dfdu(x, u) + rho @ dCdu(u, v)
+
     def dHduvr_fixed_xl (x, l):
         def _dHduvr(uvr):
             u = uvr[:m]
             v = uvr[m:2*m]
             rho =uvr[2*m:] 
-            dHdu = dLdu(x, u) + l @ dfdu(x, u) + rho @ dCdu(u, v)
             dHdv = -max_u_penalty + rho @ dCdu(u, v)
             dHdr = C(u, v)
-            return np.concatenate([dHdu, dHdv, dHdr])
+            return np.concatenate([dHdu(x, u, l, v, rho), dHdv, dHdr])
         return _dHduvr
 
     # step0: calc U0
@@ -56,10 +58,12 @@ def mpc_track_u(f, phi, L, dfdu, dfdx, dLdu, dLdx, x0, t0, t1,
     #sol = scipy.optimize.root(dHduvr, np.zeros(m + m + m), method='hybr') # failure
     sol = scipy.optimize.root(dHduvr, np.zeros(m + m + m), method='lm')
     U0 = sol.x
-    U = np.array([U0 for i in range(N+1)]) # (N+1) x 3m
+    U = np.array([U0 for i in range(N)]) # (N) x 3m
     X = np.zeros((N+1, n))
     L = np.zeros((N+1, n))
+    L[0] = 0 # L[0] is not used
     x = x0
+
 
     for i in range(1,max_itr+1):
         print(f"ITERATION: {i}/{max_itr}")
@@ -72,18 +76,14 @@ def mpc_track_u(f, phi, L, dfdu, dfdx, dLdu, dLdx, x0, t0, t1,
 
         # step2: calc last lambda
         # step3: backward calculation for lambda
-        L[-1] = dphidx(X[-1])
-        for j in range(N,0,-1):
+        L[N] = dphidx(X[-1]) # lambda_N
+        for j in range(N,1,-1):
             L[j-1] = L[j] + dHdx(X[j], U[j,0:m], L[j]) * dtau
 
         # step4: calc new U
         def F(U):
-            u = U[:,:m]
-            v = U[:,m:2*m]
-            rho =U[:,2*m:] 
-            dHdu = dLdu(x, u) + l @ dfdu(x, u) + rho @ dCdu(u, v) # TODO
-            fs = [for i in range(N)] XXXXX
-            return np.array(fs)
+            return np.array([dHdu(X[i], U[i:,:m], L[i+1], U[i:,m:2*m], U[i:,2*m:]) for i in range(N)])
+
         f = xxxx # TODO
         dU = gmres(f, U) # TODO 
         U = U + dU * dt
