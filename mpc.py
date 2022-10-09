@@ -1,6 +1,7 @@
 import numpy as np
 import scipy.optimize
 import math
+from gmres import gmres
 
 # euler lagrange equation
 # x^* : x_ast
@@ -20,7 +21,6 @@ import math
 def mpc_track_u(f, phi, L, dfdu, dfdx, dLdu, dLdx, x0, t0, t1,
         max_u, T, N, dt, max_u_penalty, dphidx):
 
-    xi = int(1 / dt)
     m = max_u.shape[0]
     n = x0.shape[0]
     max_itr = int((t1 - t0) / dt)
@@ -65,9 +65,12 @@ def mpc_track_u(f, phi, L, dfdu, dfdx, dLdu, dLdx, x0, t0, t1,
     x = x0
 
 
+    xi = int(1 / dt)
     for i in range(1,max_itr+1):
         print(f"ITERATION: {i}/{max_itr}")
-        dtau = T(i*dt + t0)/N
+        interval = T(i*dt + t0)
+        dtau = interval/N
+        rdtau = N/interval
 
         # step1: forward calculation for x
         X[0] = x
@@ -80,12 +83,15 @@ def mpc_track_u(f, phi, L, dfdu, dfdx, dLdu, dLdx, x0, t0, t1,
         for j in range(N,1,-1):
             L[j-1] = L[j] + dHdx(X[j], U[j,0:m], L[j]) * dtau
 
-        # step4: calc new U
-        def F(U):
-            return np.array([dHdu(X[i], U[i:,:m], L[i+1], U[i:,m:2*m], U[i:,2*m:]) for i in range(N)])
+        # step4: calc next U
+        def F(U_, X_):
+            return np.array([dHdu(X_[i], U_[i:,:m], L[i+1], U_[i:,m:2*m], U_[i:,2*m:]) for i in range(N)])
 
-        f = xxxx # TODO
-        dU = gmres(f, U) # TODO 
+        f0 = F(U, X[:-1])
+        def funAx(s):
+            return (F(U + dtau * s, X[1:]) - f0) * rdtau
+
+        dU = gmres(funAx, xi * f0, U[0,:], k=N)
         U = U + dU * dt
 
         # measure x
