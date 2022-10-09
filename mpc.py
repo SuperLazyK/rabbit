@@ -14,7 +14,7 @@ import scipy.optimize
 # l : costate
 # m : dim of u
 # n : dim of x
-def mpc_track_u(f, phi, L, dfdu, dLdu, x0, u0, t0, 
+def mpc_track_u(f, phi, L, dfdu, dLdu, x0, u0, t0, t1,
         max_u, T, dtau, xi, dt, max_u_penalty, dphidx=None):
 
     m = u0.shape[0]
@@ -37,14 +37,13 @@ def mpc_track_u(f, phi, L, dfdu, dLdu, x0, u0, t0,
             return np.concatenate([dHdu, dHdv, dHdr])
         return _dHduvr
 
-    # failure
-    ## step0: calc u0
-    #if dphidx is not None:
-    #    l0_est = dphidx(x0)
-    #    dHduvr = dHduvr_fixed_xl(x0, l0_est)
-    #    sol = scipy.optimize.root(dHduvr, np.zeros(m + m + m), method='hybr')
-    #    print(sol)
-    #    #u0 = sol[0:m]
+    # step0: calc u0
+    if dphidx is not None:
+        l0_est = dphidx(x0)
+        dHduvr = dHduvr_fixed_xl(x0, l0_est)
+        #sol = scipy.optimize.root(dHduvr, np.zeros(m + m + m), method='hybr') # failure
+        sol = scipy.optimize.root(dHduvr, np.zeros(m + m + m), method='lm')
+        u0 = sol.x[0:m]
 
     ## step1: forward calculation for x
 
@@ -59,6 +58,7 @@ def mpc_track_u(f, phi, L, dfdu, dLdu, x0, u0, t0,
 
 def ex8_1():
     t0 = 0
+    t1 = 20
     T = lambda t : (1 - exp (-0.5 * (t-t0)))
     f = lambda x, u : np.array([x[1], (1 - x[0]**2 - x[1]**2) * x[1] - x[0] + u])
     phi = lambda x : x[0]**2 + x[1]**2
@@ -73,7 +73,7 @@ def ex8_1():
     u0 = np.zeros(1)
     x0 = np.array([2, 0])
     max_u_penalty = np.array([0.01])
-    us = mpc_track_u(f, phi, L, dfdu, dLdu, x0, u0, t0,
+    us = mpc_track_u(f, phi, L, dfdu, dLdu, x0, u0, t0, t1,
             max_u, T, dtau, xi, dt, max_u_penalty, dphidx)
 
 if __name__ == '__main__':
