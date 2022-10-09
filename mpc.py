@@ -18,7 +18,16 @@ def mpc_track_u(f, phi, L, dfdu, dLdu, x0, u0, t0, t1,
         max_u, T, dtau, xi, dt, max_u_penalty, dphidx=None):
 
     m = u0.shape[0]
-    n = u0.shape[0]
+    n = x0.shape[0]
+
+    history_u   = np.zeros((max_itr,m))
+    history_v   = np.zeros((max_itr,m))
+    history_r   = np.zeros((max_itr,m))
+    history_x   = np.zeros((max_itr,n))
+    history_l   = np.zeros((max_itr,n))
+    history_F0 = np.zeros(max_itr)
+    history_u[0] = u0
+    history_x[0] = x0
 
     C = lambda u,v : np.array([u[i] ** 2 + v[i] ** 2 - max_u[i] ** 2 for i in range(m)])
     dCdu = lambda u, v : 2 * np.diag(u)
@@ -39,23 +48,30 @@ def mpc_track_u(f, phi, L, dfdu, dLdu, x0, u0, t0, t1,
 
     # step0: calc u0
     if dphidx is not None:
-        l0_est = dphidx(x0)
-        dHduvr = dHduvr_fixed_xl(x0, l0_est)
+        l0 = dphidx(x0)
+        dHduvr = dHduvr_fixed_xl(x0, l0)
         #sol = scipy.optimize.root(dHduvr, np.zeros(m + m + m), method='hybr') # failure
         sol = scipy.optimize.root(dHduvr, np.zeros(m + m + m), method='lm')
         u0 = sol.x[0:m]
+        history_u[0] = u0
+        history_v[0] = sol.x[m:2*m]
+        history_r[0] = sol.x[2*m:]
+        history_l[0] = l0
+
 
     max_itr = int((t1 - t0) / dt)
-    for i in range(max_itr):
+
+
+    for i in range(1,max_itr+1):
         print(f"ITERATION: {i}/{max_itr}")
         # step1: forward calculation for x
-        u0
 
         # step2: calc last lambda
 
         # step3: backward calculation for lambda
 
         # step4: calc u
+        #u0 = new
 
     return
 
