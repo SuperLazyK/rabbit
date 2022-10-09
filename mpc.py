@@ -1,9 +1,12 @@
 import numpy as np
 import scipy.optimize
+import math
 
 # euler lagrange equation
 # x^* : x_ast
 # x' = f(x, u)
+# u : input
+# U : descrete MPC input
 # slack var : v
 # C: u <= max_u <=> u^2 + v^2 = max_u^2
 # J = phi(xf) + integral (L(x,u) - trick_coeff * v) dt
@@ -14,11 +17,13 @@ import scipy.optimize
 # l : costate
 # m : dim of u
 # n : dim of x
-def mpc_track_u(f, phi, L, dfdu, dLdu, x0, u0, t0, t1,
-        max_u, T, dtau, xi, dt, max_u_penalty, dphidx=None):
+def mpc_track_u(f, phi, L, dfdu, dfdx, dLdu, dLdx, x0, t0, t1,
+        max_u, T, N, dt, max_u_penalty, dphidx):
 
-    m = u0.shape[0]
+    xi = int(1 / dt)
+    m = max_u.shape[0]
     n = x0.shape[0]
+    max_itr = int((t1 - t0) / dt)
 
     history_u   = np.zeros((max_itr,m))
     history_v   = np.zeros((max_itr,m))
@@ -26,14 +31,13 @@ def mpc_track_u(f, phi, L, dfdu, dLdu, x0, u0, t0, t1,
     history_x   = np.zeros((max_itr,n))
     history_l   = np.zeros((max_itr,n))
     history_F0 = np.zeros(max_itr)
-    history_u[0] = u0
-    history_x[0] = x0
 
     C = lambda u,v : np.array([u[i] ** 2 + v[i] ** 2 - max_u[i] ** 2 for i in range(m)])
     dCdu = lambda u, v : 2 * np.diag(u)
     dCdv = lambda u, v :  -2 * np.diag(v)
 
     H = lambda x, l, u, v, rho: L(x, u) - max_u_penalty @ v + l @ f(x,u) + rho @ C(u, v)
+    dHdx = lambda x, l, u: dLdx(x,u) - l @ dfdx(x,u)
 
     def dHduvr_fixed_xl (x, l):
         def _dHduvr(uvr):
@@ -46,32 +50,51 @@ def mpc_track_u(f, phi, L, dfdu, dLdu, x0, u0, t0, t1,
             return np.concatenate([dHdu, dHdv, dHdr])
         return _dHduvr
 
-    # step0: calc u0
-    if dphidx is not None:
-        l0 = dphidx(x0)
-        dHduvr = dHduvr_fixed_xl(x0, l0)
-        #sol = scipy.optimize.root(dHduvr, np.zeros(m + m + m), method='hybr') # failure
-        sol = scipy.optimize.root(dHduvr, np.zeros(m + m + m), method='lm')
-        u0 = sol.x[0:m]
-        history_u[0] = u0
-        history_v[0] = sol.x[m:2*m]
-        history_r[0] = sol.x[2*m:]
-        history_l[0] = l0
-
-
-    max_itr = int((t1 - t0) / dt)
-
+    # step0: calc U0
+    l0 = dphidx(x0)
+    dHduvr = dHduvr_fixed_xl(x0, l0)
+    #sol = scipy.optimize.root(dHduvr, np.zeros(m + m + m), method='hybr') # failure
+    sol = scipy.optimize.root(dHduvr, np.zeros(m + m + m), method='lm')
+    U0 = sol.x
+    U = np.array([U0 for i in range(N+1)]) # (N+1) x 3m
+    X = np.zeros((N+1, n))
+    L = np.zeros((N+1, n))
+    x = x0
 
     for i in range(1,max_itr+1):
         print(f"ITERATION: {i}/{max_itr}")
+        dtau = T(i*dt + t0)/N
+
         # step1: forward calculation for x
+        X[0] = x
+        for j in range(N):
+            X[j+1] = X[j] + f(X[j],U[j,0:m]) * dtau
 
         # step2: calc last lambda
-
         # step3: backward calculation for lambda
+        L[-1] = dphidx(X[-1])
+        for j in range(N,0,-1):
+            L[j-1] = L[j] + dHdx(X[j], U[j,0:m], L[j]) * dtau
 
-        # step4: calc u
-        #u0 = new
+        # step4: calc new U
+        def F(U):
+            u = U[:,:m]
+            v = U[:,m:2*m]
+            rho =U[:,2*m:] 
+            dHdu = dLdu(x, u) + l @ dfdu(x, u) + rho @ dCdu(u, v) # TODO
+            fs = [for i in range(N)] XXXXX
+            return np.array(fs)
+        f = xxxx # TODO
+        dU = gmres(f, U) # TODO 
+        U = U + dU * dt
+
+        # measure x
+        x = x + f(x,U) * dt
+        history_u[i] = U[0]
+        history_x[i] = x
+        history_l[i] = L[0]
+
+
 
     return
 
@@ -81,20 +104,24 @@ def ex8_1():
     t1 = 20
     T = lambda t : (1 - exp (-0.5 * (t-t0)))
     f = lambda x, u : np.array([x[1], (1 - x[0]**2 - x[1]**2) * x[1] - x[0] + u])
+    dfdu = lambda x, u : np.array([0, 1])
+    dfdx = lambda x, u : np.array([[0, -2*x[0]*x[1]-1], [1, 1 - x[0]**2 - 3*x[1]**2]])
+
     phi = lambda x : x[0]**2 + x[1]**2
+    dphidx = lambda x : np.array([2 * x[0], 2 * x[1]])
+
     L = lambda x, u : 1/2 * (x[0]**2 + x[1]**2 + u**2)
     dLdu = lambda x, u : u
-    dfdu = lambda x, u : np.array([0, 1])
-    dphidx = lambda x : np.array([2 * x[0], 2 * x[1]])
+    dLdx = lambda x, u : np.array([x[0], x[1]])
+
     max_u = np.array([0.5])
-    xi = 100
     dt = 0.01
-    dtau = 0.01
+    N = 10
     u0 = np.zeros(1)
     x0 = np.array([2, 0])
     max_u_penalty = np.array([0.01])
-    us = mpc_track_u(f, phi, L, dfdu, dLdu, x0, u0, t0, t1,
-            max_u, T, dtau, xi, dt, max_u_penalty, dphidx)
+    us = mpc_track_u(f, phi, L, dfdu, dfdx, dLdu, dLdx, x0, u0, t0, t1,
+            max_u, T, N, dt, max_u_penalty, dphidx)
 
 if __name__ == '__main__':
     ex8_1()
