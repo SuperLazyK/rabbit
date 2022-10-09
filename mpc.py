@@ -45,13 +45,17 @@ def mpc_track_u(f, phi, L, dfdu, dLdu, x0, u0, t0, t1,
         sol = scipy.optimize.root(dHduvr, np.zeros(m + m + m), method='lm')
         u0 = sol.x[0:m]
 
-    ## step1: forward calculation for x
+    max_itr = int((t1 - t0) / dt)
+    for i in range(max_itr):
+        print(f"ITERATION: {i}/{max_itr}")
+        # step1: forward calculation for x
+        u0
 
-    ## step2: calc last lambda
+        # step2: calc last lambda
 
-    ## step3: backward calculation for lambda
+        # step3: backward calculation for lambda
 
-    ## step4: calc u
+        # step4: calc u
 
     return
 
