@@ -271,9 +271,9 @@ def constraint_ground_penetration(s, idx, y, dt, beta, pred):
 def constraint_ground_friction(s, idx, y, dt):
     py = s[2*idx+1]
     active = py < y + 0.005
-    #dCdt = -vy
+    #dCdt = -vx
     j = np.zeros(IDX_VEL)
-    j[2*idx] = 1
+    j[2*idx] = -1
     return j, 0, active
 
 # TODO use deadband
