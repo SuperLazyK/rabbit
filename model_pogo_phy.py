@@ -27,7 +27,7 @@ m1 = 20
 m2 = 30
 mt = 2
 g  = 0
-g  = 9.8
+#g  = 9.8
 #g  = -9.8
 K  = 10000 # mgh = 1/2 k x^2 -> T=2*pi sqrt(m/k)
 c = 1
@@ -382,6 +382,7 @@ constraints = [ ("ground-pen", lambda s, dt: constraint_ground_penetration(s, ID
               , ("dist-0k", lambda s, dt: constraint_distant(s, IDX_0, IDX_k, l0, dt, 0.3, pred_ne0), (-inf, inf))
               , ("dist-k1", lambda s, dt: constraint_distant(s, IDX_k, IDX_1, l1, dt, 0.3, pred_ne0), (-inf, inf))
               , ("dist-12", lambda s, dt: constraint_distant(s, IDX_1, IDX_2, l2, dt, 0.3, pred_ne0), (-inf, inf))
+              , ("dist-0t", lambda s, dt: constraint_distant(s, IDX_0, IDX_t, lt, dt, 0.3, pred_ne0), (-inf, inf))
               , ("limit-0k1-min", lambda s, dt: constraint_angle(s, IDX_0, IDX_k, IDX_1, np.deg2rad(-150), dt, 0.1, pred_lt0), (0, inf))
               , ("limit-0k1-max", lambda s, dt: constraint_angle(s, IDX_0, IDX_k, IDX_1, np.deg2rad(-10), dt, 0.1, pred_gt0), (-inf, 0))
               , ("limit-k12-min", lambda s, dt: constraint_angle(s, IDX_k, IDX_1, IDX_2, np.deg2rad(-10), dt, 0.1, pred_lt0), (0, inf))
@@ -424,7 +425,7 @@ def calc_constraint_impulse(s, fext, dt):
     b = np.array(bs)
     v = s[IDX_VEL:]
 
-    #print(names)
+    print(names)
     K = J @ invM @ J.T
     r = -b - J @ (v  + invM @ fext * dt)
     lmd = np.linalg.solve(K, r)
@@ -432,7 +433,7 @@ def calc_constraint_impulse(s, fext, dt):
     lmd = np.clip(lmd, np.array(cmin), np.array(cmax))
     #print("check lmd", lmd)
     impulse = J.T @ lmd
-    #print("check impulse", impulse)
+    print("check impulse", impulse)
     return impulse
 
 def calc_ext_force(t, s, u, dt):
@@ -440,7 +441,7 @@ def calc_ext_force(t, s, u, dt):
     for name, ff in extforce + optional_extforce:
         f = ff(t, s, u)
         fext = fext + f
-        #print("ext-force impulse", name, f*dt)
+        print("ext-force impulse", name, f*dt)
     return fext
 
 def step(t, s, u, dt):
