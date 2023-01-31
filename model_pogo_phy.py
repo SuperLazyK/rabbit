@@ -209,11 +209,11 @@ def force_gravity(s):
     f[1::2] = -g
     return M * f
 
-def force_vfric(s, idx):
-    v = s[IDX_VEL+2*idx:IDX_VEL+2*idx+2]
-    f = np.zeros_like(M)
-    f[2*idx:2*idx+2] = -v * 90. * M[2*idx:2*idx+2] # 0.9 * 1/dt
-    return f
+#def force_vfric(s, idx):
+#    v = s[IDX_VEL+2*idx:IDX_VEL+2*idx+2]
+#    f = np.zeros_like(M)
+#    f[2*idx:2*idx+2] = -v * 90. * M[2*idx:2*idx+2] # 0.9 * 1/dt
+#    return f
 
 def force_linear(s, idx0, idx1, u, umin, umax, flip=1):
     p0 = s[2*idx0:2*idx0+2]
@@ -275,6 +275,17 @@ def constraint_ground_friction(s, idx, y, dt):
     j = np.zeros(IDX_VEL)
     j[2*idx] = -1
     return j, 0, active
+
+def constraint_fixed_point_fric(s, idx, point, dt):
+    p = s[2*idx:2*idx+2]
+    v = p - point
+    l = np.linalg.norm(v)
+    j = np.zeros(IDX_VEL)
+    if l < 0.0001:
+        return j, 0, False
+    else:
+        j[2*idx:2*idx+2] = normal(v/l)
+        return j, 0, True
 
 # TODO use deadband
 def constraint_fixed_point_distant(s, idx0, p, l, dt, beta, pred):
@@ -366,10 +377,12 @@ def set_fixed_constraint(idx,  point):
     global optional_extforce
     if point is None:
         optional_constraints = []
-        optional_extforce = []
+        #optional_extforce = []
     else:
-        optional_constraints = [("fixed-pointer", lambda s, dt: constraint_fixed_point_distant(s, idx, point, 0, dt, 0.1, pred_eq0), (-inf, inf))]
-        optional_extforce = [("fixed-pointer-vfric", lambda t, s, u: force_vfric(s, idx))]
+        optional_constraints = [ ("fixed-pointer", lambda s, dt: constraint_fixed_point_distant(s, idx, point, 0, dt, 0.1, pred_eq0), (-inf, inf))
+                               , ("fixed-pointer-fric", lambda s, dt: constraint_fixed_point_fric(s, idx, point, dt), (-inf, inf))
+                               ]
+        #optional_extforce = [("fixed-pointer-vfric", lambda t, s, u: force_vfric(s, idx))]
 
 def calc_constraint_impulse(s, fext, dt):
     names, js, bs, cmin, cmax = [], [], [], [], []
