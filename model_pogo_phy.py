@@ -11,7 +11,7 @@ ref_min_thk = np.deg2rad(-140)
 ref_max_thk = np.deg2rad(-20)
 ref_min_th1 = np.deg2rad(0)
 ref_max_th1 = np.deg2rad(90)
-ref_min_a = 0.25
+ref_min_a = 0.05
 ref_max_a = 0.45
 
 z0 = 0.55
@@ -146,7 +146,7 @@ def normalize(v):
 def normal(v):
     return np.array([-v[1], v[0]]) # cross( ) z axis for 3D
 
-def vec2rad(v1,v2):
+def vec2rad(v1,v2): # angle from v1 to v2
     s = np.cross(v1, v2)
     c = v1 @ v2
     return atan2(s,c)
@@ -169,10 +169,12 @@ def calc_joint_property(s):
     lk1 = np.linalg.norm(pk1)
     l12 = np.linalg.norm(p12)
     d = np.linalg.norm(p2t)
+    print("d", d)
 
     thr = atan2(pr0[1], pr0[0]) - np.pi/2
     thk = vec2rad(p0k/l0k, pk1/lk1)
     th1 = vec2rad(pk1/lk1, p12/l12)
+    print(np.rad2deg(thk), np.rad2deg(th1), d)
 
     vr = s[IDX_dxr:IDX_dyr+1]
     v0 = s[IDX_dx0:IDX_dy0+1]
@@ -193,8 +195,8 @@ def calc_joint_property(s):
     return thk, th1, d, dthk, dth1, dd
 
 def init_ref(s):
-    th0, th1, d, _, _, _ = calc_joint_property(s)
-    return np.array([th0, th1, d])
+    thk, th1, d, _, _, _ = calc_joint_property(s)
+    return np.array([thk, th1, d])
 
 def check_invariant(s):
     ps = list(node_pos(s))
@@ -233,11 +235,9 @@ def force_spring(s, d, k, idx0, idx1):
     l01 = np.linalg.norm(p0 - p1)
     u01 = p01/l01
     v01 = v0 - v1
-    #print(u01, v01)
     f = np.zeros_like(M)
     fspring = k * (l01 - d)
     fric = c * (v01 @ u01) * u01
-    #print("z", l01 - d)
     f[2*idx0:2*idx0+2] = fspring * u01 - fric
     f[2*idx1:2*idx1+2] = -fspring * u01 + fric
     return f
@@ -294,7 +294,6 @@ def constraint_point_line_penetration(s, idx0, idx1, idx2, dt, beta, pred):
     j[2*idx1+1] = -(x1-x0)/l01**2
     j[2*idx2]   = -(y2-y0)/l02**2
     j[2*idx2+1] = (x2-x0)/l02**2
-    print("plp", j, b, C)
     return j, b, pred(C)
 
 def constraint_ground_friction(s, idx, y, dt):
@@ -391,7 +390,7 @@ constraints = [ ("ground-pen", lambda s, dt: constraint_ground_penetration(s, ID
               , ("limit-k12-max", lambda s, dt: constraint_angle(s, IDX_k, IDX_1, IDX_2, np.deg2rad(130), dt, 0.1, pred_gt0), (-inf, 0))
               , ("limit-12t-min", lambda s, dt: constraint_angle(s, IDX_1, IDX_2, IDX_t, np.deg2rad(10), dt, 0.1, pred_lt0), (0, inf))
               , ("limit-12t-max", lambda s, dt: constraint_angle(s, IDX_1, IDX_2, IDX_t, np.deg2rad(170), dt, 0.1, pred_gt0), (-inf, 0))
-              , ("limit-2t-min", lambda s, dt: constraint_distant(s, IDX_2, IDX_t, 0.2, dt, 0.1, pred_lt0), (0, inf))
+              , ("limit-2t-min", lambda s, dt: constraint_distant(s, IDX_2, IDX_t, 0.0, dt, 0.1, pred_lt0), (0, inf))
               , ("limit-2t-max", lambda s, dt: constraint_distant(s, IDX_2, IDX_t, 0.5, dt, 0.1, pred_gt0), (-inf, 0))
               , ("stick < hip", lambda s, dt: constraint_point_line_penetration(s, IDX_0, IDX_t, IDX_1, dt, 0.1, pred_gt0), (-inf, 0))
               ]
@@ -428,12 +427,8 @@ def calc_constraint_impulse(s, fext, dt):
     v = s[IDX_VEL:]
 
     #print(names)
-    #print("check J", J)
-    #print("check b", b)
     K = J @ invM @ J.T
-    #print("check K", K)
     r = -b - J @ (v  + invM @ fext * dt)
-    #print("check r", r)
     lmd = np.linalg.solve(K, r)
     #print("check lmd", lmd)
     lmd = np.clip(lmd, np.array(cmin), np.array(cmax))
@@ -442,30 +437,22 @@ def calc_constraint_impulse(s, fext, dt):
     #print("check impulse", impulse)
     return impulse
 
-def calc_ext_force(t, s, u):
+def calc_ext_force(t, s, u, dt):
     fext = np.zeros(2*NUM_OF_MASS_POINTS)
     for name, ff in extforce + optional_extforce:
         f = ff(t, s, u)
         fext = fext + f
-        #print("ext-force", name, f)
+        #print("ext-force impulse", name, f*dt)
     return fext
 
 def step(t, s, u, dt):
     prev_tx, prev_ty, prev_a = moment(s)
     new_s = s.copy()
-    fext = calc_ext_force(t, s, u)
+    fext = calc_ext_force(t, s, u, dt)
     pc = calc_constraint_impulse(new_s, fext, dt)
     pe = fext * dt
-    #print("constraint-impulseX", sum(pc[0::2]))
-    #print("constraint-impulseY", sum(pc[1::2]))
-    #print("extforce-impulseX", sum(pe[0::2]))
-    #print("extforce-impulseY", sum(pe[1::2]))
     new_s[IDX_VEL:] = new_s[IDX_VEL:] + invM @ (pc + pe)
     new_s[0:IDX_VEL] = new_s[0:IDX_VEL] + dt * new_s[IDX_VEL:]
-    #tx, ty, a = moment(new_s)
-    #print("moement-diff-tx", prev_tx - tx)
-    #print("moement-diff-tx", prev_ty - ty)
-    #print("moement-diff-a", prev_a - a)
     return "normal", t+dt, new_s
 
 def energyS(s):
@@ -499,12 +486,12 @@ def moment(s):
     return tm[0], tm[1], am
 
 def pdcontrol(s, ref):
-    th0, th1, d, dth0, dth1, dd = calc_joint_property(s)
-    dob  = np.array([dth0, dth1, dd])
-    ob = np.array([th0, th1, d])
+    thk, th1, d, dthk, dth1, dd = calc_joint_property(s)
+    dob  = np.array([dthk, dth1, dd])
+    ob = np.array([thk, th1, d])
     err = ref - ob
-    #print(f"PD-ref: {np.rad2deg(ref[0])} {np.rad2deg(ref[1])}")
-    #print(f"PD-obs: {np.rad2deg(th0)} {np.rad2deg(th1)}")
+    #print(f"PD-ref: {np.rad2deg(ref[0])} {np.rad2deg(ref[1])} {ref[2]}")
+    #print(f"PD-obs: {np.rad2deg(thk)} {np.rad2deg(th1)} {d}")
     ret = err * Kp - Kd * dob
     return ret
 
