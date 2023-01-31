@@ -128,8 +128,8 @@ def ref_clip(ref):
 def node_pos(s):
     #return s[IDX_xr:IDX_yr+1],
     #return s[IDX_xr:IDX_yr+1], s[IDX_x0:IDX_y0+1], s[IDX_xk:IDX_yk+1]
-    return s[IDX_xr:IDX_yr+1], s[IDX_x0:IDX_y0+1]
-    #return s[IDX_xr:IDX_yr+1], s[IDX_x0:IDX_y0+1], s[IDX_xk:IDX_yk+1], s[IDX_x1:IDX_y1+1], s[IDX_x2:IDX_y2+1], s[IDX_xt:IDX_yt+1]
+    #return s[IDX_xr:IDX_yr+1], s[IDX_x0:IDX_y0+1]
+    return s[IDX_xr:IDX_yr+1], s[IDX_x0:IDX_y0+1], s[IDX_xk:IDX_yk+1], s[IDX_x1:IDX_y1+1], s[IDX_x2:IDX_y2+1], s[IDX_xt:IDX_yt+1]
 
 def head_pos(s):
     return s[IDX_x2:IDX_y2+1] + normalize(s[IDX_x2:IDX_y2+1] - s[IDX_x1:IDX_y1+1]) * lh
@@ -266,7 +266,7 @@ def constraint_ground_penetration(s, idx, y, dt, beta, pred):
     #dCdt = -vy
     j = np.zeros(IDX_VEL)
     j[2*idx+1] = -1
-    return j, b, not pred(C)
+    return j, b, pred(C)
 
 def constraint_ground_friction(s, idx, y, dt):
     py = s[2*idx+1]
@@ -294,7 +294,7 @@ def constraint_fixed_point_distant(s, idx0, p, l, dt, beta, pred):
     j = np.zeros(IDX_VEL)
     j[2*idx0:2*idx0+2] = (p0-p)/ np.linalg.norm(p0-p)
     b = beta*C/dt
-    return j, b, not pred(C)
+    return j, b, pred(C)
 
 def constraint_distant(s, idx0, idx1, l, dt, beta, pred):
     p0 = s[2*idx0:2*idx0+2]
@@ -305,7 +305,7 @@ def constraint_distant(s, idx0, idx1, l, dt, beta, pred):
     r = np.linalg.norm(p0-p1)
     j[2*idx0:2*idx0+2] = (p0-p1)/np.linalg.norm(p0-p1)
     j[2*idx1:2*idx1+2] = -j[2*idx0:2*idx0+2]
-    return j, b, not pred(C)
+    return j, b, pred(C)
 
 # d(p/|p|)/dt[1] = -(n0x*n0y*v0y+(n0x**2-1)*v0x)/l0
 # d(p/|p|)/dt[2] = -((n0y**2-1)*v0y+n0x*n0y*v0x)/l0
@@ -335,38 +335,37 @@ def constraint_angle(s, idx0, idx1, idx2, th, dt, beta, pred):
     j[2*idx1+1] = -(l01**2*x2+(l12**2-l01**2)*x1-l12**2*x0)/(l01**2*l12**2)
     j[2*idx2]   = -(y2-y1)/l12**2
     j[2*idx2+1] = (x2-x1)/l12**2
-    return j, b, not pred(C)
+    return j, b, pred(C)
 
-def pred_le0(C):
-    return C<=0
+def pred_gt0(C):
+    return C>0
 
-def pred_ge0(C):
-    return C>=0
+def pred_lt0(C):
+    return C<0
 
-def pred_eq0(C):
-    return C==0
+def pred_ne0(C):
+    return C!=0
 
 extforce = [ ("g", lambda t, s, u: force_gravity(s))
-           #, ("s", lambda t, s, u: force_spring(s, z0, K, IDX_r, IDX_0))
-           #, ("m0", lambda t, s, u: force_motor(s, IDX_0, IDX_k, IDX_1, u[0], -MAX_TORQUE0, MAX_TORQUE0))
-           #, ("m1", lambda t, s, u: force_motor(s, IDX_k, IDX_1, IDX_2, u[1], -MAX_TORQUE1, MAX_TORQUE1))
-           #, ("m2", lambda t, s, u: force_linear(s, IDX_2, IDX_t, u[2], -MAX_FORCE, MAX_FORCE))
+           , ("s", lambda t, s, u: force_spring(s, z0, K, IDX_r, IDX_0))
+           , ("m0", lambda t, s, u: force_motor(s, IDX_0, IDX_k, IDX_1, u[0], -MAX_TORQUE0, MAX_TORQUE0))
+           , ("m1", lambda t, s, u: force_motor(s, IDX_k, IDX_1, IDX_2, u[1], -MAX_TORQUE1, MAX_TORQUE1))
+           , ("m2", lambda t, s, u: force_linear(s, IDX_2, IDX_t, u[2], -MAX_FORCE, MAX_FORCE))
            ]
-constraints = [ ("ground-pen", lambda s, dt: constraint_ground_penetration(s, IDX_r, 0, dt, 0.1, pred_le0), (-inf, 0))
+constraints = [ ("ground-pen", lambda s, dt: constraint_ground_penetration(s, IDX_r, 0, dt, 0.1, pred_gt0), (-inf, 0))
               , ("ground-fric", lambda s, dt: constraint_ground_friction(s, IDX_r, 0, dt), (-inf, inf))
-              #, ("dist-r0", lambda s, dt: constraint_distant(s, IDX_0, IDX_k, l0, dt, 0.3, pred_eq0), (-inf, inf))
-              #, ("line-r0t", lambda s, dt: constraint_angle(s, IDX_r, IDX_0, IDX_t, 0, dt, 0.1, pred_eq0), (-inf, inf))
-              #, ("dist-0k", lambda s, dt: constraint_distant(s, IDX_0, IDX_k, l0, dt, 0.3, pred_eq0), (-inf, inf))
-              #, ("dist-k1", lambda s, dt: constraint_distant(s, IDX_k, IDX_1, l1, dt, 0.3, pred_eq0), (-inf, inf))
-              #, ("dist-12", lambda s, dt: constraint_distant(s, IDX_1, IDX_2, l2, dt, 0.3, pred_eq0), (-inf, inf))
-              #, ("limit-0k1-min", lambda s, dt: constraint_angle(s, IDX_0, IDX_k, IDX_1, np.deg2rad(-150), dt, 0.1, pred_ge0), (0, inf))
-              #, ("limit-0k1-max", lambda s, dt: constraint_angle(s, IDX_0, IDX_k, IDX_1, np.deg2rad(-10), dt, 0.1, pred_le0), (-inf, 0))
-              #, ("limit-k12-min", lambda s, dt: constraint_angle(s, IDX_k, IDX_1, IDX_2, np.deg2rad(-10), dt, 0.1, pred_ge0), (0, inf))
-              #, ("limit-k12-max", lambda s, dt: constraint_angle(s, IDX_k, IDX_1, IDX_2, np.deg2rad(130), dt, 0.1, pred_le0), (-inf, 0))
-              #, ("limit-12t-min", lambda s, dt: constraint_angle(s, IDX_1, IDX_2, IDX_t, np.deg2rad(10), dt, 0.1, pred_ge0), (0, inf))
-              #, ("limit-12t-max", lambda s, dt: constraint_angle(s, IDX_1, IDX_2, IDX_t, np.deg2rad(170), dt, 0.1, pred_le0), (-inf, 0))
-              #, ("limit-2t-min", lambda s, dt: constraint_distant(s, IDX_2, IDX_t, 0.2, dt, 0.1, pred_ge0), (0, inf))
-              #, ("limit-2t-max", lambda s, dt: constraint_distant(s, IDX_2, IDX_t, 0.5, dt, 0.1, pred_le0), (-inf, 0))
+              , ("line-r0t", lambda s, dt: constraint_angle(s, IDX_r, IDX_0, IDX_t, 0, dt, 0.1, pred_ne0), (-inf, inf))
+              , ("dist-0k", lambda s, dt: constraint_distant(s, IDX_0, IDX_k, l0, dt, 0.3, pred_ne0), (-inf, inf))
+              , ("dist-k1", lambda s, dt: constraint_distant(s, IDX_k, IDX_1, l1, dt, 0.3, pred_ne0), (-inf, inf))
+              , ("dist-12", lambda s, dt: constraint_distant(s, IDX_1, IDX_2, l2, dt, 0.3, pred_ne0), (-inf, inf))
+              , ("limit-0k1-min", lambda s, dt: constraint_angle(s, IDX_0, IDX_k, IDX_1, np.deg2rad(-150), dt, 0.1, pred_lt0), (0, inf))
+              , ("limit-0k1-max", lambda s, dt: constraint_angle(s, IDX_0, IDX_k, IDX_1, np.deg2rad(-10), dt, 0.1, pred_gt0), (-inf, 0))
+              , ("limit-k12-min", lambda s, dt: constraint_angle(s, IDX_k, IDX_1, IDX_2, np.deg2rad(-10), dt, 0.1, pred_lt0), (0, inf))
+              , ("limit-k12-max", lambda s, dt: constraint_angle(s, IDX_k, IDX_1, IDX_2, np.deg2rad(130), dt, 0.1, pred_gt0), (-inf, 0))
+              , ("limit-12t-min", lambda s, dt: constraint_angle(s, IDX_1, IDX_2, IDX_t, np.deg2rad(10), dt, 0.1, pred_lt0), (0, inf))
+              , ("limit-12t-max", lambda s, dt: constraint_angle(s, IDX_1, IDX_2, IDX_t, np.deg2rad(170), dt, 0.1, pred_gt0), (-inf, 0))
+              , ("limit-2t-min", lambda s, dt: constraint_distant(s, IDX_2, IDX_t, 0.2, dt, 0.1, pred_lt0), (0, inf))
+              , ("limit-2t-max", lambda s, dt: constraint_distant(s, IDX_2, IDX_t, 0.5, dt, 0.1, pred_gt0), (-inf, 0))
               ]
 
 optional_constraints = []
@@ -379,7 +378,7 @@ def set_fixed_constraint(idx,  point):
         optional_constraints = []
         #optional_extforce = []
     else:
-        optional_constraints = [ ("fixed-pointer", lambda s, dt: constraint_fixed_point_distant(s, idx, point, 0, dt, 0.1, pred_eq0), (-inf, inf))
+        optional_constraints = [ ("fixed-pointer", lambda s, dt: constraint_fixed_point_distant(s, idx, point, 0, dt, 0.1, pred_ne0), (-inf, inf))
                                , ("fixed-pointer-fric", lambda s, dt: constraint_fixed_point_fric(s, idx, point, dt), (-inf, inf))
                                ]
         #optional_extforce = [("fixed-pointer-vfric", lambda t, s, u: force_vfric(s, idx))]
