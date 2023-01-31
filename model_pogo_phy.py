@@ -268,6 +268,35 @@ def constraint_ground_penetration(s, idx, y, dt, beta, pred):
     j[2*idx+1] = -1
     return j, b, pred(C)
 
+# dc/dt = - beta c(t) 
+# non-elastic collistion
+# line01 point idx2
+def constraint_point_line_penetration(s, idx0, idx1, idx2, dt, beta, pred):
+    p0 = s[2*idx0:2*idx0+2]
+    p1 = s[2*idx1:2*idx1+2]
+    p2 = s[2*idx2:2*idx2+2]
+    p01=p1-p0
+    p02=p2-p0
+    l01=np.linalg.norm(p01)
+    l02=np.linalg.norm(p02)
+    C = vec2rad(p01/l01, p02/l02)
+    b = beta*C/dt
+    j = np.zeros(IDX_VEL)
+    x0 = p0[0]
+    y0 = p0[1]
+    x1 = p1[0]
+    y1 = p1[1]
+    x2 = p2[0]
+    y2 = p2[1]
+    j[2*idx0]   = (l01**2*y2-l02**2*y1+(l02**2-l01**2)*y0)/(l01**2*l02**2)
+    j[2*idx0+1] = -(l01**2*x2-l02**2*x1+(l02**2-l01**2)*x0)/(l01**2*l02**2)
+    j[2*idx1]   = (y1-y0)/l01**2
+    j[2*idx1+1] = -(x1-x0)/l01**2
+    j[2*idx2]   = -(y2-y0)/l02**2
+    j[2*idx2+1] = (x2-x0)/l02**2
+    print("plp", j, b, C)
+    return j, b, pred(C)
+
 def constraint_ground_friction(s, idx, y, dt):
     py = s[2*idx+1]
     active = py < y + 0.005
@@ -317,9 +346,7 @@ def constraint_angle(s, idx0, idx1, idx2, th, dt, beta, pred):
     p12 = p2-p1
     l01 = np.linalg.norm(p01)
     l12 = np.linalg.norm(p12)
-    n01 = p01/l01
-    n12 = p12/l12
-    th012 = vec2rad(n01, n12)
+    th012 = vec2rad(p01/l01, p12/l12)
     C = th012 - th
     b = beta*C/dt
     x0 = p0[0]
@@ -366,6 +393,7 @@ constraints = [ ("ground-pen", lambda s, dt: constraint_ground_penetration(s, ID
               , ("limit-12t-max", lambda s, dt: constraint_angle(s, IDX_1, IDX_2, IDX_t, np.deg2rad(170), dt, 0.1, pred_gt0), (-inf, 0))
               , ("limit-2t-min", lambda s, dt: constraint_distant(s, IDX_2, IDX_t, 0.2, dt, 0.1, pred_lt0), (0, inf))
               , ("limit-2t-max", lambda s, dt: constraint_distant(s, IDX_2, IDX_t, 0.5, dt, 0.1, pred_gt0), (-inf, 0))
+              , ("stick < hip", lambda s, dt: constraint_point_line_penetration(s, IDX_0, IDX_t, IDX_1, dt, 0.1, pred_gt0), (-inf, 0))
               ]
 
 optional_constraints = []
