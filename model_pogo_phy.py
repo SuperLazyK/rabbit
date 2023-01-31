@@ -27,7 +27,7 @@ m1 = 20
 m2 = 30
 mt = 2
 g  = 0
-#g  = 9.8
+g  = 9.8
 #g  = -9.8
 K  = 10000 # mgh = 1/2 k x^2 -> T=2*pi sqrt(m/k)
 c = 1
@@ -169,12 +169,10 @@ def calc_joint_property(s):
     lk1 = np.linalg.norm(pk1)
     l12 = np.linalg.norm(p12)
     d = np.linalg.norm(p2t)
-    print("d", d)
 
     thr = atan2(pr0[1], pr0[0]) - np.pi/2
     thk = vec2rad(p0k/l0k, pk1/lk1)
     th1 = vec2rad(pk1/lk1, p12/l12)
-    print(np.rad2deg(thk), np.rad2deg(th1), d)
 
     vr = s[IDX_dxr:IDX_dyr+1]
     v0 = s[IDX_dx0:IDX_dy0+1]
