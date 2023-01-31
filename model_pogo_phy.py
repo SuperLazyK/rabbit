@@ -128,8 +128,8 @@ def ref_clip(ref):
 def node_pos(s):
     #return s[IDX_xr:IDX_yr+1],
     #return s[IDX_xr:IDX_yr+1], s[IDX_x0:IDX_y0+1], s[IDX_xk:IDX_yk+1]
-    #return s[IDX_xr:IDX_yr+1], s[IDX_x0:IDX_y0+1]
-    return s[IDX_xr:IDX_yr+1], s[IDX_x0:IDX_y0+1], s[IDX_xk:IDX_yk+1], s[IDX_x1:IDX_y1+1], s[IDX_x2:IDX_y2+1], s[IDX_xt:IDX_yt+1]
+    return s[IDX_xr:IDX_yr+1], s[IDX_x0:IDX_y0+1]
+    #return s[IDX_xr:IDX_yr+1], s[IDX_x0:IDX_y0+1], s[IDX_xk:IDX_yk+1], s[IDX_x1:IDX_y1+1], s[IDX_x2:IDX_y2+1], s[IDX_xt:IDX_yt+1]
 
 def head_pos(s):
     return s[IDX_x2:IDX_y2+1] + normalize(s[IDX_x2:IDX_y2+1] - s[IDX_x1:IDX_y1+1]) * lh
@@ -137,8 +137,8 @@ def head_pos(s):
 def node_vel(s):
     #return s[IDX_dxr:IDX_dyr+1],
     #return s[IDX_dxr:IDX_dyr+1], s[IDX_dx0:IDX_dy0+1], s[IDX_dxk:IDX_dyk+1] 
-    #return s[IDX_dxr:IDX_dyr+1], s[IDX_dx0:IDX_dy0+1]
-    return s[IDX_dxr:IDX_dyr+1], s[IDX_dx0:IDX_dy0+1], s[IDX_dxk:IDX_dyk+1], s[IDX_dx1:IDX_dy1+1], s[IDX_dx2:IDX_dy2+1], s[IDX_dxt:IDX_dyt+1]
+    return s[IDX_dxr:IDX_dyr+1], s[IDX_dx0:IDX_dy0+1]
+    #return s[IDX_dxr:IDX_dyr+1], s[IDX_dx0:IDX_dy0+1], s[IDX_dxk:IDX_dyk+1], s[IDX_dx1:IDX_dy1+1], s[IDX_dx2:IDX_dy2+1], s[IDX_dxt:IDX_dyt+1]
 
 def normalize(v):
     return v / np.linalg.norm(v)
@@ -208,6 +208,12 @@ def force_gravity(s):
     f = np.zeros_like(M)
     f[1::2] = -g
     return M * f
+
+def force_vfric(s, idx):
+    v = s[IDX_VEL+2*idx:IDX_VEL+2*idx+2]
+    f = np.zeros_like(M)
+    f[2*idx:2*idx+2] = -v * 90. * M[2*idx:2*idx+2] # 0.9 * 1/dt
+    return f
 
 def force_linear(s, idx0, idx1, u, umin, umax, flip=1):
     p0 = s[2*idx0:2*idx0+2]
@@ -330,35 +336,40 @@ def pred_eq0(C):
     return C==0
 
 extforce = [ ("g", lambda t, s, u: force_gravity(s))
-           , ("s", lambda t, s, u: force_spring(s, z0, K, IDX_r, IDX_0))
-           , ("m0", lambda t, s, u: force_motor(s, IDX_0, IDX_k, IDX_1, u[0], -MAX_TORQUE0, MAX_TORQUE0))
-           , ("m1", lambda t, s, u: force_motor(s, IDX_k, IDX_1, IDX_2, u[1], -MAX_TORQUE1, MAX_TORQUE1))
-           , ("m2", lambda t, s, u: force_linear(s, IDX_2, IDX_t, u[2], -MAX_FORCE, MAX_FORCE))
+           #, ("s", lambda t, s, u: force_spring(s, z0, K, IDX_r, IDX_0))
+           #, ("m0", lambda t, s, u: force_motor(s, IDX_0, IDX_k, IDX_1, u[0], -MAX_TORQUE0, MAX_TORQUE0))
+           #, ("m1", lambda t, s, u: force_motor(s, IDX_k, IDX_1, IDX_2, u[1], -MAX_TORQUE1, MAX_TORQUE1))
+           #, ("m2", lambda t, s, u: force_linear(s, IDX_2, IDX_t, u[2], -MAX_FORCE, MAX_FORCE))
            ]
 constraints = [ ("ground-pen", lambda s, dt: constraint_ground_penetration(s, IDX_r, 0, dt, 0.1, pred_le0), (-inf, 0))
               , ("ground-fric", lambda s, dt: constraint_ground_friction(s, IDX_r, 0, dt), (-inf, inf))
-              , ("line-r0t", lambda s, dt: constraint_angle(s, IDX_r, IDX_0, IDX_t, 0, dt, 0.1, pred_eq0), (-inf, inf))
-              , ("dist-0k", lambda s, dt: constraint_distant(s, IDX_0, IDX_k, l0, dt, 0.3, pred_eq0), (-inf, inf))
-              , ("dist-k1", lambda s, dt: constraint_distant(s, IDX_k, IDX_1, l1, dt, 0.3, pred_eq0), (-inf, inf))
-              , ("dist-12", lambda s, dt: constraint_distant(s, IDX_1, IDX_2, l2, dt, 0.3, pred_eq0), (-inf, inf))
-              , ("limit-0k1-min", lambda s, dt: constraint_angle(s, IDX_0, IDX_k, IDX_1, np.deg2rad(-150), dt, 0.1, pred_ge0), (0, inf))
-              , ("limit-0k1-max", lambda s, dt: constraint_angle(s, IDX_0, IDX_k, IDX_1, np.deg2rad(-10), dt, 0.1, pred_le0), (-inf, 0))
-              , ("limit-k12-min", lambda s, dt: constraint_angle(s, IDX_k, IDX_1, IDX_2, np.deg2rad(-10), dt, 0.1, pred_ge0), (0, inf))
+              #, ("dist-r0", lambda s, dt: constraint_distant(s, IDX_0, IDX_k, l0, dt, 0.3, pred_eq0), (-inf, inf))
+              #, ("line-r0t", lambda s, dt: constraint_angle(s, IDX_r, IDX_0, IDX_t, 0, dt, 0.1, pred_eq0), (-inf, inf))
+              #, ("dist-0k", lambda s, dt: constraint_distant(s, IDX_0, IDX_k, l0, dt, 0.3, pred_eq0), (-inf, inf))
+              #, ("dist-k1", lambda s, dt: constraint_distant(s, IDX_k, IDX_1, l1, dt, 0.3, pred_eq0), (-inf, inf))
+              #, ("dist-12", lambda s, dt: constraint_distant(s, IDX_1, IDX_2, l2, dt, 0.3, pred_eq0), (-inf, inf))
+              #, ("limit-0k1-min", lambda s, dt: constraint_angle(s, IDX_0, IDX_k, IDX_1, np.deg2rad(-150), dt, 0.1, pred_ge0), (0, inf))
+              #, ("limit-0k1-max", lambda s, dt: constraint_angle(s, IDX_0, IDX_k, IDX_1, np.deg2rad(-10), dt, 0.1, pred_le0), (-inf, 0))
+              #, ("limit-k12-min", lambda s, dt: constraint_angle(s, IDX_k, IDX_1, IDX_2, np.deg2rad(-10), dt, 0.1, pred_ge0), (0, inf))
               #, ("limit-k12-max", lambda s, dt: constraint_angle(s, IDX_k, IDX_1, IDX_2, np.deg2rad(130), dt, 0.1, pred_le0), (-inf, 0))
               #, ("limit-12t-min", lambda s, dt: constraint_angle(s, IDX_1, IDX_2, IDX_t, np.deg2rad(10), dt, 0.1, pred_ge0), (0, inf))
-              , ("limit-12t-max", lambda s, dt: constraint_angle(s, IDX_1, IDX_2, IDX_t, np.deg2rad(170), dt, 0.1, pred_le0), (-inf, 0))
-              , ("limit-2t-min", lambda s, dt: constraint_distant(s, IDX_2, IDX_t, 0.2, dt, 0.1, pred_ge0), (0, inf))
-              , ("limit-2t-max", lambda s, dt: constraint_distant(s, IDX_2, IDX_t, 0.5, dt, 0.1, pred_le0), (-inf, 0))
+              #, ("limit-12t-max", lambda s, dt: constraint_angle(s, IDX_1, IDX_2, IDX_t, np.deg2rad(170), dt, 0.1, pred_le0), (-inf, 0))
+              #, ("limit-2t-min", lambda s, dt: constraint_distant(s, IDX_2, IDX_t, 0.2, dt, 0.1, pred_ge0), (0, inf))
+              #, ("limit-2t-max", lambda s, dt: constraint_distant(s, IDX_2, IDX_t, 0.5, dt, 0.1, pred_le0), (-inf, 0))
               ]
 
 optional_constraints = []
+optional_extforce = []
 
 def set_fixed_constraint(idx,  point):
     global optional_constraints
+    global optional_extforce
     if point is None:
         optional_constraints = []
+        optional_extforce = []
     else:
         optional_constraints = [("fixed-pointer", lambda s, dt: constraint_fixed_point_distant(s, idx, point, 0, dt, 0.1, pred_eq0), (-inf, inf))]
+        optional_extforce = [("fixed-pointer-vfric", lambda t, s, u: force_vfric(s, idx))]
 
 def calc_constraint_impulse(s, fext, dt):
     names, js, bs, cmin, cmax = [], [], [], [], []
@@ -393,7 +404,7 @@ def calc_constraint_impulse(s, fext, dt):
 
 def calc_ext_force(t, s, u):
     fext = np.zeros(2*NUM_OF_MASS_POINTS)
-    for name, ff in extforce:
+    for name, ff in extforce + optional_extforce:
         f = ff(t, s, u)
         fext = fext + f
         #print("ext-force", name, f)
