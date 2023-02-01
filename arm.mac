@@ -1,0 +1,129 @@
+/* 4 mass point */
+
+ratprint: false$
+
+declare ("'", alphabetic)$
+depends([xr, yr, thr] , t)$  /* root */
+depends([z, a] , t)$
+depends([th0, thk, th1, tha] , t)$
+depends([u1, u2, u3] , t)$
+
+cross(vx0,vy0,vx1,vy1):=vx0*vy1-vy0*vx1$
+
+size(M):=[length(M),length(args(M))]$
+sizev(M):=length(M)$
+
+grind:true;
+showmat(m):= for i thru length(m) do
+    for j thru length(transpose(m)) do
+        block([], printf(true,"~d:~d= ~a~%", i-1,j-1, m[i][j]))$
+
+load ("f90")$
+f90_output_line_length_max:10000000$
+showmatf90(m):= for i thru length(m) do
+    for j thru length(transpose(m)) do
+    block([], printf(true,"[~d][~d] = ", i-1,j-1), f90(m[i][j]))$
+
+showmatf90'(m):= for i thru length(m) do
+    for j thru length(transpose(m)) do
+    block([], printf(true,"[~d][~d] = ", i-1,j-1), f90(m[i][j][1]))$
+
+symbolilze(M):= subst([ diff(xr,t,2)=ddxr
+                      , diff(yr,t,2)=ddyr
+                      , diff(z,t,2)=ddz
+                      , diff(a,t,2)=dda
+                      , diff(thr,t,2)=ddthr
+                      , diff(th0,t,2)=ddth0
+                      , diff(thk,t,2)=ddthk
+                      , diff(th1,t,2)=ddth1
+                      , diff(tha,t,2)=ddtha
+                      , diff(xr,t,1)=dxr
+                      , diff(yr,t,1)=dyr
+                      , diff(z,t,1)=dz
+                      , diff(a,t,1)=da
+                      , diff(thr,t,1)=dthr
+                      , diff(th0,t,1)=dth0
+                      , diff(thk,t,1)=dthk
+                      , diff(th1,t,1)=dth1
+                      , diff(tha,t,1)=dtha
+                    ], M)$
+ground(M):= subst([dxr=0 , ddxr=0 , dyr=0, ddyr=0 ], M)$
+air(M):= subst([dz=0 , ddz=0 , z=0], M)$
+
+amoment(m, x, y, vx, vy):=m * cross(x, y, vx, vy)$
+
+/*------------*/
+/* Kinematics */
+/*------------*/
+/* foot */
+x0: xr + (z0 + z) * sin(thr)$
+y0: yr + (z0 + z) * cos(thr)$
+
+/* knee */
+xk: x0 + l0 * sin(thr + th0)$
+yk: y0 + l0 * cos(thr + th0)$
+
+/* west */
+x1: xk + l1 * sin(thr + th0 + thk)$
+y1: yk + l1 * cos(thr + th0 + thk)$
+
+/* arm */
+x2: x1 + l1 * sin(thr + th0 + thk + th1)$
+y2: y1 + l1 * cos(thr + th0 + thk + th1)$
+
+/* head */
+xh: x2 + lh * sin(thr + th0 + thk + th1)$
+yh: y2 + lh * cos(thr + th0 + thk + th1)$
+
+/* arm-hand */
+xa:  x2 + a * sin(thr + th0 + thk + th1 + tha)$
+ya:  y2 + a * cos(thr + th0 + thk + th1 + tha)$
+
+/* top */
+xt: x1 + lt * sin(thr) $
+yt: y1 + lt * cos(thr) $
+
+xc: (mr * xr + m0 * x0 + mk * xk + m1 * x1 + m2 * x2 + mt * xa + mh * xh) / (mr + m0 + mk + m1 + m2 + mh + mt) $
+yc: (mr * yr + m0 * y0 + mk * yk + m1 * y1 + m2 * y2 + mt * ya + mh * yh) / (mr + m0 + mk + m1 + m2 + mh + mt) $
+
+/*
+f90(expand(xc - xr))$
+f90(expand(yc - yr))$
+*/
+
+thr': diff(thr, t)$
+th0': diff(th0, t)$
+thk': diff(thk, t)$
+th1': diff(th1, t)$
+tha': diff(tha, t)$
+
+sol_eqc : solve((symbolilze([diff(xt - xa, t, 1)=0, diff(yt - ya, t, 1)=0])),[dth0, dtha]);
+sum_amoment: amoment(mr, xr-xr, yr-yr, diff(xr, t, 1), diff(yr, t, 1))
+           + amoment(m0, x0-xr, y0-yr, diff(x0, t, 1), diff(y0, t, 1))
+           + amoment(mk, xk-xr, yk-yr, diff(xk, t, 1), diff(yk, t, 1))
+           + amoment(m1, x1-xr, y1-yr, diff(x1, t, 1), diff(y1, t, 1))
+           + amoment(m2, x2-xr, y2-yr, diff(x2, t, 1), diff(y2, t, 1))
+           + amoment(mh, xh-xr, yh-yr, diff(xh, t, 1), diff(yh, t, 1))
+           + amoment(mt, xt-xr, yt-yr, diff(xt, t, 1), diff(yt, t, 1))$
+
+ground_dX : [dthr, dz, dthk, dth1, da]$
+target:subst(sol_eqc, ground([symbolilze(diff(xc - xr, t, 1)), symbolilze(diff(yc - xr, t, 1)), symbolilze(sum_amoment)]))$
+J:jacobian(target, ground_dX)$
+rank(J);
+showmat(J);
+b:ratsimp(target - J.transpose(ground_dX));
+
+/*
+air_dX : [dxr, dyr, dthr, dthk, dth1, da]$
+sum_amoment: amoment(mr, xr, yr, diff(xr, t, 1), diff(yr, t, 1))
+           + amoment(m0, x0, y0, diff(x0, t, 1), diff(y0, t, 1))
+           + amoment(mk, xk, yk, diff(xk, t, 1), diff(yk, t, 1))
+           + amoment(m1, x1, y1, diff(x1, t, 1), diff(y1, t, 1))
+           + amoment(m2, x2, y2, diff(x2, t, 1), diff(y2, t, 1))
+           + amoment(mh, xh, yh, diff(xh, t, 1), diff(yh, t, 1))
+           + amoment(mt, xt, yt, diff(xt, t, 1), diff(yt, t, 1))$
+target:subst(sol_eqc, air([(symbolilze(diff(xc, t, 1)))-vcogx, (symbolilze(diff(yc, t, 1)))-vcogy, symbolilze(sum_amoment) - am]))$
+J:jacobian(target, air_dX)$
+showmat(ratsimp(J));
+rank(J);
+*/
