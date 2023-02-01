@@ -29,7 +29,7 @@ mt = 2
 #g  = 0
 g  = 9.8
 #g  = -9.8
-K  = 10000 # mgh = 1/2 k x^2 -> T=2*pi sqrt(m/k)
+K  = 12000 # mgh = 1/2 k x^2 -> T=2*pi sqrt(m/k)
 c = 1
 
 MAX_TORQUE0=600 # knee can keep 100kg weight at pi/2 + arm
