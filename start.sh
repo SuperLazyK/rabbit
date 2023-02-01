@@ -1,0 +1,1 @@
+python3 env_point_pogo_phy.py
