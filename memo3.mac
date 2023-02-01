@@ -1,0 +1,55 @@
+ratprint: false$
+exptsubst: true$
+
+load ("f90")$
+load("vect")$
+declare ("'", alphabetic)$
+grind:true;
+cross(v0,v1):=v0[1]*v1[2]-v0[2]*v1[1]$
+showmat(m):= for i thru length(m) do
+    for j thru length(transpose(m)) do
+        block([], printf(true,"~d:~d= ~%", i-1,j-1), f90(m[i][j]))$
+
+f90_output_line_length_max:10000000$
+
+depends(th01, t)$
+depends(th12, t)$
+C:atan2(sin(th12-th01),cos(th12-th01)) - th0$
+dCdt:diff(C, t, 1)$
+
+disp(trigsimp(dCdt))$
+
+
+p0:[x0, y0]$
+p1:[x1, y1]$
+p2:[x2, y2]$
+depends(p0, t)$
+depends(p1, t)$
+depends(p2, t)$
+p0':diff(p0,t)$
+p1':diff(p1,t)$
+p2':diff(p2,t)$
+
+repsimp(M):= subst([ sqrt((y1-y0)^2+(x1-x0)^2)=l01
+                   , (y1-y0)^2+(x1-x0)^2=l01*l01
+                   , sqrt((y2-y0)^2+(x2-x0)^2)=l02
+                   , (y2-y0)^2+(x2-x0)^2=l02*l02
+                   , diff(x0,t,1)=x0'
+                   , diff(y0,t,1)=y0'
+                   , diff(x1,t,1)=x1'
+                   , diff(y1,t,1)=y1'
+                   , diff(x2,t,1)=x2'
+                   , diff(y2,t,1)=y2'
+                   ], M);
+v01:p1'-p0'$
+p01:p1-p0$
+v02:p2'-p0'$
+p02:p2-p0$
+th01:atan2(p1[2]-p0[2], p1[1]-p0[1])$
+th02:atan2(p2[2]-p0[2], p2[1]-p0[1])$
+ratsimp(repsimp(diff(th01, t, 1) - cross(p01, v01)/l01^2));
+ratsimp(repsimp(diff(th02, t, 1) - cross(p02, v02)/l02^2));
+
+ratsimp(repsimp(diff(th02, t, 1) - cross(p02, v02)/l02^2 - diff(th01, t, 1) + cross(p01, v01)/l01^2)) ;
+
+showmat(ratsimp(jacobian([expand(repsimp(cross(p02, v02)/l02^2 - cross(p01, v01)/l01^2))],[x0', y0',x1',y1', x2', y2'])));
