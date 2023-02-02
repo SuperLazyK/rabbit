@@ -18,11 +18,12 @@ import pickle
 DELTA = 0.01
 SPEED=6
 
+JUMP_MODE=0
+FLIP_MODE=1
+
 #----------------------------
 # Rendering
 #----------------------------
-
-FRAME_RATE = 30
 
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
@@ -41,21 +42,8 @@ class RabbitViewer():
         self.screen = pygame.display.set_mode(SCREEN_SIZE)
         pygame.display.set_caption("pogo-arm")
         self.clock = pygame.time.Clock()
-        self.rotate = pygame.image.load("clockwise.png")
+        #self.rotate = pygame.image.load("clockwise.png")
         self.font = pygame.font.SysFont('Calibri', 25, True, False)
-
-        self.alter = pygame.image.load("clockwise.png")
-        image_pixel_array = pygame.PixelArray(self.alter)
-        image_pixel_array.replace(BLACK, RED)
-
-    def render_rotation(self, u, pos, max_rot, max_scale=SCALE, default_img=True):
-        a = min(abs(u)/max_rot,1)
-        scale = (max_scale*a, max_scale*a)
-        imgu = pygame.transform.scale(self.rotate if default_img else self.alter, scale)
-        if u > 0:
-            imgu = pygame.transform.flip(imgu, True, False)
-
-        self.screen.blit(imgu, pos - np.array(scale)/2)
 
     def flip(self, p):
         ret = p.copy()
@@ -83,7 +71,7 @@ class RabbitViewer():
 
         return mp.set_fixed_constraint(idx, point)
 
-    def render(self, state, t, ref, u, r):
+    def render(self, state, mode, t, ref, u, r):
 
         energy = mp.energy(state)
 
@@ -105,8 +93,7 @@ class RabbitViewer():
         pygame.draw.line(self.screen, BLACK, ps[-2], head,  width=int(100 * RSCALE))
         pygame.draw.line(self.screen, BLACK, [0,SCREEN_SIZE[1]/2 + OFFSET_VERT], [SCREEN_SIZE[0], SCREEN_SIZE[1]/2 + OFFSET_VERT])
         tmx, tmy, am = mp.moment(state)
-        #text = self.font.render("t={:.02f} r={:.02f} ".format(t, energy, r), True, BLACK)
-        text = self.font.render("t={:.03f} E={:.02f} AM={:.00f} TMx={:.00f} TMy={:.00f}".format(t, energy, am, tmx, tmy), True, BLACK)
+        text = self.font.render(f"mode={mode:} t={t:.03f}", True, BLACK)
         self.screen.blit(text, [300, 50])
         pygame.display.flip()
         self.clock.tick(60)
@@ -124,14 +111,35 @@ class RabbitEnv():
         self.viewer = None
         self.is_render_enabled= int(os.environ.get('RENDER', "0"))
 
-    def num_of_frames(self):
-        return len(self.history)
+        self.min_action = mp.REF_MIN
+        self.max_action = mp.REF_MAX
+        self.min_obs = mp.OBS_MIN
+        self.max_obs = mp.OBS_MAX
 
-    def reset(self):
+    def reset(self, random=None):
+        print("RESET: NOT IMPLEMENTED")
+        mode = JUMP_MODE
+        t = 0
+        act = (0, 0, 0)
+        reward = 0
         s = mp.reset_state()
         ref = mp.init_ref(s)
-        self.history = [("start", 0, s, ref, (0,0,0), 0)]
-        return s
+        self.history = [(mode, t, s, ref, act, reward)]
+        return mp.obs(s)
+
+    def step(self, act):
+        s, reward, done, p = self.step_pos_control(act)
+        return mp.obs(s), reward, done, p
+
+    def obs(self, s):
+        return mp.obs(s)
+
+    def calc_reward(self, s):
+        print("REWARD: NOT IMPLEMENTED")
+        return 0
+
+    def num_of_frames(self):
+        return len(self.history)
 
     def rollback(self, frame):
         self.history = self.history[:frame+1]
@@ -139,14 +147,11 @@ class RabbitEnv():
     def game_over(self, s):
         return not mp.check_invariant(s)
 
-    def calc_reward(self, s):
-        return 0
-
     def step_plant(self, u, ref=np.array([0, 0, 0])):
         _, t, s, _, _, _ = self.history[-1]
 
         u = mp.torq_limit(s, u)
-        t1 = t + DELTA
+        t1 = t + 3*DELTA #30msec
 
         # 1. update model
         while t < t1:
@@ -177,7 +182,7 @@ class RabbitEnv():
         if self.viewer is None:
             self.viewer = RabbitViewer()
         mode, t, s, ref, u, reward = self.history[frame]
-        return self.viewer.render(s, t, ref, u, reward)
+        return self.viewer.render(s, mode, t, ref, u, reward)
 
     def get_point_idx(self, point, radius, frame=-1):
         mode, t, s, ref, u, reward = self.history[frame]
@@ -374,8 +379,6 @@ def main():
         if last_frame != frame:
             env.info(frame= -1 if frame == n-1 else frame)
             last_frame = frame
-
-        time.sleep(wait_rate * 1.0/FRAME_RATE)
 
 if __name__ == '__main__':
     main()

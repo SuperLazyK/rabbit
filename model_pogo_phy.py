@@ -13,6 +13,21 @@ ref_min_th1 = np.deg2rad(0)
 ref_max_th1 = np.deg2rad(90)
 ref_min_a = 0.05
 ref_max_a = 0.45
+REF_MIN = np.array([ref_min_thk, ref_min_th1, ref_min_a])
+REF_MAX = np.array([ref_max_thk, ref_max_th1, ref_max_a])
+
+limit_min_thk = np.deg2rad(-150)
+limit_max_thk = np.deg2rad(-10)
+limit_min_th1 = np.deg2rad(-10)
+limit_max_th1 = np.deg2rad(130)
+limit_min_d = 0
+limit_max_d = 0.5
+
+MAX_ROT_SPEED=100
+MAX_SPEED=100
+
+OBS_MIN = np.array([0, -np.pi,     0, limit_min_thk, limit_min_th1, limit_min_d, -MAX_SPEED, -MAX_SPEED, -MAX_ROT_SPEED, -MAX_SPEED])
+OBS_MAX = np.array([5,  np.pi, max_z, limit_max_thk, limit_max_th1, limit_max_d,  MAX_SPEED,  MAX_SPEED, MAX_ROT_SPEED, MAX_SPEED])
 
 z0 = 0.55
 l0 = 0.4
@@ -123,7 +138,7 @@ def torq_limit(s, u):
     return ret
 
 def ref_clip(ref):
-    return np.clip(ref, np.array([ref_min_thk, ref_min_th1, ref_min_a]), np.array([ref_max_thk, ref_max_th1, ref_max_a]))
+    return np.clip(ref, REF_MIN, REF_MAX)
 
 def node_pos(s):
     #return s[IDX_xr:IDX_yr+1],
@@ -169,6 +184,7 @@ def calc_joint_property(s):
     lk1 = np.linalg.norm(pk1)
     l12 = np.linalg.norm(p12)
     d = np.linalg.norm(p2t)
+    z = lr0 -z0
 
     thr = atan2(pr0[1], pr0[0]) - np.pi/2
     thk = vec2rad(p0k/l0k, pk1/lk1)
@@ -186,14 +202,31 @@ def calc_joint_property(s):
     dth12 = np.cross(p12, v2-v1)/l12**2
     dd = (p2t/d) @ (vt -v2)
 
+    dz = xxx
     dthr = dthr0
     dth1 = dth12 - dthr
     dthk = dthk1 - dth0k
 
-    return thk, th1, d, dthk, dth1, dd
+    return thr, z, thk, th1, d, dthr, dz, dthk, dth1, dd
+
+def obs(s):
+    thr, z, thk, th1, d, dthr, dz, dthk, dth1, dd = calc_joint_property(s)
+    return np.array([ s[IDX_yr]
+                    , thr
+                    , z
+                    , thk
+                    , th1
+                    , d
+                    , s[IDX_dxr]
+                    , s[IDX_dyr]
+                    , dthr
+                    , dz
+                    , dthk
+                    , dth1
+                    , dd])
 
 def init_ref(s):
-    thk, th1, d, _, _, _ = calc_joint_property(s)
+    _, _, thk, th1, d, _, _, _, _, _ = calc_joint_property(s)
     return np.array([thk, th1, d])
 
 def check_invariant(s):
@@ -485,7 +518,7 @@ def moment(s):
     return tm[0], tm[1], am
 
 def pdcontrol(s, ref):
-    thk, th1, d, dthk, dth1, dd = calc_joint_property(s)
+    _, _, thk, th1, d, _, _, dthk, dth1, dd = calc_joint_property(s)
     dob  = np.array([dthk, dth1, dd])
     ob = np.array([thk, th1, d])
     err = ref - ob
