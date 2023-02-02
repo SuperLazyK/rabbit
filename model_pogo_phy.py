@@ -30,7 +30,7 @@ mt = 2
 g  = 9.8
 #g  = -9.8
 K  = 12000 # mgh = 1/2 k x^2 -> T=2*pi sqrt(m/k)
-c = 1
+c = 0
 
 MAX_TORQUE0=600 # knee can keep 100kg weight at pi/2 + arm
 MAX_TORQUE1=800 #west
@@ -458,11 +458,11 @@ def energyS(s):
     pr = s[2*IDX_r:2*IDX_r+2]
     p0 = s[2*IDX_0:2*IDX_0+2]
     z = np.linalg.norm(pr - p0) - z0
-    return 1/2 * k * z ** 2
+    return 1/2 * K * z ** 2
 
 def energyU(s):
     ps = list(node_pos(s))
-    return sum([g * ps[i][1] * M[2*i] for i in range(len(ps))])# + energyS(s)
+    return sum([g * ps[i][1] * M[2*i] for i in range(len(ps))]) + energyS(s)
 
 def energyT(s):
     vs = list(node_vel(s))
