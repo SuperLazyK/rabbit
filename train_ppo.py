@@ -1,5 +1,5 @@
 from spinup import ppo_pytorch as ppo
-from env_point import RabbitEnv
+from env_point_pogo_phy import RabbitEnv
 import tensorflow as tf
 import gym
 

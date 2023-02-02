@@ -1,9 +1,6 @@
 import pygame
 import pygame.locals as pl
 import pygame_menu
-import gym
-from gym import spaces
-from gym.utils import seeding
 import numpy as np
 from numpy import sin, cos
 from os import path
@@ -123,16 +120,15 @@ class RabbitViewer():
 class RabbitEnv():
 
     def __init__(self, seed=None):
-        self.reset(False)
+        self.reset()
         self.viewer = None
-        self.np_random , seed = seeding.np_random(seed)
         self.is_render_enabled= int(os.environ.get('RENDER', "0"))
 
     def num_of_frames(self):
         return len(self.history)
 
-    def reset(self, random=True):
-        s = mp.reset_state(self.np_random if random else None)
+    def reset(self):
+        s = mp.reset_state()
         ref = mp.init_ref(s)
         self.history = [("start", 0, s, ref, (0,0,0), 0)]
         return s
