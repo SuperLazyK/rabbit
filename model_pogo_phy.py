@@ -26,8 +26,8 @@ limit_max_d = 0.5
 MAX_ROT_SPEED=100
 MAX_SPEED=100
 
-OBS_MIN = np.array([0, -np.pi,     0, limit_min_thk, limit_min_th1, limit_min_d, -MAX_SPEED, -MAX_SPEED, -MAX_ROT_SPEED, -MAX_SPEED])
-OBS_MAX = np.array([5,  np.pi, max_z, limit_max_thk, limit_max_th1, limit_max_d,  MAX_SPEED,  MAX_SPEED, MAX_ROT_SPEED, MAX_SPEED])
+OBS_MIN = np.array([0, -np.pi,     0, limit_min_thk, limit_min_th1, limit_min_d, -MAX_SPEED, -MAX_SPEED, -MAX_ROT_SPEED, -MAX_SPEED, -MAX_ROT_SPEED, -MAX_ROT_SPEED, -MAX_SPEED])
+OBS_MAX = np.array([5,  np.pi, max_z, limit_max_thk, limit_max_th1, limit_max_d,  MAX_SPEED,  MAX_SPEED, MAX_ROT_SPEED, MAX_SPEED, -MAX_ROT_SPEED, -MAX_ROT_SPEED, -MAX_SPEED])
 
 z0 = 0.55
 l0 = 0.4
@@ -202,7 +202,7 @@ def calc_joint_property(s):
     dth12 = np.cross(p12, v2-v1)/l12**2
     dd = (p2t/d) @ (vt -v2)
 
-    dz = xxx
+    dz = ((p0 - pr)/lr0) @ (v0 - vr)
     dthr = dthr0
     dth1 = dth12 - dthr
     dthk = dthk1 - dth0k

@@ -13,6 +13,7 @@ import model_pogo_phy as mp
 import csv
 import pickle
 
+pygame.init()
 # input U
 #DELTA = 0.001
 DELTA = 0.01
