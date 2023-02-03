@@ -11,7 +11,9 @@ import sys
 #import model_pogo_rot_limit as mp
 import model_pogo_phy as mp
 import csv
+import datetime
 import pickle
+
 
 pygame.init()
 # input U
@@ -108,6 +110,7 @@ class RabbitViewer():
 class RabbitEnv():
 
     def __init__(self, seed=None):
+        self.history = []
         self.reset()
         self.viewer = None
         self.is_render_enabled= int(os.environ.get('RENDER', "0"))
@@ -119,6 +122,16 @@ class RabbitEnv():
 
     def reset(self, random=None):
         print("RESET: NOT IMPLEMENTED")
+        if len(self.history ) > 1:
+            if int(os.environ.get('AUTOSAVE', "1")):
+                os.makedirs('autodump', exist_ok=True)
+                self.save('autodump/last_episode.pkl')
+                self.dump_csv('autodump/last_episode.csv')
+                if int(os.environ.get('USE_TIMESTAMP', "1")):
+                    dt = datetime.datetime.now()
+                    timestamp = dt.strftime("%Y-%m-%d-%H-%M-%S")
+                    self.save('autodump/{}.pkl'.format(timestamp))
+                    self.dump_csv('autodump/{}.csv'.format(timestamp))
         mode = JUMP_MODE
         t = 0
         act = (0, 0, 0)
@@ -210,16 +223,16 @@ class RabbitEnv():
         mp.print_state(s)
         print(f"--------------")
 
-    def save(self):
-        with open(r'dump.pkl','wb') as f:
+    def save(self, filename='dump.pkl'):
+        with open(filename,'wb') as f:
             pickle.dump(self.history, f, pickle.HIGHEST_PROTOCOL)
 
-    def load(self):
-        with open(r'dump.pkl','rb') as f:
+    def load(self, filename='dump.pkl'):
+        with open(filename,'rb') as f:
             self.history = pickle.load(f)
             self.history.pop(-1)
 
-    def dump_csv(self):
+    def dump_csv(self, filename='sate.csv'):
         data = []
         for mode, t, s, ref, u, reward in self.history:
             energy = mp.energy(s)
@@ -233,7 +246,7 @@ class RabbitEnv():
             dic['E'] = energy
             data.append(dic)
 
-        with open(r'state.csv','w',encoding='utf-8') as f:
+        with open(filename,'w',encoding='utf-8') as f:
             writer = csv.DictWriter(f, fieldnames = dic.keys())
             writer.writeheader()
             writer.writerows(data)
@@ -300,7 +313,8 @@ def main():
                 if keyname == 'w':
                     env.save()
                 elif keyname == '1':
-                    env.load()
+                    print("load")
+                    env.load('autodump/last_episode.pkl')
                     frame = 0
                     replay = True
                     done = True
@@ -330,13 +344,13 @@ def main():
                     start = True
 
                 # history
-                elif keyname == '4':
+                elif replay and keyname == 'n':
                     start = False
                     if mods & pl.KMOD_LSHIFT:
                         frame = min(frame + 10, n-1)
                     else:
                         frame = min(frame + 1, n-1)
-                elif keyname == '5':
+                elif replay and keyname == 'p':
                     start = False
                     if mods & pl.KMOD_LSHIFT:
                         frame = max(frame - 10, 0)
