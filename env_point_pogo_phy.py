@@ -132,7 +132,7 @@ class RabbitEnv():
     def reset(self, random=None):
         #print("RESET: NOT IMPLEMENTED")
         if len(self.history ) > 1:
-            if int(os.environ.get('AUTOSAVE', "1")):
+            if int(os.environ.get('AUTOSAVE', "0")):
                 self.autosave("normal")
         mode = JUMP_MODE
         t = 0
