@@ -192,7 +192,7 @@ class RabbitEnv():
         pos_ref = mp.ref_clip(ref + v_ref)
         return self.step_pos_control(pos_ref)
 
-    def render(self, mode='human', frame=-1):
+    def render(self, frame=-1):
         if self.viewer is None:
             self.viewer = RabbitViewer()
         mode, t, s, ref, u, reward = self.history[frame]
@@ -213,6 +213,16 @@ class RabbitEnv():
     #------------------------------------------
     # Debug functions
     #------------------------------------------
+    def dryrun(self, frame):
+        if frame == 0:
+            return
+        _, t, prev_s, _, _, _ = self.history[frame-1]
+        _, _, _, ref, u, reward = self.history[frame]
+        mode, t, s = mp.step(t, prev_s, u, DELTA)
+        done = self.game_over(s)
+        reward = self.calc_reward(s)
+
+
     def info(self, frame=-1):
         mode, t, s, ref, u, reward = self.history[frame]
         energy = mp.energy(s)
@@ -288,6 +298,7 @@ def main():
 
     replay = False
     move_point_idx = None
+    env.render(frame=0)
 
     while True:
         stepOne = False
@@ -342,6 +353,7 @@ def main():
                 elif keyname == 'space':
                     stepOne = True
                     start = True
+                    replay = False
 
                 # history
                 elif replay and keyname == 'n':
@@ -356,7 +368,6 @@ def main():
                         frame = max(frame - 10, 0)
                     else:
                         frame = max(frame - 1, 0)
-
                 # input
                 elif keyname == 'j':
                     v = np.array([1, 0, 0])
@@ -373,27 +384,26 @@ def main():
             elif event.type == pl.KEYUP:
                 v = np.array([0, 0, 0])
 
-        env.render(frame=frame)
-
-        if start and replay:
-            frame = frame + 1
-            if frame == n-1:
-                frame = 0
-        elif start and not done:
+        if replay:
+            if start:
+                frame = frame + 1
+                if frame == n-1:
+                    frame = 0
             if stepOne:
                 env.rollback(frame)
                 done = exec_cmd(env, v)
                 start = False
-            elif frame == n-1:
-                #_, _, done, _ = env.step_vel_control(v)
-                done = exec_cmd(env, v)
-                if done:
-                    start = False
-            frame = frame + 1
-
-        if last_frame != frame:
-            env.info(frame= -1 if frame == n-1 else frame)
-            last_frame = frame
+                replay = False
+            if last_frame != frame:
+                env.render(frame=frame)
+                env.dryrun(frame)
+                env.info(frame)
+                last_frame = frame
+        elif start and not done:
+            done = exec_cmd(env, v)
+            if done:
+                start = False
+            env.info()
 
 if __name__ == '__main__':
     main()
