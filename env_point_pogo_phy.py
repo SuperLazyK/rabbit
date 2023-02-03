@@ -120,18 +120,20 @@ class RabbitEnv():
         self.min_obs = mp.OBS_MIN
         self.max_obs = mp.OBS_MAX
 
+    def autosave(self, dirname='autodump'):
+        os.makedirs(dirname, exist_ok=True)
+        self.save(dirname + '/last_episode.pkl')
+        self.dump_csv(dirname + '/last_episode.csv')
+        dt = datetime.datetime.now()
+        timestamp = dt.strftime("%Y-%m-%d-%H-%M-%S")
+        self.save(dirname + '/{}.pkl'.format(timestamp))
+        self.dump_csv(dirname + '/{}.csv'.format(timestamp))
+
     def reset(self, random=None):
         #print("RESET: NOT IMPLEMENTED")
         if len(self.history ) > 1:
             if int(os.environ.get('AUTOSAVE', "1")):
-                os.makedirs('autodump', exist_ok=True)
-                self.save('autodump/last_episode.pkl')
-                self.dump_csv('autodump/last_episode.csv')
-                if int(os.environ.get('USE_TIMESTAMP', "1")):
-                    dt = datetime.datetime.now()
-                    timestamp = dt.strftime("%Y-%m-%d-%H-%M-%S")
-                    self.save('autodump/{}.pkl'.format(timestamp))
-                    self.dump_csv('autodump/{}.csv'.format(timestamp))
+                self.autosave("normal")
         mode = JUMP_MODE
         t = 0
         act = (0, 0, 0)
@@ -150,7 +152,7 @@ class RabbitEnv():
 
     def calc_reward(self, s):
         #print("REWARD: NOT IMPLEMENTED")
-        return 0
+        return mp.cog(s)[1] ** 2
 
     def num_of_frames(self):
         return len(self.history)
@@ -159,7 +161,8 @@ class RabbitEnv():
         self.history = self.history[:frame+1]
 
     def game_over(self, s):
-        return not mp.check_invariant(s)
+        is_ok, reason = mp.check_invariant(s)
+        return not is_ok, reason
 
     def step_plant(self, u, ref=np.array([0, 0, 0])):
         _, t, s, _, _, _ = self.history[-1]
@@ -169,10 +172,13 @@ class RabbitEnv():
 
         # 1. update model
         while t < t1:
-            mode, t, s = mp.step(t, s, u, DELTA)
-            done = self.game_over(s)
+            success, t, s = mp.step(t, s, u, DELTA)
+            if not success:
+                self.autosave("failure")
+
+            done, reason = self.game_over(s)
             reward = self.calc_reward(s)
-            self.history.append((mode, t, s, ref, u, reward))
+            self.history.append(("normal", t, s, ref, u, reward))
             if done:
                 break
 
@@ -218,8 +224,9 @@ class RabbitEnv():
             return
         _, t, prev_s, _, _, _ = self.history[frame-1]
         _, _, _, ref, u, reward = self.history[frame]
-        mode, t, s = mp.step(t, prev_s, u, DELTA)
-        done = self.game_over(s)
+        success, t, s = mp.step(t, prev_s, u, DELTA)
+        done, reason = self.game_over(t, s)
+        print(reason)
         reward = self.calc_reward(s)
 
 

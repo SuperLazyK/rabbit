@@ -234,9 +234,9 @@ def check_invariant(s):
     ps = list(node_pos(s))
     for i in range(1,len(ps)):
         if ps[i][1] <= 0.001:
-            print(f"GAME OVER p{i}={ps[i]:}")
-            return False
-    return True
+            reason = f"GAME OVER @ p{i}={ps[i]:}"
+            return False, reason
+    return True, ""
 
 def force_gravity(s):
     f = np.zeros_like(M)
@@ -479,14 +479,19 @@ def calc_ext_force(t, s, u, dt):
     return fext
 
 def step(t, s, u, dt):
-    prev_tx, prev_ty, prev_a = moment(s)
-    new_s = s.copy()
-    fext = calc_ext_force(t, s, u, dt)
-    pc = calc_constraint_impulse(new_s, fext, dt)
-    pe = fext * dt
-    new_s[IDX_VEL:] = new_s[IDX_VEL:] + invM @ (pc + pe)
-    new_s[0:IDX_VEL] = new_s[0:IDX_VEL] + dt * new_s[IDX_VEL:]
-    return True, t+dt, new_s
+    try:
+        prev_tx, prev_ty, prev_a = moment(s)
+        new_s = s.copy()
+        fext = calc_ext_force(t, s, u, dt)
+        pc = calc_constraint_impulse(new_s, fext, dt)
+        pe = fext * dt
+        new_s[IDX_VEL:] = new_s[IDX_VEL:] + invM @ (pc + pe)
+        new_s[0:IDX_VEL] = new_s[0:IDX_VEL] + dt * new_s[IDX_VEL:]
+        return True, t+dt, new_s
+    except np.linalg.LinAlgError as err:
+        print(err)
+        return False, t+dt, s
+
 
 def energyS(s):
     pr = s[2*IDX_r:2*IDX_r+2]
