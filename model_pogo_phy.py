@@ -486,7 +486,7 @@ def step(t, s, u, dt):
     pe = fext * dt
     new_s[IDX_VEL:] = new_s[IDX_VEL:] + invM @ (pc + pe)
     new_s[0:IDX_VEL] = new_s[0:IDX_VEL] + dt * new_s[IDX_VEL:]
-    return "normal", t+dt, new_s
+    return True, t+dt, new_s
 
 def energyS(s):
     pr = s[2*IDX_r:2*IDX_r+2]
