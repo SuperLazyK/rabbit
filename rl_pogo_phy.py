@@ -24,6 +24,9 @@ class RabbitRLEnv(gym.Env):
     def reset(self, random=True):
         return self.env.reset(self.np_random if random else None)
 
+    def render(self):
+        pass
+
     def step(self, act):
         return self.env.step(act)
 
