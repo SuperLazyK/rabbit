@@ -17,8 +17,8 @@ import pickle
 
 pygame.init()
 # input U
-#DELTA = 0.001
-DELTA = 0.01
+DELTA = 0.001
+#DELTA = 0.01
 SPEED=6
 
 JUMP_MODE=0
@@ -165,7 +165,7 @@ class RabbitEnv():
         _, t, s, _, _, _ = self.history[-1]
 
         u = mp.torq_limit(s, u)
-        t1 = t + 3*DELTA #30msec
+        t1 = t + 0.033 #30Hz
 
         # 1. update model
         while t < t1:
