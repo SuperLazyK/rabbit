@@ -459,7 +459,7 @@ def calc_constraint_impulse(s, fext, dt):
     b = np.array(bs)
     v = s[IDX_VEL:]
 
-    print(names)
+    #print(names)
     K = J @ invM @ J.T
     r = -b - J @ (v  + invM @ fext * dt)
     lmd = np.linalg.solve(K, r)
@@ -467,7 +467,7 @@ def calc_constraint_impulse(s, fext, dt):
     lmd = np.clip(lmd, np.array(cmin), np.array(cmax))
     #print("check lmd", lmd)
     impulse = J.T @ lmd
-    print("check impulse", impulse)
+    #print("check impulse", impulse)
     return impulse
 
 def calc_ext_force(t, s, u, dt):
@@ -475,7 +475,7 @@ def calc_ext_force(t, s, u, dt):
     for name, ff in extforce + optional_extforce:
         f = ff(t, s, u)
         fext = fext + f
-        print("ext-force impulse", name, f*dt)
+        #print("ext-force impulse", name, f*dt)
     return fext
 
 def step(t, s, u, dt):
