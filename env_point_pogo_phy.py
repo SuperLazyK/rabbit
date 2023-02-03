@@ -298,6 +298,8 @@ def main():
 
     replay = False
     move_point_idx = None
+
+    env.is_render_enabled= 1
     env.render(frame=0)
 
     while True:
@@ -402,6 +404,7 @@ def main():
         elif start and not done:
             done = exec_cmd(env, v)
             if done:
+                print("done!")
                 start = False
             env.info()
 
