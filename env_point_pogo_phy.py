@@ -121,7 +121,7 @@ class RabbitEnv():
         self.max_obs = mp.OBS_MAX
 
     def reset(self, random=None):
-        print("RESET: NOT IMPLEMENTED")
+        #print("RESET: NOT IMPLEMENTED")
         if len(self.history ) > 1:
             if int(os.environ.get('AUTOSAVE', "1")):
                 os.makedirs('autodump', exist_ok=True)
@@ -149,7 +149,7 @@ class RabbitEnv():
         return mp.obs(s)
 
     def calc_reward(self, s):
-        print("REWARD: NOT IMPLEMENTED")
+        #print("REWARD: NOT IMPLEMENTED")
         return 0
 
     def num_of_frames(self):
