@@ -228,6 +228,8 @@ class RabbitEnv():
         _, t, prev_s, _, _, _ = self.history[frame-1]
         _, _, _, ref, u, reward = self.history[frame]
         success, t, s = mp.step(t, prev_s, u, DELTA)
+        if not success:
+            print("failue!!")
         done, reason = self.game_over(s)
         reward = self.calc_reward(s)
 
@@ -305,13 +307,13 @@ def main():
     env = RabbitEnv()
 
     v = np.array([0, 0, 0])
-    wait_rate = 0
     frame = env.num_of_frames() - 1
     last_frame = -1
     start = False
     pygame.event.clear()
     done = False
     replay = False
+    slow = False
     episodes = []
     if len(sys.argv) > 1:
         for dirname in sys.argv[1:]:
@@ -372,9 +374,10 @@ def main():
 
                 # frame rate
                 elif keyname == 'd':
-                    wait_rate = min(20, wait_rate + 1)
+                    mp.debug = mp.debug ^ True
+
                 elif keyname == 'u':
-                    wait_rate = max(0, wait_rate - 1)
+                    slow = slow ^ True
 
                 elif keyname == 'space':
                     stepOne = True
@@ -386,22 +389,26 @@ def main():
                 elif replay and keyname == 'n':
                     start = False
                     if mods & pl.KMOD_LSHIFT:
-                        frame = min(frame + 10, n-1)
+                        frame = frame + 10
                     else:
-                        frame = min(frame + 1, n-1)
+                        frame = frame + 1
+                    if frame >= n:
+                        frame = 0
                 elif replay and keyname == 'p':
                     start = False
                     if mods & pl.KMOD_LSHIFT:
-                        frame = max(frame - 10, 0)
+                        frame = frame - 10
                     else:
-                        frame = max(frame - 1, 0)
-                elif replay and keyname == 'j':
+                        frame = frame - 1
+                    if frame < 0:
+                        frame = n-1
+                elif replay and keyname == 'h':
                     start = False
                     if mods & pl.KMOD_LSHIFT:
                         eidx = max(eidx - 10, 0)
                     else:
                         eidx = max(eidx - 1, 0)
-                elif replay and keyname == 'k':
+                elif replay and keyname == 'l':
                     start = False
                     if mods & pl.KMOD_LSHIFT:
                         eidx = min(eidx + 10, len(episodes)-1)
@@ -444,9 +451,11 @@ def main():
                 last_episode = eidx
 
             if last_frame != frame:
-                env.render(frame=frame)
-                env.dryrun(frame)
-                #env.info(frame)
+                if (slow or not start) or (frame % 3 == 0):
+                    env.render(frame=frame)
+                    env.dryrun(frame)
+                    if mp.debug:
+                        env.info(frame)
                 last_frame = frame
 
         elif start and not done:

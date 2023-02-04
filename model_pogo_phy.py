@@ -3,6 +3,12 @@ from math import atan2, acos, sqrt
 from numpy import sin, cos, abs
 import sys
 
+debug=0
+
+def debug_print(x):
+    if debug:
+        print(x)
+
 # Pogo-rotation-knee-phy
 max_z = 0.55
 
@@ -463,15 +469,16 @@ def calc_constraint_impulse(s, fext, dt):
     b = np.array(bs)
     v = s[IDX_VEL:]
 
-    #print(names)
+    debug_print(names)
     K = J @ invM @ J.T
+    debug_print("check K", K)
     r = -b - J @ (v  + invM @ fext * dt)
     lmd = np.linalg.solve(K, r)
-    #print("check lmd", lmd)
+    #debug_print("check lmd", lmd)
     lmd = np.clip(lmd, np.array(cmin), np.array(cmax))
-    #print("check lmd", lmd)
+    #debug_print("check lmd", lmd)
     impulse = J.T @ lmd
-    #print("check impulse", impulse)
+    debug_print(("check impulse", impulse))
     return impulse
 
 def calc_ext_force(t, s, u, dt):
@@ -479,7 +486,7 @@ def calc_ext_force(t, s, u, dt):
     for name, ff in extforce + optional_extforce:
         f = ff(t, s, u)
         fext = fext + f
-        #print("ext-force impulse", name, f*dt)
+        debug_print(("ext-force impulse", name, f*dt))
     return fext
 
 def step(t, s, u, dt):
