@@ -2,6 +2,7 @@ import numpy as np
 from math import atan2, acos, sqrt
 from numpy import sin, cos, abs
 import sys
+import scipy
 
 debug=0
 
@@ -471,12 +472,17 @@ def calc_constraint_impulse(s, fext, dt):
 
     debug_print(names)
     K = J @ invM @ J.T
-    debug_print("check K", K)
+    debug_print(("check det(K)", np.linalg.det(K)))
+    debug_print(("check J", J))
     r = -b - J @ (v  + invM @ fext * dt)
-    lmd = np.linalg.solve(K, r)
-    #debug_print("check lmd", lmd)
+    try:
+        lmd = np.linalg.solve(K, r)
+    except np.linalg.LinAlgError as err:
+        lmd, exit_code = scipy.sparse.linalg.cg(K, r, maxiter=K.shape[0]*2)
+        if exit_code != 0:
+            print("not converged")
     lmd = np.clip(lmd, np.array(cmin), np.array(cmax))
-    #debug_print("check lmd", lmd)
+    debug_print(("check lmd", lmd))
     impulse = J.T @ lmd
     debug_print(("check impulse", impulse))
     return impulse

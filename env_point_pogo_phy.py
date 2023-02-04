@@ -176,7 +176,7 @@ class RabbitEnv():
             success, t, s = mp.step(t, s, u, DELTA)
             if not success:
                 self.autosave("failure")
-                print("failue!!")
+                print("failure!!")
                 done = True
             else:
                 done, reason = self.game_over(s)
@@ -229,7 +229,7 @@ class RabbitEnv():
         _, _, _, ref, u, reward = self.history[frame]
         success, t, s = mp.step(t, prev_s, u, DELTA)
         if not success:
-            print("failue!!")
+            print("failure!!")
         done, reason = self.game_over(s)
         reward = self.calc_reward(s)
 
