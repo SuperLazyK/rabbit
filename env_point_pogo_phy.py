@@ -318,6 +318,7 @@ def main():
             episodes = episodes + fetch_episodes(dirname)
         eidx = 0
         env.load(episodes[eidx])
+        last_episode = -1
         done = True
         replay = True
     move_point_idx = None
@@ -403,9 +404,9 @@ def main():
                 elif replay and keyname == 'k':
                     start = False
                     if mods & pl.KMOD_LSHIFT:
-                        eidx = max(eidx + 10, len(episodes)-1)
+                        eidx = min(eidx + 10, len(episodes)-1)
                     else:
-                        eidx = max(eidx + 1, len(episodes)-1)
+                        eidx = min(eidx + 1, len(episodes)-1)
                 # input
                 elif keyname == 'j':
                     v = np.array([1, 0, 0])
@@ -428,20 +429,24 @@ def main():
                 if frame == env.num_of_frames()-1:
                     frame = 0
                     if len(episodes) > 0:
-                        epsode = eidx + 1
+                        eidx = eidx + 1
                         if eidx == len(episodes)-1:
                             eidx = 0
-                        env.load(episodes[eidx])
             if stepOne:
                 env.rollback(frame)
                 done = exec_cmd(env, v)
                 start = False
                 replay = False
 
+            if len(episodes) > 0 and last_episode != eidx:
+                env.load(episodes[eidx])
+                frame = 0
+                last_episode = eidx
+
             if last_frame != frame:
                 env.render(frame=frame)
                 env.dryrun(frame)
-                env.info(frame)
+                #env.info(frame)
                 last_frame = frame
 
         elif start and not done:
