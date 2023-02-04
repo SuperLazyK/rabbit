@@ -26,7 +26,7 @@ REF_MAX = np.array([ref_max_thk, ref_max_th1, ref_max_a])
 limit_min_thk = np.deg2rad(-150)
 limit_max_thk = np.deg2rad(-10)
 limit_min_th1 = np.deg2rad(-10)
-limit_max_th1 = np.deg2rad(130)
+limit_max_th1 = np.deg2rad(150)
 limit_min_d = 0
 limit_max_d = 0.5
 
@@ -53,8 +53,8 @@ g  = 9.8
 #g  = -9.8
 #K  = 12000 # mgh = 1/2 k x^2 -> T=2*pi sqrt(m/k)
 K  = 15000 # mgh = 1/2 k x^2 -> T=2*pi sqrt(m/k)
-#c = 0
-c = 10
+c = 0
+#c = 10
 
 MAX_TORQUE0=400 # knee can keep 100kg weight at pi/2
 MAX_TORQUE1=300
