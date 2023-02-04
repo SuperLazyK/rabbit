@@ -2,6 +2,7 @@ import pygame
 import pygame.locals as pl
 import pygame_menu
 import numpy as np
+import glob
 from numpy import sin, cos
 from os import path
 import os
@@ -227,8 +228,7 @@ class RabbitEnv():
         _, t, prev_s, _, _, _ = self.history[frame-1]
         _, _, _, ref, u, reward = self.history[frame]
         success, t, s = mp.step(t, prev_s, u, DELTA)
-        done, reason = self.game_over(t, s)
-        print(reason)
+        done, reason = self.game_over(s)
         reward = self.calc_reward(s)
 
 
@@ -247,6 +247,7 @@ class RabbitEnv():
             pickle.dump(self.history, f, pickle.HIGHEST_PROTOCOL)
 
     def load(self, filename='dump.pkl'):
+        print(f"Load {filename}")
         with open(filename,'rb') as f:
             self.history = pickle.load(f)
             self.history.pop(-1)
@@ -290,6 +291,12 @@ def exec_cmd(env, v):
         _, _, done, _ = env.step_plant(np.array([k_th0, k_th1, k_a]) * v)
     return done
 
+def fetch_episodes(dirname):
+    files = glob.glob(dirname + "/*.pkl")
+    files.sort(key=os.path.getmtime)
+    return files
+
+
 
 def main():
 
@@ -304,8 +311,15 @@ def main():
     start = False
     pygame.event.clear()
     done = False
-
     replay = False
+    episodes = []
+    if len(sys.argv) > 1:
+        for dirname in sys.argv[1:]:
+            episodes = episodes + fetch_episodes(dirname)
+        eidx = 0
+        env.load(episodes[eidx])
+        done = True
+        replay = True
     move_point_idx = None
 
     env.is_render_enabled= 1
@@ -365,6 +379,7 @@ def main():
                     stepOne = True
                     start = True
                     replay = False
+                    done = False
 
                 # history
                 elif replay and keyname == 'n':
@@ -379,6 +394,18 @@ def main():
                         frame = max(frame - 10, 0)
                     else:
                         frame = max(frame - 1, 0)
+                elif replay and keyname == 'j':
+                    start = False
+                    if mods & pl.KMOD_LSHIFT:
+                        eidx = max(eidx - 10, 0)
+                    else:
+                        eidx = max(eidx - 1, 0)
+                elif replay and keyname == 'k':
+                    start = False
+                    if mods & pl.KMOD_LSHIFT:
+                        eidx = max(eidx + 10, len(episodes)-1)
+                    else:
+                        eidx = max(eidx + 1, len(episodes)-1)
                 # input
                 elif keyname == 'j':
                     v = np.array([1, 0, 0])
@@ -398,18 +425,25 @@ def main():
         if replay:
             if start:
                 frame = frame + 1
-                if frame == n-1:
+                if frame == env.num_of_frames()-1:
                     frame = 0
+                    if len(episodes) > 0:
+                        epsode = eidx + 1
+                        if eidx == len(episodes)-1:
+                            eidx = 0
+                        env.load(episodes[eidx])
             if stepOne:
                 env.rollback(frame)
                 done = exec_cmd(env, v)
                 start = False
                 replay = False
+
             if last_frame != frame:
                 env.render(frame=frame)
                 env.dryrun(frame)
                 env.info(frame)
                 last_frame = frame
+
         elif start and not done:
             done = exec_cmd(env, v)
             if done:
