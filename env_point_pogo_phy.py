@@ -176,8 +176,10 @@ class RabbitEnv():
         return mp.obs(s)
 
     def calc_reward(self, s):
-        #print("REWARD: NOT IMPLEMENTED")
-        return mp.cog(s)[1] ** 2
+        r_y = mp.cog(s)[1] ** 2
+        r_thr = (4 - (mp.obs(s)[1] ** 2) )/4
+        #print(r_y, r_thr)
+        return max(0, r_y + r_thr)
 
     def num_of_frames(self):
         return len(self.history)
