@@ -114,7 +114,8 @@ class RabbitEnv():
         self.history = []
         self.reset()
         #self.alpha = 1
-        self.alpha = 0
+        #self.alpha = 0
+        self.alpha = 0.5
         self.viewer = None
         self.is_render_enabled= int(os.environ.get('RENDER', "0"))
 
@@ -153,8 +154,8 @@ class RabbitEnv():
                 dthr = 2.7*np.deg2rad(45)
             else:
                 pr = np.array([0, 1])
-                thr =  0
-                vr = np.random.rand(2)
+                thr =  np.deg2rad(30) * np.random.rand()
+                vr = np.array([5*np.random.rand(), 0])
                 dthr = np.random.rand()
 
         s = mp.reset_state(pr, thr, th0, thk, th1, vr, dthr)
