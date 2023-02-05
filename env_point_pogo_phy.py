@@ -18,8 +18,8 @@ import pickle
 
 pygame.init()
 # input U
-DELTA = 0.001
-#DELTA = 0.01
+#DELTA = 0.001
+DELTA = 0.01
 SPEED=6
 
 NORMAL_MODE=0
@@ -125,6 +125,7 @@ class RabbitEnv():
         self.max_obs = mp.OBS_MAX
 
     def autosave(self, dirname='autodump'):
+        print("dump!!!")
         os.makedirs(dirname, exist_ok=True)
         self.save(dirname + '/last_episode.pkl')
         self.dump_csv(dirname + '/last_episode.csv')
