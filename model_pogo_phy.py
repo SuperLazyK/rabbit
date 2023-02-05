@@ -96,7 +96,7 @@ IDX_x1, IDX_y1, IDX_dx1, IDX_dy1 = IDX_1*2, IDX_1*2+1, IDX_VEL+IDX_1*2, IDX_VEL+
 IDX_x2, IDX_y2, IDX_dx2, IDX_dy2 = IDX_2*2, IDX_2*2+1, IDX_VEL+IDX_2*2, IDX_VEL+IDX_2*2+1
 IDX_xt, IDX_yt, IDX_dxt, IDX_dyt = IDX_t*2, IDX_t*2+1, IDX_VEL+IDX_t*2, IDX_VEL+IDX_t*2+1
 
-def reset(pr, thr, th0, thk, th1, vr, dthr, dth0=0, z = 0, dz = 0):
+def reset(pr, thr, th0, thk, th1, vr, dthr, dth0=0, dthk=0, dth1=0, z = 0, dz = 0):
 
     dir_thr = np.array([-np.sin(thr), np.cos(thr)])
     dir_thr0 = np.array([-np.sin(thr+th0), np.cos(thr+th0)])
@@ -137,36 +137,13 @@ def reset(pr, thr, th0, thk, th1, vr, dthr, dth0=0, z = 0, dz = 0):
 
 
 def reset_state(np_random=None):
-    thr = 0
-    th0 = np.deg2rad(30)
-    thk = np.deg2rad(-90)
-    th1 = np.deg2rad(74)
-    z   = 0.
-    pr = np.array([0, 1])
-    #pr = np.array([0, 0.001])
-    #pr = np.array([0, 0.1])
-    #pr = np.array([0, 0])
-    p0 = pr + (z0 + z) * np.array([-np.sin(thr), np.cos(thr)])
-    pk = p0 + l0 * np.array([-np.sin(thr+th0), np.cos(thr+th0)])
-    p1 = pk + l1 * np.array([-np.sin(thr+th0+thk), np.cos(thr+th0+thk)])
-    p2 = p1 + l2 * np.array([-np.sin(thr+th0+thk+th1), np.cos(thr+th0+thk+th1)])
-    pt = p0 + lt * np.array([-np.sin(thr), np.cos(thr)])
-
-    s = np.zeros(IDX_MAX, dtype=np.float64)
-    s[IDX_xr:IDX_yr+1]  = pr
-    s[IDX_x0:IDX_y0+1]  = p0
-    s[IDX_xk:IDX_yk+1]  = pk
-    s[IDX_x1:IDX_y1+1]  = p1
-    s[IDX_x2:IDX_y2+1]  = p2
-    s[IDX_xt:IDX_yt+1]  = pt
-
-    #vr = np.array([-1, -1])
-    #v0 = np.array([-1, -1])
-    #vk = np.array([-1, -1])
-    #s[IDX_dxr:IDX_dyr+1]  = vr
-    #s[IDX_dx0:IDX_dy0+1]  = v0
-    #s[IDX_dxk:IDX_dyk+1]  = vk
-    return s
+    return reset( np.array([0, 1])
+                , 0
+                , np.deg2rad(30)
+                , np.deg2rad(-90)
+                , np.deg2rad(74)
+                , np.array([0, 0])
+                , 0)
 
 def print_state(s, titlePrefix="", fieldPrefix=""):
     ps = node_pos(s)

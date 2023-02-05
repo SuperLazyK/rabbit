@@ -136,17 +136,13 @@ class RabbitEnv():
             if int(os.environ.get('AUTOSAVE', "0")):
                 self.autosave("normal")
 
-        if random is None:
-            self.mode = JUMP_MODE
-            t = 0
-            s = mp.reset_state()
-        else:
-            mode = random.randint(0, 2)
-            t = 0
-            s = mp.reset_state()
+        self.mode = JUMP_MODE
+        t = 0
+        s = mp.reset_state()
+        #if random is not None:
+        #    mode = random.randint(0, 2)
         u = (0, 0, 0)
         reward = 0
-        s = mp.reset_state()
         ref = mp.init_ref(s)
         self.history = [(self.mode, t, s, ref, u, reward)]
         return mp.obs(s)
