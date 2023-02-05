@@ -113,7 +113,8 @@ class RabbitEnv():
     def __init__(self, seed=None):
         self.history = []
         self.reset()
-        self.alpha = 1
+        #self.alpha = 1
+        self.alpha = 0
         self.viewer = None
         self.is_render_enabled= int(os.environ.get('RENDER', "0"))
 
@@ -136,15 +137,34 @@ class RabbitEnv():
             if int(os.environ.get('AUTOSAVE', "0")):
                 self.autosave("normal")
 
+        th0 = np.deg2rad(30)
+        thk = np.deg2rad(-90)
+        th1 = np.deg2rad(74)
+        if random is None:
+            pr = np.array([0, 1])
+            thr =  0
+            vr = np.array([0, 0])
+            dthr = 0
+        else:
+            if random.randint(0, 2) == 0:
+                pr = np.array([0, 0])
+                thr = np.deg2rad(-45)
+                vr = np.array([0, 0])
+                dthr = 2.7*np.deg2rad(45)
+            else:
+                pr = np.array([0, 1])
+                thr =  0
+                vr = np.random.rand(2)
+                dthr = np.random.rand()
+
+        s = mp.reset_state(pr, thr, th0, thk, th1, vr, dthr)
         self.mode = JUMP_MODE
         t = 0
-        s = mp.reset_state()
-        #if random is not None:
-        #    mode = random.randint(0, 2)
         u = (0, 0, 0)
         reward = 0
         ref = mp.init_ref(s)
         self.history = [(self.mode, t, s, ref, u, reward)]
+
         return mp.obs(s)
 
     def step(self, act):
@@ -187,16 +207,16 @@ class RabbitEnv():
 
     def step_pos_control(self, pos_ref):
         _, t, s, prev, _, _ = self.history[-1]
-        u = mp.pdcontrol(s, pos_ref)
-        u = mp.torq_limit(s, u)
         t1 = t + 0.033 #30Hz
 
         while t < t1:
             prev = (1-self.alpha) * prev + (self.alpha) * pos_ref
+            u = mp.pdcontrol(s, prev)
+            u = mp.torq_limit(s, u)
             s, reward, done, p = self.step_plant(u, prev)
             if done:
                 break
-            _, t, _, _, _, _ = self.history[-1]
+            _, t, s, _, _, _ = self.history[-1]
 
         if self.is_render_enabled != 0:
             self.render(-1)

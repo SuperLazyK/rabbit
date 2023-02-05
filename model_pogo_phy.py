@@ -96,7 +96,7 @@ IDX_x1, IDX_y1, IDX_dx1, IDX_dy1 = IDX_1*2, IDX_1*2+1, IDX_VEL+IDX_1*2, IDX_VEL+
 IDX_x2, IDX_y2, IDX_dx2, IDX_dy2 = IDX_2*2, IDX_2*2+1, IDX_VEL+IDX_2*2, IDX_VEL+IDX_2*2+1
 IDX_xt, IDX_yt, IDX_dxt, IDX_dyt = IDX_t*2, IDX_t*2+1, IDX_VEL+IDX_t*2, IDX_VEL+IDX_t*2+1
 
-def reset(pr, thr, th0, thk, th1, vr, dthr, dth0=0, dthk=0, dth1=0, z = 0, dz = 0):
+def reset_state(pr, thr, th0, thk, th1, vr, dthr, dth0=0, dthk=0, dth1=0, z = 0, dz = 0):
 
     dir_thr = np.array([-np.sin(thr), np.cos(thr)])
     dir_thr0 = np.array([-np.sin(thr+th0), np.cos(thr+th0)])
@@ -136,14 +136,6 @@ def reset(pr, thr, th0, thk, th1, vr, dthr, dth0=0, dthk=0, dth1=0, z = 0, dz = 
     return s
 
 
-def reset_state(np_random=None):
-    return reset( np.array([0, 1])
-                , 0
-                , np.deg2rad(30)
-                , np.deg2rad(-90)
-                , np.deg2rad(74)
-                , np.array([0, 0])
-                , 0)
 
 def print_state(s, titlePrefix="", fieldPrefix=""):
     ps = node_pos(s)
