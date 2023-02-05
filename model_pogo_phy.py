@@ -33,9 +33,6 @@ limit_max_d = 0.5
 MAX_ROT_SPEED=100
 MAX_SPEED=100
 
-OBS_MIN = np.array([0, -np.pi,     0, limit_min_thk, limit_min_th1, limit_min_d, -MAX_SPEED, -MAX_SPEED, -MAX_ROT_SPEED, -MAX_SPEED, -MAX_ROT_SPEED, -MAX_ROT_SPEED, -MAX_SPEED])
-OBS_MAX = np.array([5,  np.pi, max_z, limit_max_thk, limit_max_th1, limit_max_d,  MAX_SPEED,  MAX_SPEED, MAX_ROT_SPEED, MAX_SPEED, -MAX_ROT_SPEED, -MAX_ROT_SPEED, -MAX_SPEED])
-
 z0 = 0.55
 l0 = 0.4
 l1 = 0.4
@@ -230,21 +227,59 @@ def calc_joint_property(s):
 
     return thr, z, thk, th1, d, dthr, dz, dthk, dth1, dd
 
+def ground(s):
+    return s[IDX_yr] < 0.05 or cog(s)[1] < 0.8
+
+#OBS_MIN = np.array([0, -np.pi,     0, limit_min_thk, limit_min_th1, limit_min_d, -MAX_SPEED, -MAX_SPEED, -MAX_ROT_SPEED, -MAX_SPEED, -MAX_ROT_SPEED, -MAX_ROT_SPEED, -MAX_SPEED])
+#OBS_MAX = np.array([5,  np.pi, max_z, limit_max_thk, limit_max_th1, limit_max_d,  MAX_SPEED,  MAX_SPEED, MAX_ROT_SPEED, MAX_SPEED, -MAX_ROT_SPEED, -MAX_ROT_SPEED, -MAX_SPEED])
+OBS_MIN = np.array([-20,-1]*NUM_OF_MASS_POINTS + [-100,-100]*NUM_OF_MASS_POINTS)
+OBS_MAX = np.array([20,10]*NUM_OF_MASS_POINTS + [100,109]*NUM_OF_MASS_POINTS)
+
 def obs(s):
-    thr, z, thk, th1, d, dthr, dz, dthk, dth1, dd = calc_joint_property(s)
-    return np.array([ s[IDX_yr]
-                    , thr
-                    , z
-                    , thk
-                    , th1
-                    , d
-                    , s[IDX_dxr]
-                    , s[IDX_dyr]
-                    , dthr
-                    , dz
-                    , dthk
-                    , dth1
-                    , dd])
+    #thr, z, thk, th1, d, dthr, dz, dthk, dth1, dd = calc_joint_property(s)
+    #return np.array([ s[IDX_yr]
+    #                , thr
+    #                , z
+    #                , thk
+    #                , th1
+    #                , d
+    #                , s[IDX_dxr]
+    #                , s[IDX_dyr]
+    #                , dthr
+    #                , dz
+    #                , dthk
+    #                , dth1
+    #                , dd])
+    return s
+
+
+def reward_imitation_jump(s, t):
+    return 0
+
+def reward_imitation_flip(s, t):
+    return 0
+
+def reward(s):
+    #thr, z, thk, th1, d, dthr, dz, dthk, dth1, dd = calc_joint_property(s)
+    vcog = dcog(s)
+    dir0r = np.array([s[IDX_xr] - s[IDX_x0], s[IDX_yr]-s[IDX_y0]])
+
+    pcog = cog(s)
+    r_y = 0
+    r_thr = 0
+
+    if ground(s):
+        mode = "ground"
+        r_thr = (2-np.linalg.norm(normalize(dir0r) - np.array([0, -1])))/2
+    else:
+        r_y = ((pcog[1]+1)**2/4)
+        if vcog[1] < 0:
+            mode = "air-up"
+            r_thr = (2-np.linalg.norm(normalize(dir0r) - normalize(vcog))) * (3/(1+pcog[1]))
+        else:
+            mode = "air-dwon"
+    print(mode, r_y + r_thr)
+    return r_y + r_thr
 
 def init_ref(s):
     _, _, thk, th1, d, _, _, _, _, _ = calc_joint_property(s)
@@ -541,6 +576,10 @@ def cog(s):
     p = sum([M[2*i]*ps[i] for i in range(len(ps))])/sum(M[0::2])
     return p
 
+def dcog(s):
+    vs = list(node_vel(s))
+    v = sum([M[2*i]*vs[i] for i in range(len(vs))])/sum(M[0::2])
+    return v
 
 def moment(s):
     vs = list(node_vel(s))

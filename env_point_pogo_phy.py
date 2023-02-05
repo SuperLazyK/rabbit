@@ -15,11 +15,6 @@ import csv
 import datetime
 import pickle
 
-def reward_imitation_jump(s, t):
-    return 0
-
-def reward_imitation_flip(s, t):
-    return 0
 
 pygame.init()
 # input U
@@ -27,8 +22,9 @@ DELTA = 0.001
 #DELTA = 0.01
 SPEED=6
 
-JUMP_MODE=0
-FLIP_MODE=1
+NORMAL_MODE=0
+JUMP_MODE=1
+FLIP_MODE=2
 
 #----------------------------
 # Rendering
@@ -163,7 +159,7 @@ class RabbitEnv():
                 dthr = np.random.rand()
 
         s = mp.reset_state(pr, thr, th0, thk, th1, vr, dthr)
-        self.mode = JUMP_MODE
+        self.mode = NORMAL_MODE
         t = 0
         u = (0, 0, 0)
         reward = 0
@@ -179,21 +175,14 @@ class RabbitEnv():
     def obs(self, s):
         return mp.obs(s)
 
-
     def calc_reward(self, s, mode, t, done):
         if done:
             return 0
         if mode == JUMP_MODE:
-            rI = reward_imitation_jump(s, t)
-            return max(0, r)
+            r = mp.reward_imitation_jump(s, t)
         else:
-            if ground
-            elif jump_up
-            else
-            r_y = mp.cog(s)[1] ** 2
-            r_thr = (4 - (mp.obs(s)[1] ** 2) )/4
-            r = r_y + r_thr
-            return max(0, r)
+            r = mp.reward(s)
+        return max(0, r)
 
     def num_of_frames(self):
         return len(self.history)
@@ -214,7 +203,7 @@ class RabbitEnv():
             done = True
         else:
             done, reason = self.game_over(s)
-        reward = self.calc_reward(s, mode, t, done)
+        reward = self.calc_reward(s, self.mode, t, done)
         self.history.append((self.mode, t, s, ref, u, reward))
 
         #if self.is_render_enabled != 0:
