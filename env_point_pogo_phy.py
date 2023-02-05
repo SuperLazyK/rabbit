@@ -113,6 +113,7 @@ class RabbitEnv():
     def __init__(self, seed=None):
         self.history = []
         self.reset()
+        self.alpha = 1
         self.viewer = None
         self.is_render_enabled= int(os.environ.get('RENDER', "0"))
 
@@ -167,34 +168,37 @@ class RabbitEnv():
 
     def step_plant(self, u, ref=np.array([0, 0, 0])):
         _, t, s, _, _, _ = self.history[-1]
+        success, t, s = mp.step(t, s, u, DELTA)
+        if not success:
+            self.autosave("failure")
+            print("failure!!")
+            done = True
+        else:
+            done, reason = self.game_over(s)
+        reward = self.calc_reward(s)
+        self.history.append(("normal", t, s, ref, u, reward))
 
-        u = mp.torq_limit(s, u)
-        t1 = t + 0.033 #30Hz
-
-        # 1. update model
-        while t < t1:
-            success, t, s = mp.step(t, s, u, DELTA)
-            if not success:
-                self.autosave("failure")
-                print("failure!!")
-                done = True
-            else:
-                done, reason = self.game_over(s)
-            reward = self.calc_reward(s)
-            self.history.append(("normal", t, s, ref, u, reward))
-            if done:
-                break
-
-        # 2. rendering
-        if self.is_render_enabled != 0:
-            self.render(-1)
+        #if self.is_render_enabled != 0:
+        #    self.render(-1)
 
         return s, reward, done, {}
 
     def step_pos_control(self, pos_ref):
-        _, _, s, _, _, _ = self.history[-1]
+        _, _, s, prev, _, _ = self.history[-1]
         u = mp.pdcontrol(s, pos_ref)
-        return self.step_plant(u, pos_ref)
+        u = mp.torq_limit(s, u)
+        t1 = t + 0.033 #30Hz
+
+        while t < t1:
+            prev = (1-self.alpha) * prev + (self.alpha) * pos_ref
+            s, reward, done, p self.step_plant(u, prev)
+            if done:
+                break
+
+        if self.is_render_enabled != 0:
+            self.render(-1)
+
+        return s, reward, done, p
 
     def step_vel_control(self, v_ref):
         _, t, s, ref, _, _ = self.history[-1]
