@@ -15,6 +15,11 @@ import csv
 import datetime
 import pickle
 
+def reward_imitation_jump(s, t):
+    return 0
+
+def reward_imitation_flip(s, t):
+    return 0
 
 pygame.init()
 # input U
@@ -46,7 +51,6 @@ class RabbitViewer():
         self.screen = pygame.display.set_mode(SCREEN_SIZE)
         pygame.display.set_caption("pogo-arm")
         self.clock = pygame.time.Clock()
-        #self.rotate = pygame.image.load("clockwise.png")
         self.font = pygame.font.SysFont('Calibri', 25, True, False)
 
     def flip(self, p):
@@ -175,11 +179,21 @@ class RabbitEnv():
     def obs(self, s):
         return mp.obs(s)
 
-    def calc_reward(self, s):
-        r_y = mp.cog(s)[1] ** 2
-        r_thr = (4 - (mp.obs(s)[1] ** 2) )/4
-        #print(r_y, r_thr)
-        return max(0, r_y + r_thr)
+
+    def calc_reward(self, s, mode, t, done):
+        if done:
+            return 0
+        if mode == JUMP_MODE:
+            rI = reward_imitation_jump(s, t)
+            return max(0, r)
+        else:
+            if ground
+            elif jump_up
+            else
+            r_y = mp.cog(s)[1] ** 2
+            r_thr = (4 - (mp.obs(s)[1] ** 2) )/4
+            r = r_y + r_thr
+            return max(0, r)
 
     def num_of_frames(self):
         return len(self.history)
@@ -200,7 +214,7 @@ class RabbitEnv():
             done = True
         else:
             done, reason = self.game_over(s)
-        reward = self.calc_reward(s)
+        reward = self.calc_reward(s, mode, t, done)
         self.history.append((self.mode, t, s, ref, u, reward))
 
         #if self.is_render_enabled != 0:
@@ -256,12 +270,12 @@ class RabbitEnv():
         if frame == 0:
             return
         _, t, prev_s, _, _, _ = self.history[frame-1]
-        _, _, _, ref, u, reward = self.history[frame]
+        mode, _, _, ref, u, reward = self.history[frame]
         success, t, s = mp.step(t, prev_s, u, DELTA)
         if not success:
             print("failure!!")
         done, reason = self.game_over(s)
-        reward = self.calc_reward(s)
+        reward = self.calc_reward(s, mode, t, done)
 
 
     def info(self, frame=-1):
