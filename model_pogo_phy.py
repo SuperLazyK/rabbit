@@ -278,7 +278,7 @@ def reward(s):
             r_thr = (2-np.linalg.norm(normalize(dir0r) - normalize(vcog))) * (3/(1+pcog[1]))
         else:
             mode = "air-dwon"
-    print(mode, r_y + r_thr)
+    #print(mode, r_y + r_thr)
     return r_y + r_thr
 
 def init_ref(s):
