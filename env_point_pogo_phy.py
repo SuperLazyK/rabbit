@@ -128,7 +128,6 @@ class RabbitEnv():
         print("dump!!!")
         os.makedirs(dirname, exist_ok=True)
         self.save(dirname + '/last_episode.pkl')
-        self.dump_csv(dirname + '/last_episode.csv')
         dt = datetime.datetime.now()
         timestamp = dt.strftime("%Y-%m-%d-%H-%M-%S")
         self.save(dirname + '/{}.pkl'.format(timestamp))
@@ -286,7 +285,7 @@ class RabbitEnv():
         print(f"Load {filename}")
         with open(filename,'rb') as f:
             self.history = pickle.load(f)
-            self.history.pop(-1)
+            #self.history.pop(-1)
 
     def dump_csv(self, filename='sate.csv'):
         data = []
