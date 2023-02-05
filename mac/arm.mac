@@ -56,36 +56,37 @@ amoment(m, x, y, vx, vy):=m * cross(x, y, vx, vy)$
 /* Kinematics */
 /*------------*/
 /* foot */
-x0: xr + (z0 + z) * sin(thr)$
+x0: xr - (z0 + z) * sin(thr)$
 y0: yr + (z0 + z) * cos(thr)$
 
 /* knee */
-xk: x0 + l0 * sin(thr + th0)$
+xk: x0 - l0 * sin(thr + th0)$
 yk: y0 + l0 * cos(thr + th0)$
 
 /* west */
-x1: xk + l1 * sin(thr + th0 + thk)$
+x1: xk - l1 * sin(thr + th0 + thk)$
 y1: yk + l1 * cos(thr + th0 + thk)$
 
 /* arm */
-x2: x1 + l1 * sin(thr + th0 + thk + th1)$
-y2: y1 + l1 * cos(thr + th0 + thk + th1)$
+x2: x1 - l2 * sin(thr + th0 + thk + th1)$
+y2: y1 + l2 * cos(thr + th0 + thk + th1)$
 
 /* head */
-xh: x2 + lh * sin(thr + th0 + thk + th1)$
+xh: x2 - lh * sin(thr + th0 + thk + th1)$
 yh: y2 + lh * cos(thr + th0 + thk + th1)$
 
 /* arm-hand */
-xa:  x2 + a * sin(thr + th0 + thk + th1 + tha)$
+xa:  x2 - a * sin(thr + th0 + thk + th1 + tha)$
 ya:  y2 + a * cos(thr + th0 + thk + th1 + tha)$
 
 /* top */
-xt: x1 + lt * sin(thr) $
-yt: y1 + lt * cos(thr) $
+xt: x0 - lt * sin(thr) $
+yt: y0 + lt * cos(thr) $
 
 xc: (mr * xr + m0 * x0 + mk * xk + m1 * x1 + m2 * x2 + mt * xa + mh * xh) / (mr + m0 + mk + m1 + m2 + mh + mt) $
 yc: (mr * yr + m0 * y0 + mk * yk + m1 * y1 + m2 * y2 + mt * ya + mh * yh) / (mr + m0 + mk + m1 + m2 + mh + mt) $
 
+thr': diff(thr, t)$
 /*
 f90(expand(xc - xr))$
 f90(expand(yc - yr))$
@@ -96,6 +97,23 @@ th0': diff(th0, t)$
 thk': diff(thk, t)$
 th1': diff(th1, t)$
 tha': diff(tha, t)$
+
+
+/*
+f90(symbolilze(diff(x0-xr, t)));
+f90(symbolilze(diff(y0-yr, t)));
+f90(symbolilze(diff(xk-x0, t)));
+f90(symbolilze(diff(yk-y0, t)));
+f90(symbolilze(diff(x1-xk, t)));
+f90(symbolilze(diff(y1-yk, t)));
+f90(symbolilze(diff(x2-x1, t)));
+f90(symbolilze(diff(y2-y1, t)));
+*/
+f90(symbolilze(diff(xt-x0, t)));
+f90(symbolilze(diff(yt-y0, t)));
+
+
+/*
 
 sol_eqc : solve((symbolilze([diff(xt - xa, t, 1)=0, diff(yt - ya, t, 1)=0])),[dth0, dtha]);
 sum_amoment: amoment(mr, xr-xr, yr-yr, diff(xr, t, 1), diff(yr, t, 1))
@@ -112,6 +130,7 @@ J:jacobian(target, ground_dX)$
 rank(J);
 showmat(J);
 b:ratsimp(target - J.transpose(ground_dX));
+*/
 
 /*
 air_dX : [dxr, dyr, dthr, dthk, dth1, da]$

@@ -132,17 +132,23 @@ class RabbitEnv():
         self.dump_csv(dirname + '/{}.csv'.format(timestamp))
 
     def reset(self, random=None):
-        #print("RESET: NOT IMPLEMENTED")
         if len(self.history ) > 1:
             if int(os.environ.get('AUTOSAVE', "0")):
                 self.autosave("normal")
-        mode = JUMP_MODE
-        t = 0
-        act = (0, 0, 0)
+
+        if random is None:
+            self.mode = JUMP_MODE
+            t = 0
+            s = mp.reset_state()
+        else:
+            mode = random.randint(0, 2)
+            t = 0
+            s = mp.reset_state()
+        u = (0, 0, 0)
         reward = 0
         s = mp.reset_state()
         ref = mp.init_ref(s)
-        self.history = [(mode, t, s, ref, act, reward)]
+        self.history = [(self.mode, t, s, ref, u, reward)]
         return mp.obs(s)
 
     def step(self, act):
@@ -176,7 +182,7 @@ class RabbitEnv():
         else:
             done, reason = self.game_over(s)
         reward = self.calc_reward(s)
-        self.history.append(("normal", t, s, ref, u, reward))
+        self.history.append((self.mode, t, s, ref, u, reward))
 
         #if self.is_render_enabled != 0:
         #    self.render(-1)

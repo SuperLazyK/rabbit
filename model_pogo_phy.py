@@ -96,6 +96,46 @@ IDX_x1, IDX_y1, IDX_dx1, IDX_dy1 = IDX_1*2, IDX_1*2+1, IDX_VEL+IDX_1*2, IDX_VEL+
 IDX_x2, IDX_y2, IDX_dx2, IDX_dy2 = IDX_2*2, IDX_2*2+1, IDX_VEL+IDX_2*2, IDX_VEL+IDX_2*2+1
 IDX_xt, IDX_yt, IDX_dxt, IDX_dyt = IDX_t*2, IDX_t*2+1, IDX_VEL+IDX_t*2, IDX_VEL+IDX_t*2+1
 
+def reset(pr, thr, th0, thk, th1, vr, dthr, dth0=0, z = 0, dz = 0):
+
+    dir_thr = np.array([-np.sin(thr), np.cos(thr)])
+    dir_thr0 = np.array([-np.sin(thr+th0), np.cos(thr+th0)])
+    dir_thr0k = np.array([-np.sin(thr+th0+thk), np.cos(thr+th0+thk)])
+    dir_thr0k1 = np.array([-np.sin(thr+th0+thk+th1), np.cos(thr+th0+thk+th1)])
+    dir_dthr = np.array([-np.cos(thr), -np.sin(thr)])
+    dir_dthr0 = np.array([-np.cos(thr+th0), -np.sin(thr+th0)])
+    dir_dthr0k = np.array([-np.cos(thr+th0+thk), -np.sin(thr+th0+thk)])
+    dir_dthr0k1 = np.array([-np.cos(thr+th0+thk+th1), -np.sin(thr+th0+thk+th1)])
+
+    p0 = pr + (z0 + z) * dir_thr
+    pk = p0 + l0 * dir_thr0
+    p1 = pk + l1 * dir_thr0k
+    p2 = p1 + l2 * dir_thr0k1
+    pt = p0 + lt * dir_thr
+
+    v0 = vr + dz*dir_thr + dthr*(z0+z)*dir_dthr
+    vk = v0 + (dthr+dth0)*l0*dir_dthr0
+    v1 = vk + (dthr+dthk+dth0)*l1*dir_dthr0k
+    v2 = v1 + (dthr+dthk+dth1+dth0)*l2*dir_dthr0k1
+    vt = v0 + dthr*lt*dir_dthr
+
+    s = np.zeros(IDX_MAX, dtype=np.float64)
+    s[IDX_xr:IDX_yr+1]  = pr
+    s[IDX_x0:IDX_y0+1]  = p0
+    s[IDX_xk:IDX_yk+1]  = pk
+    s[IDX_x1:IDX_y1+1]  = p1
+    s[IDX_x2:IDX_y2+1]  = p2
+    s[IDX_xt:IDX_yt+1]  = pt
+    s[IDX_dxr:IDX_dyr+1]  = vr
+    s[IDX_dx0:IDX_dy0+1]  = v0
+    s[IDX_dxk:IDX_dyk+1]  = vk
+    s[IDX_dx1:IDX_dy1+1]  = v1
+    s[IDX_dx2:IDX_dy2+1]  = v2
+    s[IDX_dxt:IDX_dyt+1]  = vt
+
+    return s
+
+
 def reset_state(np_random=None):
     thr = 0
     th0 = np.deg2rad(30)
