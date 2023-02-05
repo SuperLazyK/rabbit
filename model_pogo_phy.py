@@ -519,6 +519,7 @@ def calc_constraint_impulse(s, fext, dt):
     debug_print(("check det(K)", np.linalg.det(K)))
     debug_print(("check J", J))
     r = -b - J @ (v  + invM @ fext * dt)
+    debug_print(("check r", r))
     try:
         lmd = np.linalg.solve(K, r)
     except np.linalg.LinAlgError as err:
