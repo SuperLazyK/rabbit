@@ -279,7 +279,7 @@ def reward(s):
         else:
             mode = "air-dwon"
     #print(mode, r_y + r_thr)
-    return r_y + r_thr
+    return 3 + r_y + r_thr
 
 def init_ref(s):
     _, _, thk, th1, d, _, _, _, _, _ = calc_joint_property(s)
