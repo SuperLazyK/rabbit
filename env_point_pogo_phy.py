@@ -184,16 +184,17 @@ class RabbitEnv():
         return s, reward, done, {}
 
     def step_pos_control(self, pos_ref):
-        _, _, s, prev, _, _ = self.history[-1]
+        _, t, s, prev, _, _ = self.history[-1]
         u = mp.pdcontrol(s, pos_ref)
         u = mp.torq_limit(s, u)
         t1 = t + 0.033 #30Hz
 
         while t < t1:
             prev = (1-self.alpha) * prev + (self.alpha) * pos_ref
-            s, reward, done, p self.step_plant(u, prev)
+            s, reward, done, p = self.step_plant(u, prev)
             if done:
                 break
+            _, t, _, _, _, _ = self.history[-1]
 
         if self.is_render_enabled != 0:
             self.render(-1)
