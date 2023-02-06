@@ -147,7 +147,7 @@ class RabbitEnv():
             vr = np.array([0, 0])
             dthr = 0
         else:
-            if random.randint(0, 2) == 0:
+            if True: #random.randint(0, 2) == 0:
                 pr = np.array([0, 0])
                 thr = np.deg2rad(-45)
                 vr = np.array([0, 0])
@@ -358,7 +358,6 @@ def main():
         replay = True
     move_point_idx = None
 
-    env.is_render_enabled= 1
     env.render(frame=0)
 
     while True:
@@ -408,6 +407,9 @@ def main():
                 # frame rate
                 elif keyname == 'd':
                     mp.debug = mp.debug ^ True
+
+                elif keyname == 'i':
+                    mp.print_joint_property(env.history[frame][2])
 
                 elif keyname == 'u':
                     slow = slow ^ True
@@ -493,10 +495,12 @@ def main():
 
         elif start and not done:
             done = exec_cmd(env, v)
+            frame = env.num_of_frames() - 1
+            env.render(frame=frame)
             if done:
                 print("done!")
                 start = False
-            env.info()
+            #env.info()
 
 if __name__ == '__main__':
     main()
