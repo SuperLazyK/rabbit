@@ -45,8 +45,8 @@ mk = 10
 m1 = 20
 m2 = 30
 mt = 2
-g  = 0
-#g  = 9.8
+#g  = 0
+g  = 9.8
 #g  = -9.8
 #K  = 12000 # mgh = 1/2 k x^2 -> T=2*pi sqrt(m/k)
 K  = 15000 # mgh = 1/2 k x^2 -> T=2*pi sqrt(m/k)
@@ -170,8 +170,8 @@ def head_pos(s):
 def node_vel(s):
     #return s[IDX_dxr:IDX_dyr+1],
     #return s[IDX_dxr:IDX_dyr+1], s[IDX_dx0:IDX_dy0+1], s[IDX_dxk:IDX_dyk+1] 
-    return s[IDX_dxr:IDX_dyr+1], s[IDX_dx0:IDX_dy0+1]
-    #return s[IDX_dxr:IDX_dyr+1], s[IDX_dx0:IDX_dy0+1], s[IDX_dxk:IDX_dyk+1], s[IDX_dx1:IDX_dy1+1], s[IDX_dx2:IDX_dy2+1], s[IDX_dxt:IDX_dyt+1]
+    #return s[IDX_dxr:IDX_dyr+1], s[IDX_dx0:IDX_dy0+1]
+    return s[IDX_dxr:IDX_dyr+1], s[IDX_dx0:IDX_dy0+1], s[IDX_dxk:IDX_dyk+1], s[IDX_dx1:IDX_dy1+1], s[IDX_dx2:IDX_dy2+1], s[IDX_dxt:IDX_dyt+1]
 
 def normalize(v):
     return v / np.linalg.norm(v)
@@ -227,23 +227,6 @@ def calc_joint_property(s):
 
     return thr, z, thk, th1, d, dthr, dz, dthk, dth1, dd
 
-def print_joint_property(s):
-    thr, z, thk, th1, d, dthr, dz, dthk, dth1, dd = calc_joint_property(s)
-    print("")
-    print("thr       :", np.rad2deg(thr)       )
-    print("z         :", z         )
-    print("thk       :", np.rad2deg(thk)       )
-    print("th1       :", np.rad2deg(th1)       )
-    print("d         :", d         )
-    print("")
-    #print("s[IDX_dxr]:", s[IDX_dxr])
-    #print("s[IDX_dyr]:", s[IDX_dyr])
-    #print("dthr      :", dthr      )
-    #print("dz        :", dz        )
-    #print("dthk      :", dthk      )
-    #print("dth1      :", dth1      )
-    #print("dd)       :", dd)       )
-
 def ground(s):
     return s[IDX_yr] < 0.05 or cog(s)[1] < 0.8
 
@@ -253,21 +236,21 @@ OBS_MIN = np.array([-20,-1]*NUM_OF_MASS_POINTS + [-100,-100]*NUM_OF_MASS_POINTS)
 OBS_MAX = np.array([20,10]*NUM_OF_MASS_POINTS + [100,109]*NUM_OF_MASS_POINTS)
 
 def obs(s):
-    thr, z, thk, th1, d, dthr, dz, dthk, dth1, dd = calc_joint_property(s)
-    return np.array([ s[IDX_yr]
-                    , thr
-                    , z
-                    , thk
-                    , th1
-                    , d
-                    , s[IDX_dxr]
-                    , s[IDX_dyr]
-                    , dthr
-                    , dz
-                    , dthk
-                    , dth1
-                    , dd])
-    #return s
+    #thr, z, thk, th1, d, dthr, dz, dthk, dth1, dd = calc_joint_property(s)
+    #return np.array([ s[IDX_yr]
+    #                , thr
+    #                , z
+    #                , thk
+    #                , th1
+    #                , d
+    #                , s[IDX_dxr]
+    #                , s[IDX_dyr]
+    #                , dthr
+    #                , dz
+    #                , dthk
+    #                , dth1
+    #                , dd])
+    return s
 
 
 def reward_imitation_jump(s, t):
@@ -488,9 +471,7 @@ constraints = [ ("ground-pen", lambda s, dt: constraint_ground_penetration(s, ID
               , ("dist-0k", lambda s, dt: constraint_distant(s, IDX_0, IDX_k, l0, dt, 0.3, pred_ne0), (-inf, inf))
               , ("dist-k1", lambda s, dt: constraint_distant(s, IDX_k, IDX_1, l1, dt, 0.3, pred_ne0), (-inf, inf))
               , ("dist-12", lambda s, dt: constraint_distant(s, IDX_1, IDX_2, l2, dt, 0.3, pred_ne0), (-inf, inf))
-              , ("fixed-pointer0", lambda s, dt: constraint_fixed_point_distant(s, IDX_0, np.array([0, 1]), 0, dt, 0.1, pred_ne0), (-inf, inf))
-              , ("fixed-pointert", lambda s, dt: constraint_fixed_point_distant(s, IDX_t, np.array([0, 1 + lt]), 0, dt, 0.1, pred_ne0), (-inf, inf))
-              #, ("dist-0t", lambda s, dt: constraint_distant(s, IDX_0, IDX_t, lt, dt, 0.3, pred_ne0), (-inf, inf))
+              , ("dist-0t", lambda s, dt: constraint_distant(s, IDX_0, IDX_t, lt, dt, 0.3, pred_ne0), (-inf, inf))
               , ("limit-0k1-min", lambda s, dt: constraint_angle(s, IDX_0, IDX_k, IDX_1, np.deg2rad(-150), dt, 0.1, pred_lt0), (0, inf))
               , ("limit-0k1-max", lambda s, dt: constraint_angle(s, IDX_0, IDX_k, IDX_1, np.deg2rad(-10), dt, 0.1, pred_gt0), (-inf, 0))
               , ("limit-k12-min", lambda s, dt: constraint_angle(s, IDX_k, IDX_1, IDX_2, np.deg2rad(-10), dt, 0.1, pred_lt0), (0, inf))
