@@ -97,7 +97,7 @@ class RabbitViewer():
         pygame.draw.line(self.screen, BLACK, ps[-2], head,  width=int(100 * RSCALE))
         pygame.draw.line(self.screen, BLACK, [0,SCREEN_SIZE[1]/2 + OFFSET_VERT], [SCREEN_SIZE[0], SCREEN_SIZE[1]/2 + OFFSET_VERT],  width=int(100 * RSCALE))
         tmx, tmy, am = mp.moment(state)
-        text = self.font.render(f"mode={mode:} t={t:.03f}", True, BLACK)
+        text = self.font.render(f"mode={mode:} t={t:.03f} E={energy:.01f}", True, BLACK)
         self.screen.blit(text, [300, 50])
         pygame.display.flip()
         self.clock.tick(60)
