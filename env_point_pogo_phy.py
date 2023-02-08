@@ -4,6 +4,7 @@ import pygame_menu
 import numpy as np
 import glob
 from numpy import sin, cos
+from math import degrees
 from os import path
 import os
 import time
@@ -14,12 +15,13 @@ import model_pogo_phy as mp
 import csv
 import datetime
 import pickle
+import yaml
 
 
 pygame.init()
 # input U
-#DELTA = 0.001
-DELTA = 0.01
+DELTA = 0.001
+#DELTA = 0.01
 SPEED=6
 
 NORMAL_MODE=0
@@ -41,6 +43,28 @@ SCREEN_SIZE=(1300, 500)
 SCALE=100
 RSCALE=1/SCALE
 OFFSET_VERT = SCREEN_SIZE[1]/3
+
+def dump_history_csv(history, filename='sate.csv'):
+    data = []
+    for mode, t, s, ref, u, reward in history:
+        energy = mp.energy(s)
+        dic = {}
+        dic['t'] = t
+        dic['ref_th0'] = ref[0]
+        dic['ref_th1'] = ref[1]
+        dic['ref_d']   = ref[2]
+        dic['u_torq0%'] = u[0]/mp.max_u()[0]
+        dic['u_torq1%'] = u[1]/mp.max_u()[1]
+        data.append(dic)
+
+    with open(filename,'w',encoding='utf-8') as f:
+        writer = csv.DictWriter(f, fieldnames = dic.keys())
+        writer.writeheader()
+        writer.writerows(data)
+
+def dump_plot_yaml(joint_info, filename='plot.yaml'):
+    with open(filename, 'w') as f:
+        yaml.dump(joint_info, f)
 
 class RabbitViewer():
     def __init__(self):
@@ -131,7 +155,6 @@ class RabbitEnv():
         dt = datetime.datetime.now()
         timestamp = dt.strftime("%Y-%m-%d-%H-%M-%S")
         self.save(dirname + '/{}.pkl'.format(timestamp))
-        self.dump_csv(dirname + '/{}.csv'.format(timestamp))
 
     def reset(self, random=None):
         if len(self.history ) > 1:
@@ -287,24 +310,16 @@ class RabbitEnv():
             self.history = pickle.load(f)
             #self.history.pop(-1)
 
-    def dump_csv(self, filename='sate.csv'):
-        data = []
-        for mode, t, s, ref, u, reward in self.history:
-            energy = mp.energy(s)
-            dic = {}
-            dic['t'] = t
-            dic['ref_th0'] = ref[0]
-            dic['ref_th1'] = ref[1]
-            dic['ref_d']   = ref[2]
-            dic['u_torq0%'] = u[0]/mp.max_u()[0]
-            dic['u_torq1%'] = u[1]/mp.max_u()[1]
-            dic['E'] = energy
-            data.append(dic)
-
-        with open(filename,'w',encoding='utf-8') as f:
-            writer = csv.DictWriter(f, fieldnames = dic.keys())
-            writer.writeheader()
-            writer.writerows(data)
+    def joint_info(self, frame):
+        s = self.history[frame][2]
+        prop = mp.calc_joint_property(s)
+        prop['t'] = self.history[frame][1]
+        for k in prop:
+            if 'th' in k:
+                prop[k] = degrees(prop[k])
+            prop[k] = round(float(prop[k]), 3)
+            print(f"{k}\t:\t{prop[k]}")
+        return prop
 
 
 #----------------------------
@@ -359,9 +374,10 @@ def main():
     move_point_idx = None
 
     env.render(frame=0)
+    plot_data = []
 
     while True:
-        stepOne = False
+        #stepOne = False
         prev_frame = frame
         n = env.num_of_frames()
         for event in pygame.event.get():
@@ -391,7 +407,7 @@ def main():
                     done = True
 
                 if keyname == 'q':
-                    env.dump_csv()
+                    dump_history_csv(env.history)
                     env.close()
                     sys.exit()
 
@@ -409,16 +425,12 @@ def main():
                     mp.debug = mp.debug ^ True
 
                 elif keyname == 'i':
-                    mp.print_joint_property(env.history[frame][2])
+                    plot_data.append(env.joint_info(frame))
+                    dump_plot_yaml(plot_data, 'plot.yaml')
 
                 elif keyname == 'u':
                     slow = slow ^ True
 
-                elif keyname == 'space':
-                    stepOne = True
-                    start = True
-                    replay = False
-                    done = False
 
                 # history
                 elif replay and keyname == 'n':
@@ -474,11 +486,11 @@ def main():
                         eidx = eidx + 1
                         if eidx == len(episodes)-1:
                             eidx = 0
-            if stepOne:
-                env.rollback(frame)
-                done = exec_cmd(env, v)
-                start = False
-                replay = False
+            #if stepOne:
+            #    env.rollback(frame)
+            #    done = exec_cmd(env, v)
+            #    start = False
+            #    replay = False
 
             if len(episodes) > 0 and last_episode != eidx:
                 env.load(episodes[eidx])

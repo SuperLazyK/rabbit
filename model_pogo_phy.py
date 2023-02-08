@@ -185,6 +185,7 @@ def vec2rad(v1,v2): # angle from v1 to v2
     return atan2(s,c)
 
 def calc_joint_property(s):
+    ret = {}
     pr = s[IDX_xr:IDX_yr+1]
     p0 = s[IDX_x0:IDX_y0+1]
     pk = s[IDX_xk:IDX_yk+1]
@@ -198,13 +199,12 @@ def calc_joint_property(s):
     p12 = p2 - p1
     p2t = pt - p2
     lr0 = np.linalg.norm(pr0)
-    d = np.linalg.norm(p2t)
-    z = lr0 -z0
-
-    thr = atan2(pr0[1], pr0[0]) - np.pi/2
-    th0 = vec2rad(pr0/lr0, p0k/l0)
-    thk = vec2rad(p0k/l0, pk1/l1)
-    th1 = vec2rad(pk1/l1, p12/l2)
+    ret['d'] = d = np.linalg.norm(p2t)
+    ret['z'] = lr0 -z0
+    ret['thr'] = atan2(pr0[1], pr0[0]) - np.pi/2
+    ret['th0'] = vec2rad(pr0/lr0, p0k/l0)
+    ret['thk'] = vec2rad(p0k/l0, pk1/l1)
+    ret['th1'] = vec2rad(pk1/l1, p12/l2)
 
     vr = s[IDX_dxr:IDX_dyr+1]
     v0 = s[IDX_dx0:IDX_dy0+1]
@@ -213,32 +213,19 @@ def calc_joint_property(s):
     v2 = s[IDX_dx2:IDX_dy2+1]
     vt = s[IDX_dxt:IDX_dyt+1]
 
-    dthr = np.cross(pr0, v0-vr)/lr0**2
-    dth0 = np.cross(p0k, vk-v0)/l0**2 - dthr
-    dthk = np.cross(pk1, v1-vk)/l1**2 - dthr - dth0
-    dth1 = np.cross(p12, v2-v1)/l2**2 - dthr - dth0 - dthk
+    ret['dd'] = (p2t/d) @ (vt -v2)
+    ret['dz'] = (pr0/lr0) @ (v0 - vr)
+    ret['dthr'] = dthr = np.cross(pr0, v0-vr)/lr0**2
+    ret['dth0'] = dth0 = np.cross(p0k, vk-v0)/l0**2 - dthr
+    ret['dthk'] = dthk = np.cross(pk1, v1-vk)/l1**2 - dthr - dth0
+    ret['dth1'] = dth1 = np.cross(p12, v2-v1)/l2**2 - dthr - dth0 - dthk
 
-    dd = (p2t/d) @ (vt -v2)
-    dz = (pr0/lr0) @ (v0 - vr)
+    ret['prx'] = s[IDX_xr]
+    ret['pry'] = s[IDX_yr]
+    ret['vrx'] = s[IDX_dxr]
+    ret['vry'] = s[IDX_dyr]
+    return ret
 
-    return thr, z, th0, thk, th1, d, dthr, dz, dth0, dthk, dth1, dd
-
-def print_joint_property(s):
-    thr, z, th0, thk, th1, d, dthr, dz, dth0, dthk, dth1, dd = calc_joint_property(s)
-    print("")
-    print("thr       :", np.rad2deg(thr)       )
-    print("z         :", z         )
-    print("thk       :", np.rad2deg(thk)       )
-    print("th1       :", np.rad2deg(th1)       )
-    print("d         :", d         )
-    print("")
-    #print("s[IDX_dxr]:", s[IDX_dxr])
-    #print("s[IDX_dyr]:", s[IDX_dyr])
-    #print("dthr      :", dthr      )
-    #print("dz        :", dz        )
-    #print("dthk      :", dthk      )
-    #print("dth1      :", dth1      )
-    #print("dd)       :", dd)       )
 
 def ground(s):
     return s[IDX_yr] < 0.05 or cog(s)[1] < 0.8
@@ -249,20 +236,20 @@ OBS_MIN = np.array([-20,-1]*NUM_OF_MASS_POINTS + [-100,-100]*NUM_OF_MASS_POINTS)
 OBS_MAX = np.array([20,10]*NUM_OF_MASS_POINTS + [100,109]*NUM_OF_MASS_POINTS)
 
 def obs(s):
-    thr, z, th0, thk, th1, d, dthr, dz, dth0, dthk, dth1, dd = calc_joint_property(s)
+    prop = calc_joint_property(s)
     return np.array([ s[IDX_yr]
-                    , thr
-                    , z
-                    , thk
-                    , th1
-                    , d
+                    , prop['thr']
+                    , prop['z']
+                    , prop['thk']
+                    , prop['th1']
+                    , prop['d']
                     , s[IDX_dxr]
                     , s[IDX_dyr]
-                    , dthr
-                    , dz
-                    , dthk
-                    , dth1
-                    , dd])
+                    , prop['dthr']
+                    , prop['dz']
+                    , prop['dthk']
+                    , prop['dth1']
+                    , prop['dd']])
     #return s
 
 
@@ -294,8 +281,8 @@ def reward(s):
     return 3 + r_y + r_thr
 
 def init_ref(s):
-    _, _, _, thk, th1, d, _, _, _, _, _, _ = calc_joint_property(s)
-    return np.array([thk, th1, d])
+    prop = calc_joint_property(s)
+    return np.array([prop['thk'], prop['th1'], prop['d']])
 
 def check_invariant(s):
     ps = list(node_pos(s))
@@ -604,9 +591,9 @@ def moment(s):
     return tm[0], tm[1], am
 
 def pdcontrol(s, ref):
-    _, _, _, thk, th1, d, _, _, _, dthk, dth1, dd = calc_joint_property(s)
-    dob  = np.array([dthk, dth1, dd])
-    ob = np.array([thk, th1, d])
+    prop = calc_joint_property(s)
+    dob  = np.array([prop['dthk'], prop['dth1'], prop['dd']])
+    ob = np.array([prop['thk'], prop['th1'], prop['d']])
     err = ref - ob
     #print(f"PD-ref: {np.rad2deg(ref[0])} {np.rad2deg(ref[1])} {ref[2]}")
     #print(f"PD-obs: {np.rad2deg(thk)} {np.rad2deg(th1)} {d}")
