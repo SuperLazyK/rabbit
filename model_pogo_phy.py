@@ -219,8 +219,6 @@ def calc_joint_property(s):
     dth1 = np.cross(p12, v2-v1)/l2**2 - dthr - dth0 - dthk
 
     dd = (p2t/d) @ (vt -v2)
-    print("d", d, "dd", dd)
-    print("th0", th0, "dth0", dth0)
     dz = (pr0/lr0) @ (v0 - vr)
 
     return thr, z, th0, thk, th1, d, dthr, dz, dth0, dthk, dth1, dd
