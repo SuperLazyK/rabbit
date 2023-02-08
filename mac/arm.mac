@@ -8,7 +8,7 @@ depends([z, a] , t)$
 depends([th0, thk, th1, tha] , t)$
 depends([u1, u2, u3] , t)$
 
-cross(vx0,vy0,vx1,vy1):=vx0*vy1-vy0*vx1$
+cross(v1,v2):=v1[1]*v2[2]-v1[2]*v2[1]$
 
 size(M):=[length(M),length(args(M))]$
 sizev(M):=length(M)$
@@ -50,43 +50,42 @@ symbolilze(M):= subst([ diff(xr,t,2)=ddxr
 ground(M):= subst([dxr=0 , ddxr=0 , dyr=0, ddyr=0 ], M)$
 air(M):= subst([dz=0 , ddz=0 , z=0], M)$
 
-amoment(m, x, y, vx, vy):=m * cross(x, y, vx, vy)$
+amoment(m, x, y, vx, vy):=m * cross([x, y], [vx, vy])$
 
 /*------------*/
 /* Kinematics */
 /*------------*/
 /* foot */
-x0: xr - (z0 + z) * sin(thr)$
+x0: xr + (z0 + z) * sin(thr)$
 y0: yr + (z0 + z) * cos(thr)$
 
 /* knee */
-xk: x0 - l0 * sin(thr + th0)$
+xk: x0 + l0 * sin(thr + th0)$
 yk: y0 + l0 * cos(thr + th0)$
 
 /* west */
-x1: xk - l1 * sin(thr + th0 + thk)$
+x1: xk + l1 * sin(thr + th0 + thk)$
 y1: yk + l1 * cos(thr + th0 + thk)$
 
 /* arm */
-x2: x1 - l2 * sin(thr + th0 + thk + th1)$
+x2: x1 + l2 * sin(thr + th0 + thk + th1)$
 y2: y1 + l2 * cos(thr + th0 + thk + th1)$
 
 /* head */
-xh: x2 - lh * sin(thr + th0 + thk + th1)$
+xh: x2 + lh * sin(thr + th0 + thk + th1)$
 yh: y2 + lh * cos(thr + th0 + thk + th1)$
 
 /* arm-hand */
-xa:  x2 - a * sin(thr + th0 + thk + th1 + tha)$
+xa:  x2 + a * sin(thr + th0 + thk + th1 + tha)$
 ya:  y2 + a * cos(thr + th0 + thk + th1 + tha)$
 
 /* top */
-xt: x0 - lt * sin(thr) $
+xt: x0 + lt * sin(thr) $
 yt: y0 + lt * cos(thr) $
 
 xc: (mr * xr + m0 * x0 + mk * xk + m1 * x1 + m2 * x2 + mt * xa + mh * xh) / (mr + m0 + mk + m1 + m2 + mh + mt) $
 yc: (mr * yr + m0 * y0 + mk * yk + m1 * y1 + m2 * y2 + mt * ya + mh * yh) / (mr + m0 + mk + m1 + m2 + mh + mt) $
 
-thr': diff(thr, t)$
 /*
 f90(expand(xc - xr))$
 f90(expand(yc - yr))$
@@ -98,19 +97,31 @@ thk': diff(thk, t)$
 th1': diff(th1, t)$
 tha': diff(tha, t)$
 
+pr: [xr, yr]$
+p0: [x0, y0]$
+p1: [x1, y1]$
+pk: [xk, yk]$
+p2: [x2, y2]$
+vr: diff(pr,t)$
+v0: diff(p0,t)$
+v1: diff(p1,t)$
+vk: diff(pk,t)$
+v2: diff(p2,t)$
+lr0:(z0 + z)$
+dir_r0: (p0 - pr) / lr0$
 
-/*
-f90(symbolilze(diff(x0-xr, t)));
-f90(symbolilze(diff(y0-yr, t)));
-f90(symbolilze(diff(xk-x0, t)));
-f90(symbolilze(diff(yk-y0, t)));
-f90(symbolilze(diff(x1-xk, t)));
-f90(symbolilze(diff(y1-yk, t)));
-f90(symbolilze(diff(x2-x1, t)));
-f90(symbolilze(diff(y2-y1, t)));
-*/
-f90(symbolilze(diff(xt-x0, t)));
-f90(symbolilze(diff(yt-y0, t)));
+f90(ratsimp(trigsimp(symbolilze(
+cross((v0-vr) - dz * dir_r0,  dir_r0)/lr0)
+)));
+
+
+f90(ratsimp(trigsimp(symbolilze(cross(v0 - vr, p0 -pr)/lr0**2))))$
+f90(ratsimp(trigsimp(symbolilze(cross(vk - v0, pk -p0)/l0**2 - dthr))))$
+f90(ratsimp(trigsimp(symbolilze(cross(v1 - vk, p1 -pk)/l1**2 - dthr - dth0))))$
+f90(ratsimp(trigsimp(symbolilze(cross(v2 - v1, p2 -p1)/l2**2 - dthr - dth0 -dthk))))$
+
+f90(ratsimp(trigsimp(symbolilze((vk-v0)))))$
+f90(ratsimp(trigsimp(symbolilze((v1-vk)))))$
 
 
 /*
