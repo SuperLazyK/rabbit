@@ -102,11 +102,15 @@ p0: [x0, y0]$
 p1: [x1, y1]$
 pk: [xk, yk]$
 p2: [x2, y2]$
+pt: [xt, yt]$
+
 vr: diff(pr,t)$
 v0: diff(p0,t)$
 v1: diff(p1,t)$
 vk: diff(pk,t)$
 v2: diff(p2,t)$
+vt: diff(pt,t)$
+
 lr0:(z0 + z)$
 dir_r0: (p0 - pr) / lr0$
 
@@ -114,14 +118,13 @@ f90(ratsimp(trigsimp(symbolilze(
 cross((v0-vr) - dz * dir_r0,  dir_r0)/lr0)
 )));
 
-
+/*
 f90(ratsimp(trigsimp(symbolilze(cross(v0 - vr, p0 -pr)/lr0**2))))$
 f90(ratsimp(trigsimp(symbolilze(cross(vk - v0, pk -p0)/l0**2 - dthr))))$
 f90(ratsimp(trigsimp(symbolilze(cross(v1 - vk, p1 -pk)/l1**2 - dthr - dth0))))$
 f90(ratsimp(trigsimp(symbolilze(cross(v2 - v1, p2 -p1)/l2**2 - dthr - dth0 -dthk))))$
+*/
 
-f90(ratsimp(trigsimp(symbolilze((vk-v0)))))$
-f90(ratsimp(trigsimp(symbolilze((v1-vk)))))$
 
 
 /*
