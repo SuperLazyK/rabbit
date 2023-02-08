@@ -56,31 +56,31 @@ amoment(m, x, y, vx, vy):=m * cross([x, y], [vx, vy])$
 /* Kinematics */
 /*------------*/
 /* foot */
-x0: xr + (z0 + z) * sin(thr)$
+x0: xr - (z0 + z) * sin(thr)$
 y0: yr + (z0 + z) * cos(thr)$
 
 /* knee */
-xk: x0 + l0 * sin(thr + th0)$
+xk: x0 - l0 * sin(thr + th0)$
 yk: y0 + l0 * cos(thr + th0)$
 
 /* west */
-x1: xk + l1 * sin(thr + th0 + thk)$
+x1: xk - l1 * sin(thr + th0 + thk)$
 y1: yk + l1 * cos(thr + th0 + thk)$
 
 /* arm */
-x2: x1 + l2 * sin(thr + th0 + thk + th1)$
+x2: x1 - l2 * sin(thr + th0 + thk + th1)$
 y2: y1 + l2 * cos(thr + th0 + thk + th1)$
 
 /* head */
-xh: x2 + lh * sin(thr + th0 + thk + th1)$
+xh: x2 - lh * sin(thr + th0 + thk + th1)$
 yh: y2 + lh * cos(thr + th0 + thk + th1)$
 
 /* arm-hand */
-xa:  x2 + a * sin(thr + th0 + thk + th1 + tha)$
+xa:  x2 - a * sin(thr + th0 + thk + th1 + tha)$
 ya:  y2 + a * cos(thr + th0 + thk + th1 + tha)$
 
 /* top */
-xt: x0 + lt * sin(thr) $
+xt: x0 - lt * sin(thr) $
 yt: y0 + lt * cos(thr) $
 
 xc: (mr * xr + m0 * x0 + mk * xk + m1 * x1 + m2 * x2 + mt * xa + mh * xh) / (mr + m0 + mk + m1 + m2 + mh + mt) $
@@ -114,16 +114,11 @@ vt: diff(pt,t)$
 lr0:(z0 + z)$
 dir_r0: (p0 - pr) / lr0$
 
-f90(ratsimp(trigsimp(symbolilze(
-cross((v0-vr) - dz * dir_r0,  dir_r0)/lr0)
-)));
 
-/*
-f90(ratsimp(trigsimp(symbolilze(cross(v0 - vr, p0 -pr)/lr0**2))))$
-f90(ratsimp(trigsimp(symbolilze(cross(vk - v0, pk -p0)/l0**2 - dthr))))$
-f90(ratsimp(trigsimp(symbolilze(cross(v1 - vk, p1 -pk)/l1**2 - dthr - dth0))))$
-f90(ratsimp(trigsimp(symbolilze(cross(v2 - v1, p2 -p1)/l2**2 - dthr - dth0 -dthk))))$
-*/
+f90(ratsimp(trigsimp(symbolilze(cross(p0 -pr, v0 - vr)/lr0**2))))$
+f90(ratsimp(trigsimp(symbolilze(cross(pk -p0, vk - v0)/l0**2 - dthr))))$
+f90(ratsimp(trigsimp(symbolilze(cross(p1 -pk, v1 - vk)/l1**2 - dthr - dth0))))$
+f90(ratsimp(trigsimp(symbolilze(cross(p2 -p1, v2 - v1)/l2**2 - dthr - dth0 -dthk))))$
 
 
 
