@@ -45,8 +45,8 @@ mk = 10
 m1 = 20
 m2 = 30
 mt = 2
-#g  = 0
-g  = 9.8
+g  = 0
+#g  = 9.8
 #g  = -9.8
 #K  = 12000 # mgh = 1/2 k x^2 -> T=2*pi sqrt(m/k)
 K  = 15000 # mgh = 1/2 k x^2 -> T=2*pi sqrt(m/k)
@@ -213,12 +213,14 @@ def calc_joint_property(s):
     v2 = s[IDX_dx2:IDX_dy2+1]
     vt = s[IDX_dxt:IDX_dyt+1]
 
-    dthr = np.cross(v0-vr, pr0)/lr0**2
-    dth0 = np.cross(vk-v0, p0k)/l0**2 - dthr
-    dthk = np.cross(v1-vk, pk1)/l1**2 - dthr - dth0
-    dth1 = np.cross(v2-v1, p12)/l2**2 - dthr - dth0 - dthk
+    dthr = np.cross(pr0, v0-vr)/lr0**2
+    dth0 = np.cross(p0k, vk-v0)/l0**2 - dthr
+    dthk = np.cross(pk1, v1-vk)/l1**2 - dthr - dth0
+    dth1 = np.cross(p12, v2-v1)/l2**2 - dthr - dth0 - dthk
 
     dd = (p2t/d) @ (vt -v2)
+    print("d", d, "dd", dd)
+    print("th0", th0, "dth0", dth0)
     dz = (pr0/lr0) @ (v0 - vr)
 
     return thr, z, th0, thk, th1, d, dthr, dz, dth0, dthk, dth1, dd
@@ -610,7 +612,7 @@ def pdcontrol(s, ref):
     err = ref - ob
     #print(f"PD-ref: {np.rad2deg(ref[0])} {np.rad2deg(ref[1])} {ref[2]}")
     #print(f"PD-obs: {np.rad2deg(thk)} {np.rad2deg(th1)} {d}")
-    ret = err * Kp + Kd * dob
+    ret = err * Kp - Kd * dob
     return ret
 
 
