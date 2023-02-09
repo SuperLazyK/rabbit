@@ -19,7 +19,7 @@ ref_max_thk = np.deg2rad(-20)
 ref_min_th1 = np.deg2rad(0)
 ref_max_th1 = np.deg2rad(90)
 ref_min_a = 0.05
-ref_max_a = 0.45
+ref_max_a = 0.50
 REF_MIN = np.array([ref_min_thk, ref_min_th1, ref_min_a])
 REF_MAX = np.array([ref_max_thk, ref_max_th1, ref_max_a])
 
@@ -28,7 +28,7 @@ limit_max_thk = np.deg2rad(-10)
 limit_min_th1 = np.deg2rad(-10)
 limit_max_th1 = np.deg2rad(150)
 limit_min_d = 0
-limit_max_d = 0.5
+limit_max_d = 0.6
 
 MAX_ROT_SPEED=100
 MAX_SPEED=100

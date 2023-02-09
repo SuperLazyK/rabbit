@@ -44,7 +44,7 @@ SCALE=100
 RSCALE=1/SCALE
 OFFSET_VERT = SCREEN_SIZE[1]/3
 
-def dump_history_csv(history, filename='sate.csv'):
+def dump_history_csv(history, filename='state.csv'):
     data = []
     for mode, t, s, ref, u, reward in history:
         energy = mp.energy(s)
@@ -407,7 +407,7 @@ def main():
                     done = True
 
                 if keyname == 'q':
-                    dump_history_csv(env.history)
+                    #dump_history_csv(env.history)
                     env.close()
                     sys.exit()
 
