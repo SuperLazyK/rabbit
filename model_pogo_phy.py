@@ -481,7 +481,9 @@ constraints = [ ("ground-pen", lambda s, dt: constraint_ground_penetration(s, ID
               #, ("limit-12t-max", lambda s, dt: constraint_angle(s, IDX_1, IDX_2, IDX_t, np.deg2rad(170), dt, 0.1, pred_gt0), (-inf, 0))
               , ("limit-2t-min", lambda s, dt: constraint_distant(s, IDX_2, IDX_t, limit_min_d, dt, 0.1, pred_lt0), (0, inf))
               , ("limit-2t-max", lambda s, dt: constraint_distant(s, IDX_2, IDX_t, limit_max_d, dt, 0.1, pred_gt0), (-inf, 0))
-              , ("stick < hip", lambda s, dt: constraint_point_line_penetration(s, IDX_0, IDX_t, IDX_1, dt, 0.1, pred_gt0), (-inf, 0))
+              , ("stick < 1", lambda s, dt: constraint_point_line_penetration(s, IDX_0, IDX_t, IDX_1, dt, 0.1, pred_gt0), (-inf, 0))
+              , ("stick < 2", lambda s, dt: constraint_point_line_penetration(s, IDX_0, IDX_t, IDX_2, dt, 0.1, pred_gt0), (-inf, 0))
+              , ("top < 1h", lambda s, dt: constraint_point_line_penetration(s, IDX_1, IDX_h, IDX_t, dt, 0.1, pred_lt0), (0, inf))
               ]
 
 optional_constraints = []
