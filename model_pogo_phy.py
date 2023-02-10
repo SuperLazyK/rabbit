@@ -18,8 +18,8 @@ ref_min_thk = np.deg2rad(-140)
 ref_max_thk = np.deg2rad(-20)
 ref_min_th1 = np.deg2rad(0)
 ref_max_th1 = np.deg2rad(90)
-ref_min_a = 0.05
-ref_max_a = 0.6
+ref_min_a = 0.00
+ref_max_a = 0.35
 REF_MIN = np.array([ref_min_thk, ref_min_th1, ref_min_a])
 REF_MAX = np.array([ref_max_thk, ref_max_th1, ref_max_a])
 
@@ -28,7 +28,7 @@ limit_max_thk = np.deg2rad(-10)
 limit_min_th1 = np.deg2rad(-10)
 limit_max_th1 = np.deg2rad(150)
 limit_min_d = 0
-limit_max_d = 0.7
+limit_max_d = 0.5
 
 MAX_ROT_SPEED=100
 MAX_SPEED=100
@@ -36,8 +36,8 @@ MAX_SPEED=100
 z0 = 0.55
 l0 = 0.4
 l1 = 0.5
-l2 = 0.4
-lh = 0.2
+l2 = 0.3
+lh = 0.4
 lt = 0.91
 mr = 1
 m0 = 10
@@ -374,12 +374,12 @@ def constraint_point_line_penetration(s, idx0, idx1, idx2, dt, beta, pred):
     y1 = p1[1]
     x2 = p2[0]
     y2 = p2[1]
-    j[2*idx0]   = (l01**2*y2-l02**2*y1+(l02**2-l01**2)*y0)/(l01**2*l02**2)
-    j[2*idx0+1] = -(l01**2*x2-l02**2*x1+(l02**2-l01**2)*x0)/(l01**2*l02**2)
     j[2*idx1]   = (y1-y0)/l01**2
     j[2*idx1+1] = -(x1-x0)/l01**2
     j[2*idx2]   = -(y2-y0)/l02**2
     j[2*idx2+1] = (x2-x0)/l02**2
+    j[2*idx0]   = -j[2*idx1] - j[2*idx2]
+    j[2*idx0+1] = -j[2*idx1+1] - j[2*idx2+1]
     return j, b, pred(C)
 
 def constraint_ground_friction(s, idx, y, dt):
@@ -434,19 +434,19 @@ def constraint_angle(s, idx0, idx1, idx2, th, dt, beta, pred):
     th012 = vec2rad(p01/l01, p12/l12)
     C = th012 - th
     b = beta*C/dt
+    j = np.zeros(IDX_VEL)
     x0 = p0[0]
     y0 = p0[1]
     x1 = p1[0]
     y1 = p1[1]
     x2 = p2[0]
     y2 = p2[1]
-    j = np.zeros(IDX_VEL)
     j[2*idx0]   = -(y1-y0)/l01**2
     j[2*idx0+1] = (x1-x0)/l01**2
-    j[2*idx1]   = (l01**2*y2+(l12**2-l01**2)*y1-l12**2*y0)/(l01**2*l12**2)
-    j[2*idx1+1] = -(l01**2*x2+(l12**2-l01**2)*x1-l12**2*x0)/(l01**2*l12**2)
     j[2*idx2]   = -(y2-y1)/l12**2
     j[2*idx2+1] = (x2-x1)/l12**2
+    j[2*idx1]   = -j[2*idx0] - j[2*idx2]
+    j[2*idx1+1] = -j[2*idx0+1] - j[2*idx2+1]
     return j, b, pred(C)
 
 def pred_gt0(C):
@@ -600,18 +600,4 @@ def pdcontrol(s, ref):
     ret = err * Kp - Kd * dob
     return ret
 
-
-def test_dynamics():
-    s = reset_state()
-    dt = 0.001
-    t = 0
-    for i in range(5000):
-        print("----------")
-        print("t", t)
-        print("----------")
-        print_state(s)
-        _, t, s = step(t, s, np.zeros(2), dt)
-
-if __name__ == '__main__':
-    test_dynamics()
 

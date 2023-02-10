@@ -332,7 +332,7 @@ def exec_cmd(env, v):
     if ctr_mode == 'vel':
         k_th0 = SPEED*np.pi/360
         k_th1 = SPEED*np.pi/360
-        k_a   = SPEED/6 * 0.05
+        k_a   = SPEED/6 * 0.01
         _, _, done, _ = env.step_vel_control(np.array([k_th0, k_th1, k_a]) * v)
     else:
         k_th0 = 100000
@@ -463,9 +463,9 @@ def main():
                         eidx = min(eidx + 1, len(episodes)-1)
                 # input
                 elif keyname == 'j':
-                    v = np.array([1, 0, 0])
-                elif keyname == 'k':
                     v = np.array([-1, 0, 0])
+                elif keyname == 'k':
+                    v = np.array([1, 0, 0])
                 elif keyname == 'h':
                     v =  np.array([0, 1, 0])
                 elif keyname == 'l':
