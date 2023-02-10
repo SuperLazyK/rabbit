@@ -332,7 +332,7 @@ def exec_cmd(env, v):
     if ctr_mode == 'vel':
         k_th0 = SPEED*np.pi/360
         k_th1 = SPEED*np.pi/360
-        k_a   = 0.04
+        k_a   = SPEED/6 * 0.05
         _, _, done, _ = env.step_vel_control(np.array([k_th0, k_th1, k_a]) * v)
     else:
         k_th0 = 100000
