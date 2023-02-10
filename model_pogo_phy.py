@@ -36,14 +36,15 @@ MAX_SPEED=100
 z0 = 0.55
 l0 = 0.4
 l1 = 0.5
-l2 = 0.3
+l2 = 0.2
 lh = 0.4
 lt = 0.91
 mr = 1
 m0 = 10
 mk = 10
 m1 = 20
-m2 = 30
+m2 = 20
+mh = 15
 mt = 2
 g  = 0
 #g  = 9.8
@@ -65,7 +66,7 @@ Kp = np.array([400, 400, 400])
 #Kd = Kp * (0.01)
 Kd = Kp * (0.1)
 
-M = np.array([mr, mr, m0, m0, mk, mk, m1, m1, m2, m2, mt, mt])
+M = np.array([mr, mr, m0, m0, mk, mk, m1, m1, m2, m2, mh, mh, mt, mt])
 invM = np.diag(1. / M)
 #M[0] = 0
 #M[1] = 0
@@ -75,7 +76,7 @@ invM = np.diag(1. / M)
 #-----------------
 # State
 #-----------------
-NUM_OF_MASS_POINTS = 6
+NUM_OF_MASS_POINTS = 7
 IDX_VEL = NUM_OF_MASS_POINTS * 2
 IDX_MAX = NUM_OF_MASS_POINTS * 2 * 2
 
@@ -84,13 +85,15 @@ IDX_0   = 1
 IDX_k   = 2
 IDX_1   = 3
 IDX_2   = 4
-IDX_t   = 5
+IDX_h   = 5
+IDX_t   = 6
 
 IDX_xr, IDX_yr, IDX_dxr, IDX_dyr = IDX_r*2, IDX_r*2+1, IDX_VEL+IDX_r*2, IDX_VEL+IDX_r*2+1
 IDX_x0, IDX_y0, IDX_dx0, IDX_dy0 = IDX_0*2, IDX_0*2+1, IDX_VEL+IDX_0*2, IDX_VEL+IDX_0*2+1
 IDX_xk, IDX_yk, IDX_dxk, IDX_dyk = IDX_k*2, IDX_k*2+1, IDX_VEL+IDX_k*2, IDX_VEL+IDX_k*2+1
 IDX_x1, IDX_y1, IDX_dx1, IDX_dy1 = IDX_1*2, IDX_1*2+1, IDX_VEL+IDX_1*2, IDX_VEL+IDX_1*2+1
 IDX_x2, IDX_y2, IDX_dx2, IDX_dy2 = IDX_2*2, IDX_2*2+1, IDX_VEL+IDX_2*2, IDX_VEL+IDX_2*2+1
+IDX_xh, IDX_yh, IDX_dxh, IDX_dyh = IDX_h*2, IDX_h*2+1, IDX_VEL+IDX_h*2, IDX_VEL+IDX_h*2+1
 IDX_xt, IDX_yt, IDX_dxt, IDX_dyt = IDX_t*2, IDX_t*2+1, IDX_VEL+IDX_t*2, IDX_VEL+IDX_t*2+1
 
 def reset_state(pr, thr, th0, thk, th1, vr, dthr, dth0=0, dthk=0, dth1=0, z = 0, dz = 0):
@@ -108,12 +111,14 @@ def reset_state(pr, thr, th0, thk, th1, vr, dthr, dth0=0, dthk=0, dth1=0, z = 0,
     pk = p0 + l0 * dir_thr0
     p1 = pk + l1 * dir_thr0k
     p2 = p1 + l2 * dir_thr0k1
+    ph = p2 + lh * dir_thr0k1
     pt = p0 + lt * dir_thr
 
     v0 = vr + dz*dir_thr + dthr*(z0+z)*dir_dthr
     vk = v0 + (dthr+dth0)*l0*dir_dthr0
     v1 = vk + (dthr+dthk+dth0)*l1*dir_dthr0k
     v2 = v1 + (dthr+dthk+dth1+dth0)*l2*dir_dthr0k1
+    vh = v2 + (dthr+dthk+dth1+dth0)*lh*dir_dthr0k1
     vt = v0 + dthr*lt*dir_dthr
 
     s = np.zeros(IDX_MAX, dtype=np.float64)
@@ -122,12 +127,14 @@ def reset_state(pr, thr, th0, thk, th1, vr, dthr, dth0=0, dthk=0, dth1=0, z = 0,
     s[IDX_xk:IDX_yk+1]  = pk
     s[IDX_x1:IDX_y1+1]  = p1
     s[IDX_x2:IDX_y2+1]  = p2
+    s[IDX_xh:IDX_yh+1]  = ph
     s[IDX_xt:IDX_yt+1]  = pt
     s[IDX_dxr:IDX_dyr+1]  = vr
     s[IDX_dx0:IDX_dy0+1]  = v0
     s[IDX_dxk:IDX_dyk+1]  = vk
     s[IDX_dx1:IDX_dy1+1]  = v1
     s[IDX_dx2:IDX_dy2+1]  = v2
+    s[IDX_dxh:IDX_dyh+1]  = vh
     s[IDX_dxt:IDX_dyt+1]  = vt
 
     return s
@@ -137,15 +144,8 @@ def reset_state(pr, thr, th0, thk, th1, vr, dthr, dth0=0, dthk=0, dth1=0, z = 0,
 def print_state(s, titlePrefix="", fieldPrefix=""):
     ps = node_pos(s)
     for i in range(len(ps)):
-        #print(f"{titlePrefix}OBJ{i:}:P {s[2*i]:.2f},{s[2*i+1]:.2f} :V {s[IDX_VEL+2*i]:.4f},{s[IDX_VEL+2*i+1]:.4f}")
-        print(f"{titlePrefix}OBJ{i:}:{fieldPrefix}P {s[2*i+1]} :{fieldPrefix}V {s[IDX_VEL+2*i+1]}")
-    #pr = s[IDX_xr:IDX_yr+1]
-    #p0 = s[IDX_x0:IDX_y0+1]
-    #vr = s[IDX_dxr:IDX_dyr+1]
-    #v0 = s[IDX_dx0:IDX_dy0+1]
-    #z = np.linalg.norm(pr - p0) - z0
-    #dz = np.linalg.norm(vr - v0) - z0
-    #print(f"z:{fieldPrefix}P {z} :{fieldPrefix}V {dz}")
+        print(f"{titlePrefix}OBJ{i:}:P {s[2*i]:.2f},{s[2*i+1]:.2f} :V {s[IDX_VEL+2*i]:.4f},{s[IDX_VEL+2*i+1]:.4f}")
+        #print(f"{titlePrefix}OBJ{i:}:{fieldPrefix}P {s[2*i+1]} :{fieldPrefix}V {s[IDX_VEL+2*i+1]}")
 
 def max_u():
     return np.array([MAX_TORQUE0, MAX_TORQUE1, MAX_FORCE])
@@ -162,16 +162,14 @@ def node_pos(s):
     #return s[IDX_xr:IDX_yr+1],
     #return s[IDX_xr:IDX_yr+1], s[IDX_x0:IDX_y0+1], s[IDX_xk:IDX_yk+1]
     #return s[IDX_xr:IDX_yr+1], s[IDX_x0:IDX_y0+1]
-    return s[IDX_xr:IDX_yr+1], s[IDX_x0:IDX_y0+1], s[IDX_xk:IDX_yk+1], s[IDX_x1:IDX_y1+1], s[IDX_x2:IDX_y2+1], s[IDX_xt:IDX_yt+1]
+    return s[IDX_xr:IDX_yr+1], s[IDX_x0:IDX_y0+1], s[IDX_xk:IDX_yk+1], s[IDX_x1:IDX_y1+1], s[IDX_x2:IDX_y2+1], s[IDX_xh:IDX_yh+1], s[IDX_xt:IDX_yt+1]
 
-def head_pos(s):
-    return s[IDX_x2:IDX_y2+1] + normalize(s[IDX_x2:IDX_y2+1] - s[IDX_x1:IDX_y1+1]) * lh
 
 def node_vel(s):
     #return s[IDX_dxr:IDX_dyr+1],
     #return s[IDX_dxr:IDX_dyr+1], s[IDX_dx0:IDX_dy0+1], s[IDX_dxk:IDX_dyk+1] 
     #return s[IDX_dxr:IDX_dyr+1], s[IDX_dx0:IDX_dy0+1]
-    return s[IDX_dxr:IDX_dyr+1], s[IDX_dx0:IDX_dy0+1], s[IDX_dxk:IDX_dyk+1], s[IDX_dx1:IDX_dy1+1], s[IDX_dx2:IDX_dy2+1], s[IDX_dxt:IDX_dyt+1]
+    return s[IDX_dxr:IDX_dyr+1], s[IDX_dx0:IDX_dy0+1], s[IDX_dxk:IDX_dyk+1], s[IDX_dx1:IDX_dy1+1], s[IDX_dx2:IDX_dy2+1], s[IDX_dxh:IDX_dyh+1], s[IDX_dxt:IDX_dyt+1]
 
 def normalize(v):
     return v / np.linalg.norm(v)
@@ -467,9 +465,11 @@ extforce = [ ("g", lambda t, s, u: force_gravity(s))
 constraints = [ ("ground-pen", lambda s, dt: constraint_ground_penetration(s, IDX_r, 0, dt, 0.1, pred_gt0), (-inf, 0))
               , ("ground-fric", lambda s, dt: constraint_ground_friction(s, IDX_r, 0, dt), (-inf, inf))
               , ("line-r0t", lambda s, dt: constraint_angle(s, IDX_r, IDX_0, IDX_t, 0, dt, 0.1, pred_ne0), (-inf, inf))
+              , ("line-12h", lambda s, dt: constraint_angle(s, IDX_1, IDX_2, IDX_h, 0, dt, 0.1, pred_ne0), (-inf, inf))
               , ("dist-0k", lambda s, dt: constraint_distant(s, IDX_0, IDX_k, l0, dt, 0.3, pred_ne0), (-inf, inf))
               , ("dist-k1", lambda s, dt: constraint_distant(s, IDX_k, IDX_1, l1, dt, 0.3, pred_ne0), (-inf, inf))
               , ("dist-12", lambda s, dt: constraint_distant(s, IDX_1, IDX_2, l2, dt, 0.3, pred_ne0), (-inf, inf))
+              , ("dist-2h", lambda s, dt: constraint_distant(s, IDX_2, IDX_h, lh, dt, 0.3, pred_ne0), (-inf, inf))
               #, ("fixed-pointer0", lambda s, dt: constraint_fixed_point_distant(s, IDX_0, np.array([0, 1]), 0, dt, 0.1, pred_ne0), (-inf, inf))
               #, ("fixed-pointert", lambda s, dt: constraint_fixed_point_distant(s, IDX_t, np.array([0, 1 + lt]), 0, dt, 0.1, pred_ne0), (-inf, inf))
               , ("dist-0t", lambda s, dt: constraint_distant(s, IDX_0, IDX_t, lt, dt, 0.3, pred_ne0), (-inf, inf))
@@ -477,8 +477,8 @@ constraints = [ ("ground-pen", lambda s, dt: constraint_ground_penetration(s, ID
               , ("limit-0k1-max", lambda s, dt: constraint_angle(s, IDX_0, IDX_k, IDX_1, np.deg2rad(-10), dt, 0.1, pred_gt0), (-inf, 0))
               , ("limit-k12-min", lambda s, dt: constraint_angle(s, IDX_k, IDX_1, IDX_2, np.deg2rad(-10), dt, 0.1, pred_lt0), (0, inf))
               , ("limit-k12-max", lambda s, dt: constraint_angle(s, IDX_k, IDX_1, IDX_2, np.deg2rad(170), dt, 0.1, pred_gt0), (-inf, 0))
-              , ("limit-12t-min", lambda s, dt: constraint_angle(s, IDX_1, IDX_2, IDX_t, np.deg2rad(10), dt, 0.1, pred_lt0), (0, inf))
-              , ("limit-12t-max", lambda s, dt: constraint_angle(s, IDX_1, IDX_2, IDX_t, np.deg2rad(170), dt, 0.1, pred_gt0), (-inf, 0))
+              #, ("limit-12t-min", lambda s, dt: constraint_angle(s, IDX_1, IDX_2, IDX_t, np.deg2rad(10), dt, 0.1, pred_lt0), (0, inf))
+              #, ("limit-12t-max", lambda s, dt: constraint_angle(s, IDX_1, IDX_2, IDX_t, np.deg2rad(170), dt, 0.1, pred_gt0), (-inf, 0))
               , ("limit-2t-min", lambda s, dt: constraint_distant(s, IDX_2, IDX_t, limit_min_d, dt, 0.1, pred_lt0), (0, inf))
               , ("limit-2t-max", lambda s, dt: constraint_distant(s, IDX_2, IDX_t, limit_max_d, dt, 0.1, pred_gt0), (-inf, 0))
               , ("stick < hip", lambda s, dt: constraint_point_line_penetration(s, IDX_0, IDX_t, IDX_1, dt, 0.1, pred_gt0), (-inf, 0))

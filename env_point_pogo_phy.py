@@ -107,18 +107,19 @@ class RabbitViewer():
         for i in range(len(ps)):
             ps[i] = self.conv_pos(ps[i])
         cog = self.conv_pos(mp.cog(state))
-        head = self.conv_pos(mp.head_pos(state))
+        head = ps[-2]
 
         self.screen.fill(WHITE)
-        for i in range(len(ps)-1):
+        for i in range(len(ps)-2):
             pygame.draw.line(self.screen, BLACK, ps[i], ps[i+1],  width=int(100 * RSCALE))
+        pygame.draw.line(self.screen, BLACK, ps[-3], ps[-1],  width=int(100 * RSCALE))
         pygame.draw.line(self.screen, BLACK, ps[1], ps[-1],  width=int(100 * RSCALE))
+
         for i in range(len(ps)):
             pygame.draw.circle(self.screen, BLUE if i > 0 else RED, ps[i], 150/5 * np.sqrt(RSCALE))
 
         pygame.draw.circle(self.screen, GREEN, cog, 150/5 * np.sqrt(RSCALE))
         pygame.draw.circle(self.screen, YELLOW, head, 150/5 * np.sqrt(RSCALE))
-        pygame.draw.line(self.screen, BLACK, ps[-2], head,  width=int(100 * RSCALE))
         pygame.draw.line(self.screen, BLACK, [0,SCREEN_SIZE[1]/2 + OFFSET_VERT], [SCREEN_SIZE[0], SCREEN_SIZE[1]/2 + OFFSET_VERT],  width=int(100 * RSCALE))
         tmx, tmy, am = mp.moment(state)
         text = self.font.render(f"mode={mode:} t={t:.03f} E={energy:.01f}", True, BLACK)
@@ -425,6 +426,7 @@ def main():
                     mp.debug = mp.debug ^ True
 
                 elif keyname == 'i':
+                    env.info(frame)
                     plot_data.append(env.joint_info(frame))
                     dump_plot_yaml(plot_data, 'plot.yaml')
 
