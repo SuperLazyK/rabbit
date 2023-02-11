@@ -166,7 +166,7 @@ class RabbitEnv():
 
         th0 = np.deg2rad(10)
         thk = np.deg2rad(-20)
-        th1 = np.deg2rad(15)
+        th1 = np.deg2rad(10)
         if random is None:
             pr = np.array([0, 1])
             thr =  0
@@ -298,7 +298,7 @@ class RabbitEnv():
         energy = mp.energy(s)
         print(f"--")
         print(f"t:{t:.3f} E: {energy:.2f} mode: {mode:} reward: {reward:}")
-        print(f"INPUT: u: {100*u/mp.max_u()} [%]")
+        print(f"INPUT: u: {100*(u/mp.max_u())} [%]")
         print(f"INPUT: ref: thk {degrees(ref[0]):.2f} th1 {degrees(ref[1]):.2f} d {ref[2]:.2f}")
         print(f"OUTPUT:")
         self.joint_info(frame)
