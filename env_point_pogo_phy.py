@@ -22,8 +22,8 @@ from scipy import interpolate
 
 pygame.init()
 # input U
-#DELTA = 0.001
-DELTA = 0.005
+DELTA = 0.001
+#DELTA = 0.005
 SPEED=6
 
 NORMAL_MODE=0
@@ -164,29 +164,31 @@ class RabbitEnv():
             if int(os.environ.get('AUTOSAVE', "0")):
                 self.autosave("normal")
 
-        th0 = np.deg2rad(30)
-        thk = np.deg2rad(-90)
-        th1 = np.deg2rad(74)
-        pr = np.array([0, 0.1])
-        thr = np.deg2rad(5)
-        vr = np.array([0, 0])
-        dthr = 0
-        #if random is None:
-        #    pr = np.array([0, 1])
-        #    thr =  0
-        #    vr = np.array([0, 0])
-        #    dthr = 0
-        #else:
-        #    if True: #random.randint(0, 2) == 0:
-        #        pr = np.array([0, 0])
-        #        thr = np.deg2rad(-45)
-        #        vr = np.array([0, 0])
-        #        dthr = 2.7*np.deg2rad(45)
-        #    else:
-        #        pr = np.array([0, 1])
-        #        thr =  np.deg2rad(30) * np.random.rand()
-        #        vr = np.array([5*np.random.rand(), 0])
-        #        dthr = np.random.rand()
+        if random is None:
+            th0 = np.deg2rad(30)
+            thk = np.deg2rad(-90)
+            th1 = np.deg2rad(74)
+            pr = np.array([0, 1])
+            thr =  0
+            vr = np.array([0, 0])
+            dthr = 0
+        else:
+            if random.randint(0, 2) == 0:
+                th0 = np.deg2rad(30)
+                thk = np.deg2rad(-90)
+                th1 = np.deg2rad(74)
+                pr = np.array([0, 0.1])
+                thr = np.deg2rad(5)
+                vr = np.array([0, 0])
+                dthr = 0
+            else:
+                th0 = np.deg2rad(10)
+                thk = np.deg2rad(-20)
+                th1 = np.deg2rad(10)
+                pr = np.array([0, np.random.rand()])
+                thr = 0
+                vr = np.array([0, 0])
+                dthr = 0
 
         s = mp.reset_state(pr, thr, th0, thk, th1, vr, dthr)
         self.mode = NORMAL_MODE

@@ -284,7 +284,7 @@ def reward(s):
         mode = "air"
         if vcog[1] < 0:
             r_thr = (2-np.linalg.norm(normalize(dir0r) - normalize(vcog))) * (3/(1+pcog[1]))
-    print(mode, r_y, r_thr, r_cogx)
+    debug_print((mode, r_y, r_thr, r_cogx))
     return r_y + r_thr + r_cogx
 
 def init_ref(s):
