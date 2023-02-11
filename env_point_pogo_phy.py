@@ -577,6 +577,7 @@ def main():
             if done:
                 print("done!")
                 start = False
+                replay = True
             #env.info()
 
 

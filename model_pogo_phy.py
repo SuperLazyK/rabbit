@@ -4,6 +4,7 @@ from numpy import sin, cos, abs
 import sys
 import scipy
 
+MAX_IMPULSE=10
 debug=0
 np.set_printoptions(linewidth=np.inf)
 
@@ -533,7 +534,7 @@ def calc_constraint_impulse(s, fext, dt):
     debug_print(("check lmd", lmd))
     impulse = J.T @ lmd
     debug_print(("check impulse", impulse))
-    return impulse
+    return np.clip(impulse, -MAX_IMPULSE, MAX_IMPULSE)
 
 def calc_ext_force(t, s, u, dt):
     fext = np.zeros(2*NUM_OF_MASS_POINTS)
