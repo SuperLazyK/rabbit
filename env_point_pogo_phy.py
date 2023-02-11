@@ -298,9 +298,11 @@ class RabbitEnv():
         energy = mp.energy(s)
         print(f"--")
         print(f"t:{t:.3f} E: {energy:.2f} mode: {mode:} reward: {reward:}")
-        print(f"INPUT: u: {u/mp.max_u()}")
+        print(f"INPUT: u: {100*u/mp.max_u()} [%]")
+        print(f"INPUT: ref: thk {degrees(ref[0]):.2f} th1 {degrees(ref[1]):.2f} d {ref[2]:.2f}")
         print(f"OUTPUT:")
-        mp.print_state(s)
+        self.joint_info(frame)
+        #mp.print_state(s)
         print(f"--------------")
 
     def save(self, filename='dump.pkl'):
@@ -571,6 +573,7 @@ def main():
             done = exec_cmd(env, v)
             frame = env.num_of_frames() - 1
             env.render(frame=frame)
+            env.info()
             if stepOne:
                 start = False
                 stepOne = False
@@ -578,7 +581,6 @@ def main():
                 print("done!")
                 start = False
                 replay = True
-            #env.info()
 
 
 if __name__ == '__main__':
