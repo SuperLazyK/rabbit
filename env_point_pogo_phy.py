@@ -549,7 +549,7 @@ def main():
         if replay:
             if start:
                 frame = frame + 1
-                if frame == env.num_of_frames()-1:
+                if frame > env.num_of_frames()-1:
                     frame = 0
                     if len(episodes) > 0:
                         eidx = eidx + 1
