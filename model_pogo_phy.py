@@ -12,6 +12,9 @@ def debug_print(x):
     if debug:
         print(x)
 
+def normalize_angle(x):
+    return (x + np. pi) % (2 * np.pi) - np.pi
+
 # Pogo-rotation-knee-phy
 max_z = 0.55
 
@@ -208,8 +211,7 @@ def calc_joint_property(s):
     ret['th0'] = vec2rad(pr0/lr0, p0k/l0)
     ret['thk'] = vec2rad(p0k/l0, pk1/l1)
     ret['th1'] = vec2rad(pk1/l1, p12/l2)
-    #ret['th2'] = normalize_angle(vec2rad(p12/l2, p2t/d) + np.pi)
-    ret['th2'] = (vec2rad(p12/l2, p2t/d) + np.pi)
+    ret['th2'] = normalize_angle(vec2rad(p12/l2, p2t/d) + np.pi)
 
     vr = s[IDX_dxr:IDX_dyr+1]
     v0 = s[IDX_dx0:IDX_dy0+1]
@@ -632,7 +634,6 @@ def pdcontrol(s, ref):
     dob  = np.array([prop['dthk'], prop['dth2'], prop['dd']])
     ob = np.array([prop['thk'], prop['th2'], prop['d']])
     err = ref - ob
-    print("check ref", err[2])
     #print(f"PD-ref: {np.rad2deg(ref[0])} {np.rad2deg(ref[1])} {ref[2]}")
     #print(f"PD-obs: {np.rad2deg(thk)} {np.rad2deg(th2)} {d}")
     ret = err * Kp - Kd * dob
