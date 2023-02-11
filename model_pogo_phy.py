@@ -63,7 +63,7 @@ MAX_TORQUE1=300
 MAX_FORCE=800 # arm [N]
 
 inf = float('inf')
-Kp = np.array([2000, 2000, 4000])
+Kp = np.array([2000, 2000, 8000])
 #Kp = np.array([400, 400, 800])
 #Kd = Kp * (0.01)
 Kd = Kp * (0.1)
@@ -488,6 +488,12 @@ constraints = [ ("ground-pen", lambda s, dt: constraint_ground_penetration(s, ID
 
 optional_constraints = []
 optional_extforce = []
+
+def set_fixed_constraint_0t(arg_s):
+    global optional_constraints
+    optional_constraints = [ ("fixed-pointer0", lambda s, dt: constraint_fixed_point_distant(s, IDX_0, arg_s[2*IDX_0:2*IDX_0+2], 0, dt, 0.1, pred_ne0), (-inf, inf))
+                           , ("fixed-pointert", lambda s, dt: constraint_fixed_point_distant(s, IDX_t, arg_s[2*IDX_t:2*IDX_t+2], 0, dt, 0.1, pred_ne0), (-inf, inf))
+                           ]
 
 def set_fixed_constraint(idx,  point):
     global optional_constraints

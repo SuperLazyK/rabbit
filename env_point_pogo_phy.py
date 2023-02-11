@@ -273,6 +273,9 @@ class RabbitEnv():
     def set_fixed_constraint(self, idx, point):
         return self.viewer.set_fixed_constraint(idx,  point)
 
+    def set_fixed_constraint_0t(self, frame=-1):
+        mp.set_fixed_constraint_0t(self.history[frame][2])
+
     def close(self):
         if self.viewer:
             self.viewer.close()
@@ -459,6 +462,8 @@ def main():
                 # app
                 if keyname == 'w':
                     env.save()
+                elif keyname == 'c':
+                    env.set_fixed_constraint_0t(frame)
                 elif keyname == '1':
                     print("load")
                     env.load('autodump/last_episode.pkl')
