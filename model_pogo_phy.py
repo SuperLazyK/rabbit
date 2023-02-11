@@ -26,7 +26,7 @@ ref_max_thk = np.deg2rad(-20)
 ref_min_th2 = np.deg2rad(-140)
 ref_max_th2 = np.deg2rad(40)
 ref_min_d = 0.05
-ref_max_d = 0.35
+ref_max_d = 0.45
 REF_MIN = np.array([ref_min_thk, ref_min_th2, ref_min_d])
 REF_MAX = np.array([ref_max_thk, ref_max_th2, ref_max_d])
 
@@ -45,7 +45,7 @@ MAX_SPEED=100
 z0 = 0.55
 l0 = 0.4
 l1 = 0.5
-l2 = 0.2
+l2 = 0.3
 lh = 0.4
 lt = 0.91
 mr = 1
@@ -55,8 +55,8 @@ m1 = 20
 m2 = 20
 mh = 15
 mt = 2
-g  = 0
-#g  = 9.8
+#g  = 0
+g  = 9.8
 #g  = -9.8
 #K  = 12000 # mgh = 1/2 k x^2 -> T=2*pi sqrt(m/k)
 K  = 15000 # mgh = 1/2 k x^2 -> T=2*pi sqrt(m/k)
@@ -507,12 +507,12 @@ constraints = [ ("ground-pen", lambda s, dt: constraint_ground_penetration(s, ID
               , ("limit-0k1-max", lambda s, dt: constraint_angle(s, IDX_0, IDX_k, IDX_1, np.deg2rad(-10), dt, 0.1, pred_gt0), (-inf, 0))
               , ("limit-k12-min", lambda s, dt: constraint_angle(s, IDX_k, IDX_1, IDX_2, np.deg2rad(-10), dt, 0.1, pred_lt0), (0, inf))
               , ("limit-k12-max", lambda s, dt: constraint_angle(s, IDX_k, IDX_1, IDX_2, np.deg2rad(170), dt, 0.1, pred_gt0), (-inf, 0))
-              #, ("limit-12t-min", lambda s, dt: constraint_angleR(s, IDX_1, IDX_2, IDX_t, limit_min_th2, dt, 0.1, pred_lt0), (0, inf))
-              #, ("limit-12t-max", lambda s, dt: constraint_angleR(s, IDX_1, IDX_2, IDX_t, limit_max_th2, dt, 0.1, pred_gt0), (-inf, 0))
-              #, ("limit-2t-min", lambda s, dt: constraint_distant(s, IDX_2, IDX_t, limit_min_d, dt, 0.1, pred_lt0), (0, inf))
-              #, ("limit-2t-max", lambda s, dt: constraint_distant(s, IDX_2, IDX_t, limit_max_d, dt, 0.1, pred_gt0), (-inf, 0))
+              , ("limit-12t-min", lambda s, dt: constraint_angleR(s, IDX_1, IDX_2, IDX_t, limit_min_th2, dt, 0.1, pred_lt0), (0, inf))
+              , ("limit-12t-max", lambda s, dt: constraint_angleR(s, IDX_1, IDX_2, IDX_t, limit_max_th2, dt, 0.1, pred_gt0), (-inf, 0))
+              , ("limit-2t-min", lambda s, dt: constraint_distant(s, IDX_2, IDX_t, limit_min_d, dt, 0.1, pred_lt0), (0, inf))
+              , ("limit-2t-max", lambda s, dt: constraint_distant(s, IDX_2, IDX_t, limit_max_d, dt, 0.1, pred_gt0), (-inf, 0))
               , ("stick < 1", lambda s, dt: constraint_point_line_penetration(s, IDX_0, IDX_t, IDX_1, dt, 0.1, pred_gt0), (-inf, 0))
-              #, ("stick < 2", lambda s, dt: constraint_point_line_penetration(s, IDX_0, IDX_t, IDX_2, dt, 0.1, pred_gt0), (-inf, 0))
+              , ("stick < 2", lambda s, dt: constraint_point_line_penetration(s, IDX_0, IDX_t, IDX_2, dt, 0.1, pred_gt0), (-inf, 0))
               , ("top < 1h", lambda s, dt: constraint_point_line_penetration(s, IDX_1, IDX_h, IDX_t, dt, 0.1, pred_lt0), (0, inf))
               ]
 

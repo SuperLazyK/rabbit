@@ -541,9 +541,9 @@ def main():
                 elif keyname == 'k':
                     v = np.array([1, 0, 0])
                 elif keyname == 'h':
-                    v =  np.array([0, 1, 0])
+                    v =  -np.array([0, 1, 0])
                 elif keyname == 'l':
-                    v = np.array([0, -1, 0])
+                    v = -np.array([0, -1, 0])
                 elif keyname == 'n':
                     v =  np.array([0, 0, 1])
                 elif keyname == 'p':
