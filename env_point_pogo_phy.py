@@ -330,65 +330,49 @@ class RabbitEnv():
         with open(filename) as file:
             jprops = yaml.safe_load(file)
 
-        interpf = {}
+        tsi = np.arange(jprops[0]['t'], jprops[-1]['t'], DELTA)
+        data = {}
         for field in ['z', 'prx', 'pry', 'thr', 'th0', 'thk', 'th1']:
             # duplicate t=0 with velocity 0
             ts = [jprops[0]['t']-1]
-            xs = [jprop[0][field]]
+            xs = [jprops[0][field]]
             for jprop in jprops:
                 ts.append(jprop['t'])
                 xs.append(jprop[field])
-            interpf[field] = interpolate.interp1d(ts, xs, kind="cubic")
+            data[field] = interpolate.interp1d(ts, xs, kind="cubic")(tsi)
 
-        t = jprops[0]['t']
-        z   = interpf['z'](t)
-        prx = interpf['prx'](t)
-        pry = interpf['pry'](t)
-        thr = interpf['thr'](t)
-        th0 = interpf['th0'](t)
-        thk = interpf['thk'](t)
-        th1 = interpf['th1'](t)
-        dz = 0
-        vrx = 0
-        vry = 0
-        dthr = 0
-        dth0 = 0
-        dthk = 0
-        dth1 = 0
-        while t < jprops[-1]['t']:
+        for i in range(len(tsi)):
+            t = tsi[i]
+            if i == 0:
+                dz = 0
+                vrx = 0
+                vry = 0
+                dthr = 0
+                dth0 = 0
+                dthk = 0
+                dth1 = 0
+            else:
+                dz   = (data['z']  [i]  - data['z']  [i-1]) / DELTA
+                vrx  = (data['prx'][i]  - data['prx'][i-1]) / DELTA
+                vry  = (data['pry'][i]  - data['pry'][i-1]) / DELTA
+                dthr = (data['thr'][i]  - data['thr'][i-1]) / DELTA
+                dth0 = (data['th0'][i]  - data['th0'][i-1]) / DELTA
+                dthk = (data['thk'][i]  - data['thk'][i-1]) / DELTA
+                dth1 = (data['th1'][i]  - data['th1'][i-1]) / DELTA
             s = mp.reset_state(
-                    np.array([prx, pry]),
-                    np.deg2rad(thr),
-                    np.deg2rad(th0),
-                    np.deg2rad(thk),
-                    np.deg2rad(th1)
+                    np.array([data['prx'][i], data['pry'][i]]),
+                    np.deg2rad(data['thr'][i]),
+                    np.deg2rad(data['th0'][i]),
+                    np.deg2rad(data['thk'][i]),
+                    np.deg2rad(data['th1'][i]),
                     np.array([vrx, vry]),
                     np.deg2rad(dthr),
                     np.deg2rad(dth0),
                     np.deg2rad(dthk),
-                    np.deg2rad(dth1)
+                    np.deg2rad(dth1),
+                    data['z'][i],
+                    dz,
                     )
-            prev_z   = z
-            prev_prx = prx
-            prev_pry = pry
-            prev_thr = thr
-            prev_th0 = th0
-            prev_thk = thk
-            prev_th1 = th1
-            z   = interpf['z'](t+DELTA)
-            prx = interpf['prx'](t+DELTA)
-            pry = interpf['pry'](t+DELTA)
-            thr = interpf['thr'](t+DELTA)
-            th0 = interpf['th0'](t+DELTA)
-            thk = interpf['thk'](t+DELTA)
-            th1 = interpf['th1'](t+DELTA)
-            dz   = (z    - prev_z  ) / DELTA
-            vrx  = (prx  - prev_prx) / DELTA
-            vry  = (pry  - prev_pry) / DELTA
-            dthr = (thr  - prev_thr) / DELTA
-            dth0 = (th0  - prev_th0) / DELTA
-            dthk = (thk  - prev_thk) / DELTA
-            dth1 = (th1  - prev_th1) / DELTA
             self.mode = NORMAL_MODE
             u = (0, 0, 0)
             mode ='normal'
