@@ -16,6 +16,8 @@ import csv
 import datetime
 import pickle
 import yaml
+from scipy import interpolate
+
 
 
 pygame.init()
@@ -323,17 +325,71 @@ class RabbitEnv():
         return prop
 
     def load_yaml(self, filename):
+
         self.history = []
         with open(filename) as file:
             jprops = yaml.safe_load(file)
-        for jprop in jprops:
-            s = mp.reset_state(np.array([jprop['prx'], jprop['pry']]),
-                    np.deg2rad(jprop['thr']),
-                    np.deg2rad(jprop['th0']),
-                    np.deg2rad(jprop['thk']),
-                    np.deg2rad(jprop['th1']))
+
+        interpf = {}
+        for field in ['z', 'prx', 'pry', 'thr', 'th0', 'thk', 'th1']:
+            # duplicate t=0 with velocity 0
+            ts = [jprops[0]['t']-1]
+            xs = [jprop[0][field]]
+            for jprop in jprops:
+                ts.append(jprop['t'])
+                xs.append(jprop[field])
+            interpf[field] = interpolate.interp1d(ts, xs, kind="cubic")
+
+        t = jprops[0]['t']
+        z   = interpf['z'](t)
+        prx = interpf['prx'](t)
+        pry = interpf['pry'](t)
+        thr = interpf['thr'](t)
+        th0 = interpf['th0'](t)
+        thk = interpf['thk'](t)
+        th1 = interpf['th1'](t)
+        dz = 0
+        vrx = 0
+        vry = 0
+        dthr = 0
+        dth0 = 0
+        dthk = 0
+        dth1 = 0
+        while t < jprops[-1]['t']:
+            s = mp.reset_state(
+                    np.array([prx, pry]),
+                    np.deg2rad(thr),
+                    np.deg2rad(th0),
+                    np.deg2rad(thk),
+                    np.deg2rad(th1)
+                    np.array([vrx, vry]),
+                    np.deg2rad(dthr),
+                    np.deg2rad(dth0),
+                    np.deg2rad(dthk),
+                    np.deg2rad(dth1)
+                    )
+            prev_z   = z
+            prev_prx = prx
+            prev_pry = pry
+            prev_thr = thr
+            prev_th0 = th0
+            prev_thk = thk
+            prev_th1 = th1
+            z   = interpf['z'](t+DELTA)
+            prx = interpf['prx'](t+DELTA)
+            pry = interpf['pry'](t+DELTA)
+            thr = interpf['thr'](t+DELTA)
+            th0 = interpf['th0'](t+DELTA)
+            thk = interpf['thk'](t+DELTA)
+            th1 = interpf['th1'](t+DELTA)
+            dz   = (z    - prev_z  ) / DELTA
+            vrx  = (prx  - prev_prx) / DELTA
+            vry  = (pry  - prev_pry) / DELTA
+            dthr = (thr  - prev_thr) / DELTA
+            dth0 = (th0  - prev_th0) / DELTA
+            dthk = (thk  - prev_thk) / DELTA
+            dth1 = (th1  - prev_th1) / DELTA
             self.mode = NORMAL_MODE
-            t = jprop['t']
             u = (0, 0, 0)
             mode ='normal'
             ref = mp.init_ref(s)
