@@ -53,7 +53,7 @@ def dump_history_csv(history, filename='state.csv'):
         dic = {}
         dic['t'] = t
         dic['ref_th0'] = ref[0]
-        dic['ref_th1'] = ref[1]
+        dic['ref_th2'] = ref[1]
         dic['ref_d']   = ref[2]
         dic['u_torq0%'] = u[0]/mp.max_u()[0]
         dic['u_torq1%'] = u[1]/mp.max_u()[1]
@@ -302,7 +302,7 @@ class RabbitEnv():
         print(f"--")
         print(f"t:{t:.3f} E: {energy:.2f} mode: {mode:} reward: {reward:}")
         print(f"INPUT: u: {100*(u/mp.max_u())} [%]")
-        print(f"INPUT: ref: thk {degrees(ref[0]):.2f} th1 {degrees(ref[1]):.2f} d {ref[2]:.2f}")
+        print(f"INPUT: ref: thk {degrees(ref[0]):.2f} th2 {degrees(ref[1]):.2f} d {ref[2]:.2f}")
         print(f"OUTPUT:")
         self.joint_info(frame)
         #mp.print_state(s)
@@ -394,14 +394,14 @@ def exec_cmd(env, v):
     ctr_mode = 'vel'
     if ctr_mode == 'vel':
         k_th0 = SPEED*np.pi/360
-        k_th1 = SPEED*np.pi/360
+        k_th2 = SPEED*np.pi/360
         k_a   = SPEED/6 * 0.01
-        _, _, done, _ = env.step_vel_control(np.array([k_th0, k_th1, k_a]) * v)
+        _, _, done, _ = env.step_vel_control(np.array([k_th0, k_th2, k_a]) * v)
     else:
         k_th0 = 100000
-        k_th1 = 100000
+        k_th2 = 100000
         k_a   = 100000
-        _, _, done, _ = env.step_plant(np.array([k_th0, k_th1, k_a]) * v)
+        _, _, done, _ = env.step_plant(np.array([k_th0, k_th2, k_a]) * v)
     return done
 
 def fetch_episodes(dirname):
