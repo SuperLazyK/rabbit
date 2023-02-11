@@ -322,6 +322,23 @@ class RabbitEnv():
             print(f"{k}\t:\t{prop[k]}")
         return prop
 
+    def load_yaml(self, filename):
+        self.history = []
+        with open(filename) as file:
+            jprops = yaml.safe_load(file)
+        for jprop in jprops:
+            s = mp.reset_state(np.array([jprop['prx'], jprop['pry']]),
+                    np.deg2rad(jprop['thr']),
+                    np.deg2rad(jprop['th0']),
+                    np.deg2rad(jprop['thk']),
+                    np.deg2rad(jprop['th1']))
+            self.mode = NORMAL_MODE
+            t = jprop['t']
+            u = (0, 0, 0)
+            mode ='normal'
+            ref = mp.init_ref(s)
+            reward = self.calc_reward(s, mode, t, False)
+            self.history.append((self.mode, t, s, ref, u, reward))
 
 #----------------------------
 # main
@@ -403,6 +420,11 @@ def main():
                 elif keyname == '1':
                     print("load")
                     env.load('autodump/last_episode.pkl')
+                    frame = 0
+                    replay = True
+                    done = True
+                elif keyname == '0':
+                    env.load_yaml('main_pose.yaml')
                     frame = 0
                     replay = True
                     done = True
@@ -516,5 +538,7 @@ def main():
                 start = False
             #env.info()
 
+
 if __name__ == '__main__':
     main()
+

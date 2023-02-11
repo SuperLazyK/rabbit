@@ -96,7 +96,7 @@ IDX_x2, IDX_y2, IDX_dx2, IDX_dy2 = IDX_2*2, IDX_2*2+1, IDX_VEL+IDX_2*2, IDX_VEL+
 IDX_xh, IDX_yh, IDX_dxh, IDX_dyh = IDX_h*2, IDX_h*2+1, IDX_VEL+IDX_h*2, IDX_VEL+IDX_h*2+1
 IDX_xt, IDX_yt, IDX_dxt, IDX_dyt = IDX_t*2, IDX_t*2+1, IDX_VEL+IDX_t*2, IDX_VEL+IDX_t*2+1
 
-def reset_state(pr, thr, th0, thk, th1, vr, dthr, dth0=0, dthk=0, dth1=0, z = 0, dz = 0):
+def reset_state(pr, thr, th0, thk, th1, vr = np.array([0,0]), dthr=0, dth0=0, dthk=0, dth1=0, z = 0, dz = 0):
 
     dir_thr = np.array([-np.sin(thr), np.cos(thr)])
     dir_thr0 = np.array([-np.sin(thr+th0), np.cos(thr+th0)])
