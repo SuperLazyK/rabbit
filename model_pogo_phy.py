@@ -5,6 +5,7 @@ import sys
 import scipy
 
 debug=0
+np.set_printoptions(linewidth=np.inf)
 
 def debug_print(x):
     if debug:
@@ -46,8 +47,8 @@ m1 = 20
 m2 = 20
 mh = 15
 mt = 2
-g  = 0
-#g  = 9.8
+#g  = 0
+g  = 9.8
 #g  = -9.8
 #K  = 12000 # mgh = 1/2 k x^2 -> T=2*pi sqrt(m/k)
 K  = 15000 # mgh = 1/2 k x^2 -> T=2*pi sqrt(m/k)
@@ -517,6 +518,7 @@ def calc_constraint_impulse(s, fext, dt):
 
     debug_print(names)
     K = J @ invM @ J.T
+    debug_print(("check K", K))
     debug_print(("check det(K)", np.linalg.det(K)))
     debug_print(("check J", J))
     r = -b - J @ (v  + invM @ fext * dt)

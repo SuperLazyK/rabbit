@@ -164,9 +164,9 @@ class RabbitEnv():
             if int(os.environ.get('AUTOSAVE', "0")):
                 self.autosave("normal")
 
-        th0 = np.deg2rad(30)
-        thk = np.deg2rad(-90)
-        th1 = np.deg2rad(74)
+        th0 = np.deg2rad(10)
+        thk = np.deg2rad(-20)
+        th1 = np.deg2rad(15)
         if random is None:
             pr = np.array([0, 1])
             thr =  0
@@ -435,7 +435,7 @@ def main():
     plot_data = []
 
     while True:
-        #stepOne = False
+        stepOne = False
         prev_frame = frame
         n = env.num_of_frames()
         for event in pygame.event.get():
@@ -494,7 +494,10 @@ def main():
 
                 elif keyname == 'u':
                     slow = slow ^ True
-
+                elif keyname == 'space':
+                    stepOne = True
+                    start = True
+                    replay = False
 
                 # history
                 elif replay and keyname == 'n':
@@ -550,11 +553,6 @@ def main():
                         eidx = eidx + 1
                         if eidx == len(episodes)-1:
                             eidx = 0
-            #if stepOne:
-            #    env.rollback(frame)
-            #    done = exec_cmd(env, v)
-            #    start = False
-            #    replay = False
 
             if len(episodes) > 0 and last_episode != eidx:
                 env.load(episodes[eidx])
@@ -573,6 +571,9 @@ def main():
             done = exec_cmd(env, v)
             frame = env.num_of_frames() - 1
             env.render(frame=frame)
+            if stepOne:
+                start = False
+                stepOne = False
             if done:
                 print("done!")
                 start = False
