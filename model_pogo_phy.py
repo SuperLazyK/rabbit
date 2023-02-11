@@ -272,21 +272,20 @@ def reward(s):
     dir0r = np.array([s[IDX_xr] - s[IDX_x0], s[IDX_yr]-s[IDX_y0]])
 
     pcog = cog(s)
-    r_y = 0
+    r_y = (energyU(s) + energyTy(s))/600
     r_thr = 0
+    r_cogx = 0
 
     if ground(s):
         mode = "ground"
+        r_cogx = np.exp(-(pcog[0]-s[IDX_xr])**2)*3
         r_thr = (2-np.linalg.norm(normalize(dir0r) - np.array([0, -1])))/2
     else:
-        r_y = ((pcog[1]+1)**2/4)
+        mode = "air"
         if vcog[1] < 0:
-            mode = "air-up"
             r_thr = (2-np.linalg.norm(normalize(dir0r) - normalize(vcog))) * (3/(1+pcog[1]))
-        else:
-            mode = "air-dwon"
-    #print(mode, r_y + r_thr)
-    return 3 + r_y + r_thr
+    print(mode, r_y, r_thr, r_cogx)
+    return r_y + r_thr + r_cogx
 
 def init_ref(s):
     prop = calc_joint_property(s)
@@ -604,6 +603,10 @@ def energyS(s):
 def energyU(s):
     ps = list(node_pos(s))
     return sum([g * ps[i][1] * M[2*i] for i in range(len(ps))]) + energyS(s)
+
+def energyTy(s):
+    vs = list(node_vel(s))
+    return sum([1/2 * (vs[i][1] ** 2) * M[2*i] for i in range(len(vs))])
 
 def energyT(s):
     vs = list(node_vel(s))
