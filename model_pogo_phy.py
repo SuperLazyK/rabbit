@@ -45,17 +45,19 @@ limit_min_th0 = np.deg2rad(-10)
 limit_max_th0 = np.deg2rad(120)
 limit_min_a = 0.50
 limit_max_a = 1.40
+limit_max_d = 0.55
 
 MAX_ROT_SPEED=100
 MAX_SPEED=100
 
 #MAX_TORQUE2=300 # arm
 #MAX_FORCE=800 # arm [N]
-MAX_TORQUE2=1200 # arm
-MAX_FORCE=7200 # arm [N]
+MAX_TORQUE2=300 # arm
+MAX_FORCE=800 # arm [N]
 
 inf = float('inf')
-Kp = np.array([4000, 13000])
+#Kp = np.array([4000, 13000])
+Kp = np.array([400, 800])
 #Kp = np.array([400, 800])
 #Kp = np.array([400, 400, 800])
 #Kd = Kp * (0.01)
@@ -184,8 +186,8 @@ def calc_joint_property(s):
 def ground(s):
     return s[IDX_yr] < 0.05 or cog(s)[1] < 0.8
 
-OBS_MIN = np.array([0, -np.pi,     0, limit_min_th0, limit_min_a, -MAX_SPEED])
-OBS_MAX = np.array([5,  np.pi, max_z, limit_max_th0, limit_max_a,  MAX_SPEED])
+OBS_MIN = np.array([0, -np.pi, limit_min_th0, limit_min_a, -MAX_SPEED])
+OBS_MAX = np.array([5,  np.pi, limit_max_th0, limit_max_a,  MAX_SPEED])
 
 def obs(s):
     #vcog = dcog(s)
@@ -430,17 +432,17 @@ extforce = [ ("g", lambda t, s, u: force_gravity(s))
            , ("m2-linear", lambda t, s, u: force_linear(s, IDX_0, IDX_2, u[1], -MAX_FORCE, MAX_FORCE))
            ]
 
-constraints = [ ("ground-pen", lambda s, dt: constraint_ground_penetration(s, IDX_r, 0, dt, 0.1, pred_gt0), (-inf, 0))
+constraints = [ ("ground-pen", lambda s, dt: constraint_ground_penetration(s, IDX_r, 0, dt, 1, pred_gt0), (-inf, 0))
               , ("ground-fric", lambda s, dt: constraint_ground_friction(s, IDX_r, 0, dt), (-inf, inf))
               , ("line-r0t", lambda s, dt: constraint_angle(s, IDX_r, IDX_0, IDX_t, 0, dt, 0.1, pred_ne0), (-inf, inf))
               #, ("fixed-pointer0", lambda s, dt: constraint_fixed_point_distant(s, IDX_0, np.array([0, 1+z0]), 0, dt, 0.1, pred_ne0), (-inf, inf))
               #, ("fixed-pointert", lambda s, dt: constraint_fixed_point_distant(s, IDX_t, np.array([0, 1 + z0+lt]), 0, dt, 0.1, pred_ne0), (-inf, inf))
               , ("dist-0t", lambda s, dt: constraint_distant(s, IDX_0, IDX_t, lt, dt, 0.3, pred_ne0), (-inf, inf))
-              , ("stick > 2", lambda s, dt: constraint_point_line_penetration(s, IDX_0, IDX_t, IDX_2, dt, 0.1, pred_lt0), (0, inf))
+              #, ("stick > 2", lambda s, dt: constraint_point_line_penetration(s, IDX_0, IDX_t, IDX_2, dt, 0.1, pred_lt0), (0, inf))
               #, ("limit-0t2-min", lambda s, dt: constraint_angleR(s, IDX_0, IDX_t, IDX_2, limit_min_tht, dt, 0.1, pred_lt0), (0, inf))
               #, ("limit-0t2-max", lambda s, dt: constraint_angleR(s, IDX_0, IDX_t, IDX_2, limit_max_tht, dt, 0.1, pred_gt0), (-inf, 0))
               #, ("limit-2t-min", lambda s, dt: constraint_distant(s, IDX_2, IDX_t, limit_min_d, dt, 0.1, pred_lt0), (0, inf))
-              #, ("limit-2t-max", lambda s, dt: constraint_distant(s, IDX_2, IDX_t, limit_max_d, dt, 0.1, pred_gt0), (-inf, 0))
+              , ("limit-2t-max", lambda s, dt: constraint_distant(s, IDX_2, IDX_t, limit_max_d, dt, 0.1, pred_gt0), (-inf, 0))
               #, ("limit-r02-min", lambda s, dt: constraint_angleR(s, IDX_r, IDX_0, IDX_2, np.deg2rad(-45), dt, 0.1, pred_lt0), (0, inf))
               #, ("limit-r02-max", lambda s, dt: constraint_angleR(s, IDX_r, IDX_0, IDX_2, 0, dt, 0.1, pred_gt0), (-inf, 0))
               ]
