@@ -4,7 +4,7 @@ from numpy import sin, cos, abs
 import sys
 import scipy
 
-MAX_IMPULSE=10
+MAX_IMPULSE=20
 debug=0
 np.set_printoptions(linewidth=np.inf)
 
@@ -519,7 +519,7 @@ def calc_ext_force(t, s, u, dt):
 def step(t, s, u, dt):
     try:
         prev_tx, prev_ty, prev_a = moment(s)
-        print("moment-prev", prev_tx, prev_ty, prev_a)
+        #print("moment-prev", prev_tx, prev_ty, prev_a)
         new_s = s.copy()
         fext = calc_ext_force(t, s, u, dt)
         pc = calc_constraint_impulse(new_s, fext, dt)
@@ -527,14 +527,13 @@ def step(t, s, u, dt):
         new_s[IDX_VEL:] = new_s[IDX_VEL:] + invM @ (pc + pe)
         new_s[0:IDX_VEL] = new_s[0:IDX_VEL] + dt * new_s[IDX_VEL:]
         tx, ty, a = moment(new_s)
-        print("constraint-impulseX", sum(pc[0::2]))
-        print("constraint-impulseY", sum(pc[1::2]))
-        print("extforce-impulseX", sum(pe[0::2]))
-        print("extforce-impulseY", sum(pe[1::2]))
-        print("moment-new", tx, ty, a)
+        #print("constraint-impulseX", sum(pc[0::2]))
+        #print("constraint-impulseY", sum(pc[1::2]))
+        #print("extforce-impulseX", sum(pe[0::2]))
+        #print("extforce-impulseY", sum(pe[1::2]))
+        #print("moment-new", tx, ty, a)
         return True, t+dt, new_s
     except np.linalg.LinAlgError as err:
-        print("??????????????/")
         print(err)
         return False, t+dt, s
 
