@@ -166,7 +166,7 @@ def calc_joint_property(s):
     ret['dd'] = (pt2/d) @ (v2 -vt)
     ret['dz'] = (pr0/lr0) @ (v0 - vr)
     ret['dthr'] = dthr = np.cross(pr0, v0-vr)/lr0**2
-    ret['dtht'] = dtht = np.cross(pt2, v2-vt)/d**2 - dthr - dth0 - dthk -dth1
+    ret['dtht'] = dtht = np.cross(pt2, v2-vt)/d**2 - dthr
 
     ret['prx'] = s[IDX_xr]
     ret['pry'] = s[IDX_yr]
