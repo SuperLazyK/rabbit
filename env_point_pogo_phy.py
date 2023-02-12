@@ -129,7 +129,12 @@ class RabbitViewer():
         pygame.draw.line(self.screen, BLACK, ps[-2], head,  width=int(100 * RSCALE))
         tmx, tmy, am = mp.moment(state)
         text = self.font.render(f"mode={mode:} t={t:.03f} E={energy:.01f}", True, BLACK)
+        text1 = self.font.render(f"ref={degrees(ref[0]):.01f} {degrees(ref[1]):.01f} {degrees(ref[2]):.01f}", True, BLACK)
+        info = mp.calc_joint_property(state)
+        text2 = self.font.render(f"obs={degrees(info['thk']):.01f} {degrees(info['th2']):.01f} {degrees(info['d']):.01f}", True, BLACK)
         self.screen.blit(text, [300, 50])
+        self.screen.blit(text1, [300, 100])
+        self.screen.blit(text2, [300, 150])
         pygame.display.flip()
         self.clock.tick(60)
 
