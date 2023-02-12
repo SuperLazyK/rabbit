@@ -19,9 +19,9 @@ def normalize_angle(x):
 max_z = 0.55
 
 # ccw is positive
-ref_min_tht = np.deg2rad(0)
+ref_min_tht = np.deg2rad(3)
 ref_max_tht = np.deg2rad(45)
-ref_min_d = 0.05
+ref_min_d = 0.10
 ref_max_d = 0.45
 REF_MIN = np.array([ref_min_tht, ref_min_d])
 REF_MAX = np.array([ref_max_tht, ref_max_d])
@@ -29,7 +29,7 @@ REF_MAX = np.array([ref_max_tht, ref_max_d])
 limit_min_tht = np.deg2rad(-10)
 limit_max_tht = np.deg2rad(120)
 limit_min_d = 0.00
-limit_max_d = 0.5
+limit_max_d = 0.55
 
 MAX_ROT_SPEED=100
 MAX_SPEED=100
@@ -51,7 +51,8 @@ MAX_TORQUE2=300 # arm
 MAX_FORCE=800 # arm [N]
 
 inf = float('inf')
-Kp = np.array([2000, 8000])
+#Kp = np.array([2000, 8000])
+Kp = np.array([400, 800])
 #Kp = np.array([400, 400, 800])
 #Kd = Kp * (0.01)
 Kd = Kp * (0.1)
@@ -430,12 +431,12 @@ constraints = [ ("ground-pen", lambda s, dt: constraint_ground_penetration(s, ID
               #, ("fixed-pointer0", lambda s, dt: constraint_fixed_point_distant(s, IDX_0, np.array([0, 1+z0]), 0, dt, 0.1, pred_ne0), (-inf, inf))
               #, ("fixed-pointert", lambda s, dt: constraint_fixed_point_distant(s, IDX_t, np.array([0, 1 + z0+lt]), 0, dt, 0.1, pred_ne0), (-inf, inf))
               , ("dist-0t", lambda s, dt: constraint_distant(s, IDX_0, IDX_t, lt, dt, 0.3, pred_ne0), (-inf, inf))
-              , ("limit-0t2-min", lambda s, dt: constraint_angleR(s, IDX_0, IDX_t, IDX_2, limit_min_tht, dt, 0.1, pred_lt0), (0, inf))
-              , ("limit-0t2-max", lambda s, dt: constraint_angleR(s, IDX_0, IDX_t, IDX_2, limit_max_tht, dt, 0.1, pred_gt0), (-inf, 0))
-              , ("limit-2t-min", lambda s, dt: constraint_distant(s, IDX_2, IDX_t, limit_min_d, dt, 0.1, pred_lt0), (0, inf))
-              , ("limit-2t-max", lambda s, dt: constraint_distant(s, IDX_2, IDX_t, limit_max_d, dt, 0.1, pred_gt0), (-inf, 0))
-              , ("limit-r02-min", lambda s, dt: constraint_angleR(s, IDX_r, IDX_0, IDX_2, np.deg2rad(-45), dt, 0.1, pred_lt0), (0, inf))
-              , ("limit-r02-max", lambda s, dt: constraint_angleR(s, IDX_r, IDX_0, IDX_2, 0, dt, 0.1, pred_gt0), (-inf, 0))
+              #, ("limit-0t2-min", lambda s, dt: constraint_angleR(s, IDX_0, IDX_t, IDX_2, limit_min_tht, dt, 0.1, pred_lt0), (0, inf))
+              #, ("limit-0t2-max", lambda s, dt: constraint_angleR(s, IDX_0, IDX_t, IDX_2, limit_max_tht, dt, 0.1, pred_gt0), (-inf, 0))
+              #, ("limit-2t-min", lambda s, dt: constraint_distant(s, IDX_2, IDX_t, limit_min_d, dt, 0.1, pred_lt0), (0, inf))
+              #, ("limit-2t-max", lambda s, dt: constraint_distant(s, IDX_2, IDX_t, limit_max_d, dt, 0.1, pred_gt0), (-inf, 0))
+              #, ("limit-r02-min", lambda s, dt: constraint_angleR(s, IDX_r, IDX_0, IDX_2, np.deg2rad(-45), dt, 0.1, pred_lt0), (0, inf))
+              #, ("limit-r02-max", lambda s, dt: constraint_angleR(s, IDX_r, IDX_0, IDX_2, 0, dt, 0.1, pred_gt0), (-inf, 0))
               ]
 
 optional_constraints = []
@@ -477,11 +478,11 @@ def calc_constraint_impulse(s, fext, dt):
 
     debug_print(names)
     K = J @ invM @ J.T
-    debug_print(("check K", K))
-    debug_print(("check det(K)", np.linalg.det(K)))
-    debug_print(("check J", J))
+    #debug_print(("check K", K))
+    #debug_print(("check det(K)", np.linalg.det(K)))
+    #debug_print(("check J", J))
     r = -b - J @ (v  + invM @ fext * dt)
-    debug_print(("check r", r))
+    #debug_print(("check r", r))
     try:
         lmd = np.linalg.solve(K, r)
     except np.linalg.LinAlgError as err:
@@ -489,7 +490,7 @@ def calc_constraint_impulse(s, fext, dt):
         if exit_code != 0:
             print("not converged")
     lmd = np.clip(lmd, np.array(cmin), np.array(cmax))
-    debug_print(("check lmd", lmd))
+    #debug_print(("check lmd", lmd))
     impulse = J.T @ lmd
     debug_print(("check impulse", impulse))
     return np.clip(impulse, -MAX_IMPULSE, MAX_IMPULSE)
@@ -560,8 +561,9 @@ def pdcontrol(s, ref):
     dob  = np.array([prop['dtht'], prop['dd']])
     ob = np.array([prop['tht'], prop['d']])
     err = ref - ob
-    #print(f"PD-ref: {np.rad2deg(ref[0])} {np.rad2deg(ref[1])} {ref[2]}")
-    #print(f"PD-obs: {np.rad2deg(thk)} {np.rad2deg(th2)} {d}")
+    debug_print(f"PD-ref: {np.rad2deg(ref[0])} {ref[1]}")
+    debug_print(f"PD-obs: {np.rad2deg(ob[0])}  {ob[1]}")
+    debug_print(f"PD-vel: {dob}")
     ret = err * Kp - Kd * dob
     return ret
 
