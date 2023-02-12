@@ -175,7 +175,7 @@ class RabbitEnv():
             if int(os.environ.get('AUTOSAVE', "0")):
                 self.autosave("normal")
 
-        th0 = np.deg2rad(1)
+        th0 = np.deg2rad(10)
         a   = 1.3
         pr = np.array([0, 1])
         thr =  0
@@ -386,7 +386,7 @@ def exec_cmd(env, v):
     #ctr_mode = 'torq'
     ctr_mode = 'vel'
     if ctr_mode == 'vel':
-        k_th0 = SPEED*np.pi/360
+        k_th0 = SPEED/6*np.pi/360
         k_a   = SPEED/6 * 0.01
         _, _, done, _ = env.step_vel_control(np.array([k_th0, k_a]) * v)
     else:

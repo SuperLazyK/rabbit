@@ -33,7 +33,7 @@ c = 0
 
 # ccw is positive
 ref_min_th0 = np.deg2rad(0)
-ref_max_th0 = np.deg2rad(45)
+ref_max_th0 = np.deg2rad(10)
 ref_min_d = 0.10
 ref_max_d = 0.45
 ref_min_a = lt + ref_min_d - 0.05
