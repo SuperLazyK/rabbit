@@ -184,19 +184,20 @@ def calc_joint_property(s):
 def ground(s):
     return s[IDX_yr] < 0.05 or cog(s)[1] < 0.8
 
-OBS_MIN = np.array([0, -np.pi,     0, limit_min_th0, limit_min_a, -MAX_SPEED, -MAX_SPEED])
-OBS_MAX = np.array([5,  np.pi, max_z, limit_max_th0, limit_max_a,  MAX_SPEED,  MAX_SPEED])
+OBS_MIN = np.array([0, -np.pi,     0, limit_min_th0, limit_min_a, -MAX_SPEED])
+OBS_MAX = np.array([5,  np.pi, max_z, limit_max_th0, limit_max_a,  MAX_SPEED])
 
 def obs(s):
-    vcog = dcog(s)
-    pcog = cog(s)
+    #vcog = dcog(s)
+    #pcog = cog(s)
     prop = calc_joint_property(s)
-    return np.array([ pcog[1]
+    return np.array([ s[IDX_y0]
                     , prop['thr']
                     , prop['th0']
                     , prop['a']
-                    , vcog[0]
-                    , prop['dz']
+                    , s[IDX_dy0]
+                    #, vcog[0]
+                    #, prop['dz']
                     ])
 
 def reward_imitation_jump(s, t):
