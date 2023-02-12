@@ -22,7 +22,8 @@ from scipy import interpolate
 
 pygame.init()
 # input U
-DELTA = 0.001
+#DELTA = 0.001
+DELTA = 0.002
 #DELTA = 0.005
 SPEED=6
 
@@ -175,7 +176,7 @@ class RabbitEnv():
         else:
             if random.randint(0, 2) == 0:
                 th0 = np.deg2rad(30)
-                thk = np.deg2rad(-90)
+                thk = np.deg2rad(-70)
                 th1 = np.deg2rad(74)
                 pr = np.array([0, 0.1])
                 thr = np.deg2rad(5)

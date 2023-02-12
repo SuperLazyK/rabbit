@@ -19,7 +19,7 @@ def normalize_angle(x):
 max_z = 0.55
 
 # ccw is positive
-ref_min_thk = np.deg2rad(-140)
+ref_min_thk = np.deg2rad(-70)
 ref_max_thk = np.deg2rad(-20)
 #ref_min_th1 = np.deg2rad(0)
 #ref_max_th1 = np.deg2rad(90)
@@ -238,8 +238,10 @@ def calc_joint_property(s):
 def ground(s):
     return s[IDX_yr] < 0.05 or cog(s)[1] < 0.8
 
-OBS_MIN = np.array([0, -np.pi,     0, limit_min_thk, limit_min_th2, limit_min_d, -MAX_SPEED, -MAX_SPEED, -MAX_ROT_SPEED, -MAX_SPEED, -MAX_ROT_SPEED, -MAX_ROT_SPEED, -MAX_SPEED])
-OBS_MAX = np.array([5,  np.pi, max_z, limit_max_thk, limit_max_th2, limit_max_d,  MAX_SPEED,  MAX_SPEED, MAX_ROT_SPEED, MAX_SPEED, -MAX_ROT_SPEED, -MAX_ROT_SPEED, -MAX_SPEED])
+OBS_MIN = np.array([0, -np.pi,     0, limit_min_thk, limit_min_th2, limit_min_d])
+OBS_MAX = np.array([5,  np.pi, max_z, limit_max_thk, limit_max_th2, limit_max_d])
+#OBS_MIN = np.array([0, -np.pi,     0, limit_min_thk, limit_min_th2, limit_min_d, -MAX_SPEED, -MAX_SPEED, -MAX_ROT_SPEED, -MAX_SPEED, -MAX_ROT_SPEED, -MAX_ROT_SPEED, -MAX_SPEED])
+#OBS_MAX = np.array([5,  np.pi, max_z, limit_max_thk, limit_max_th2, limit_max_d,  MAX_SPEED,  MAX_SPEED, MAX_ROT_SPEED, MAX_SPEED, -MAX_ROT_SPEED, -MAX_ROT_SPEED, -MAX_SPEED])
 #OBS_MIN = np.array([-20,-1]*NUM_OF_MASS_POINTS + [-100,-100]*NUM_OF_MASS_POINTS)
 #OBS_MAX = np.array([20,10]*NUM_OF_MASS_POINTS + [100,109]*NUM_OF_MASS_POINTS)
 
@@ -251,13 +253,20 @@ def obs(s):
                     , prop['thk']
                     , prop['th2']
                     , prop['d']
-                    , s[IDX_dxr]
-                    , s[IDX_dyr]
-                    , prop['dthr']
-                    , prop['dz']
-                    , prop['dthk']
-                    , prop['dth2']
-                    , prop['dd']])
+                    ])
+    #return np.array([ s[IDX_yr]
+    #                , prop['thr']
+    #                , prop['z']
+    #                , prop['thk']
+    #                , prop['th2']
+    #                , prop['d']
+    #                , s[IDX_dxr]
+    #                , s[IDX_dyr]
+    #                , prop['dthr']
+    #                , prop['dz']
+    #                , prop['dthk']
+    #                , prop['dth2']
+    #                , prop['dd']])
     #return s
 
 
