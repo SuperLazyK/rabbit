@@ -65,9 +65,11 @@ def dump_history_csv(history, filename='state.csv'):
         writer.writeheader()
         writer.writerows(data)
 
-def dump_plot_yaml(joint_info, filename='plot.yaml'):
-    with open(filename, 'w') as f:
-        yaml.dump(joint_info, f)
+def dump_plot(d, filename='plot.csv'):
+    with open(filename,'w',encoding='utf-8') as f:
+        writer = csv.DictWriter(f, fieldnames = ['t', 'prx', 'pry', 'thr', 'z', 'th0', 'thk', 'th1'])
+        writer.writeheader()
+        writer.writerows(d)
 
 class RabbitViewer():
     def __init__(self):
@@ -167,18 +169,18 @@ class RabbitEnv():
                 self.autosave("normal")
 
         if random is None:
-            th0 = np.deg2rad(30)
-            thk = np.deg2rad(-90)
-            th1 = np.deg2rad(74)
+            th0 = np.deg2rad(15.131)
+            thk = np.deg2rad(-39.49)
+            th1 = np.deg2rad(33.082)
             pr = np.array([0, 1])
             thr =  0
             vr = np.array([0, 0])
             dthr = 0
         else:
             if random.randint(0, 2) == 0:
-                th0 = np.deg2rad(30)
-                thk = np.deg2rad(-70)
-                th1 = np.deg2rad(74)
+                th0 = np.deg2rad(15.131)
+                thk = np.deg2rad(-39.49)
+                th1 = np.deg2rad(33.082)
                 pr = np.array([0, 0.1])
                 thr = np.deg2rad(5)
                 vr = np.array([0, 0])
@@ -337,12 +339,13 @@ class RabbitEnv():
             print(f"{k}\t:\t{prop[k]}")
         return prop
 
-    def load_yaml(self, filename):
+    def load_plot(self, filename):
+
+        with open(filename) as f:
+            reader = csv.DictReader(f)
+            jprops = [{field:float(row[field]) for field in row} for row in reader]
 
         self.history = []
-        with open(filename) as file:
-            jprops = yaml.safe_load(file)
-
         tsi = np.arange(jprops[0]['t'], jprops[-1]['t'], DELTA)
         data = {}
         for field in ['z', 'prx', 'pry', 'thr', 'th0', 'thk', 'th1']:
@@ -479,7 +482,7 @@ def main():
                     replay = True
                     done = True
                 elif keyname == '0':
-                    env.load_yaml('main_pose.yaml')
+                    env.load_plot('main_pose.csv')
                     frame = 0
                     replay = True
                     done = True
@@ -504,8 +507,9 @@ def main():
 
                 elif keyname == 'i':
                     env.info(frame)
-                    plot_data.append(env.joint_info(frame))
-                    dump_plot_yaml(plot_data, 'plot.yaml')
+                    d = env.joint_info(frame)
+                    plot_data.append( {k: d[k] for k in ['t', 'z', 'prx', 'pry', 'thr', 'th0', 'thk', 'th1']})
+                    dump_plot(plot_data)
 
                 elif keyname == 'u':
                     slow = slow ^ True
