@@ -67,7 +67,7 @@ def dump_history_csv(history, filename='state.csv'):
 
 def dump_plot(d, filename='plot.csv'):
     with open(filename,'w',encoding='utf-8') as f:
-        writer = csv.DictWriter(f, fieldnames = ['t', 'prx', 'pry', 'thr', 'z', 'th0', 'thk', 'th1'])
+        writer = csv.DictWriter(f, fieldnames = ['t', 'prx', 'pry', 'thr', 'z', 'th0', 'a'])
         writer.writeheader()
         writer.writerows(d)
 
@@ -133,7 +133,7 @@ class RabbitViewer():
         text = self.font.render(f"mode={mode:} t={t:.03f} E={energy:.01f}", True, BLACK)
         text1 = self.font.render(f"ref={degrees(ref[0]):.01f} {(ref[1]):.02f}", True, BLACK)
         info = mp.calc_joint_property(state)
-        text2 = self.font.render(f"obs={degrees(info['tht']):.01f} {(info['d']):.02f}", True, BLACK)
+        text2 = self.font.render(f"obs={degrees(info['th0']):.01f} {(info['a']):.02f}", True, BLACK)
         self.screen.blit(text, [300, 50])
         self.screen.blit(text1, [300, 100])
         self.screen.blit(text2, [300, 150])
@@ -175,12 +175,12 @@ class RabbitEnv():
             if int(os.environ.get('AUTOSAVE', "0")):
                 self.autosave("normal")
 
-        tht = np.deg2rad(20)
-        d   = 0.2
+        th0 = np.deg2rad(1)
+        a   = 1.3
         pr = np.array([0, 1])
         thr =  0
 
-        s = mp.reset_state(pr, thr, tht, d)
+        s = mp.reset_state(pr, thr, th0, a)
         self.mode = NORMAL_MODE
         t = 0
         u = (0, 0)
@@ -298,7 +298,7 @@ class RabbitEnv():
         print(f"--")
         print(f"t:{t:.3f} E: {energy:.2f} mode: {mode:} reward: {reward:}")
         print(f"INPUT: u: {100*(u/mp.max_u())} [%]")
-        print(f"INPUT: ref: tht {degrees(ref[0]):.2f}  d {ref[1]:.2f}")
+        print(f"INPUT: ref: th0 {degrees(ref[0]):.2f}  a {ref[1]:.2f}")
         print(f"OUTPUT:")
         self.joint_info(frame)
         #mp.print_state(s)
@@ -334,7 +334,7 @@ class RabbitEnv():
         self.history = []
         tsi = np.arange(jprops[0]['t'], jprops[-1]['t'], DELTA)
         data = {}
-        for field in ['z', 'prx', 'pry', 'thr', 'th0', 'thk', 'th1']:
+        for field in ['z', 'prx', 'pry', 'thr', 'th0', 'a']:
             # duplicate t=0 with velocity 0
             ts = [jprops[0]['t']-1]
             xs = [jprops[0][field]]
@@ -351,27 +351,23 @@ class RabbitEnv():
                 vry = 0
                 dthr = 0
                 dth0 = 0
-                dthk = 0
-                dth1 = 0
+                da = 0
             else:
                 dz   = (data['z']  [i]  - data['z']  [i-1]) / DELTA
                 vrx  = (data['prx'][i]  - data['prx'][i-1]) / DELTA
                 vry  = (data['pry'][i]  - data['pry'][i-1]) / DELTA
                 dthr = (data['thr'][i]  - data['thr'][i-1]) / DELTA
                 dth0 = (data['th0'][i]  - data['th0'][i-1]) / DELTA
-                dthk = (data['thk'][i]  - data['thk'][i-1]) / DELTA
-                dth1 = (data['th1'][i]  - data['th1'][i-1]) / DELTA
+                da = (data['a'][i]  - data['a'][i-1]) / DELTA
             s = mp.reset_state(
                     np.array([data['prx'][i], data['pry'][i]]),
                     np.deg2rad(data['thr'][i]),
                     np.deg2rad(data['th0'][i]),
-                    np.deg2rad(data['thk'][i]),
-                    np.deg2rad(data['th1'][i]),
+                    np.deg2rad(data['a'][i]),
                     np.array([vrx, vry]),
                     np.deg2rad(dthr),
                     np.deg2rad(dth0),
-                    np.deg2rad(dthk),
-                    np.deg2rad(dth1),
+                    np.deg2rad(da),
                     data['z'][i],
                     dz,
                     )
@@ -390,13 +386,13 @@ def exec_cmd(env, v):
     #ctr_mode = 'torq'
     ctr_mode = 'vel'
     if ctr_mode == 'vel':
-        k_tht = SPEED*np.pi/360
+        k_th0 = SPEED*np.pi/360
         k_a   = SPEED/6 * 0.01
-        _, _, done, _ = env.step_vel_control(np.array([k_tht, k_a]) * v)
+        _, _, done, _ = env.step_vel_control(np.array([k_th0, k_a]) * v)
     else:
-        k_tht = 100000
+        k_th0 = 100000
         k_a   = 100000
-        _, _, done, _ = env.step_plant(np.array([k_tht, k_a]) * v)
+        _, _, done, _ = env.step_plant(np.array([k_th0, k_a]) * v)
     return done
 
 def fetch_episodes(dirname):
@@ -479,6 +475,8 @@ def main():
                 if keyname == 'r':
                     frame = 0
                     done = False
+                    replay = False
+                    start = False
                     s = env.reset()
                     n = env.num_of_frames()
 
@@ -492,7 +490,7 @@ def main():
                 elif keyname == 'i':
                     env.info(frame)
                     d = env.joint_info(frame)
-                    plot_data.append( {k: d[k] for k in ['t', 'z', 'prx', 'pry', 'thr', 'th0', 'thk', 'th1']})
+                    plot_data.append( {k: d[k] for k in ['t', 'z', 'prx', 'pry', 'thr', 'th0', 'a']})
                     dump_plot(plot_data)
 
                 elif keyname == 'u':
@@ -506,7 +504,7 @@ def main():
                 elif replay and keyname == 'n':
                     start = False
                     if mods & pl.KMOD_LSHIFT:
-                        frame = frame + 10
+                        frame = frame + 30
                     else:
                         frame = frame + 1
                     if frame >= n:
@@ -514,7 +512,7 @@ def main():
                 elif replay and keyname == 'p':
                     start = False
                     if mods & pl.KMOD_LSHIFT:
-                        frame = frame - 10
+                        frame = frame - 30
                     else:
                         frame = frame - 1
                     if frame < 0:

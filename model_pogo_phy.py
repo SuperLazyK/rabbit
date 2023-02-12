@@ -17,44 +17,46 @@ def normalize_angle(x):
 
 # Pogo-rotation-knee-phy
 max_z = 0.55
-
-# ccw is positive
-ref_min_tht = np.deg2rad(3)
-ref_max_tht = np.deg2rad(45)
-ref_min_d = 0.10
-ref_max_d = 0.45
-REF_MIN = np.array([ref_min_tht, ref_min_d])
-REF_MAX = np.array([ref_max_tht, ref_max_d])
-
-limit_min_tht = np.deg2rad(-10)
-limit_max_tht = np.deg2rad(120)
-limit_min_d = 0.00
-limit_max_d = 0.55
-
-MAX_ROT_SPEED=100
-MAX_SPEED=100
-
 z0 = 0.55
 lt = 0.83
 mr = 1
-m0 = 15
-m2 = 55
+m0 = 20
+m2 = 50
 mt = 7
-g  = 0
-#g  = 9.8
+#g  = 0
+g  = 9.8
 #g  = -9.8
 K  = 15000 # mgh = 1/2 k x^2 -> T=2*pi sqrt(m/k)
 c = 0
 #c = 10
 
+
+# ccw is positive
+ref_min_th0 = np.deg2rad(0)
+ref_max_th0 = np.deg2rad(45)
+ref_min_d = 0.10
+ref_max_d = 0.45
+ref_min_a = lt + ref_min_d - 0.05
+ref_max_a = 1.3
+REF_MIN = np.array([ref_min_th0, ref_min_a])
+REF_MAX = np.array([ref_max_th0, ref_max_a])
+
+limit_min_th0 = np.deg2rad(-10)
+limit_max_th0 = np.deg2rad(120)
+limit_min_a = 0.50
+limit_max_a = 1.40
+
+MAX_ROT_SPEED=100
+MAX_SPEED=100
+
 #MAX_TORQUE2=300 # arm
 #MAX_FORCE=800 # arm [N]
-MAX_TORQUE2=600 # arm
-MAX_FORCE=1200 # arm [N]
+MAX_TORQUE2=1200 # arm
+MAX_FORCE=7200 # arm [N]
 
 inf = float('inf')
-#Kp = np.array([2000, 8000])
-Kp = np.array([400, 800])
+Kp = np.array([4000, 13000])
+#Kp = np.array([400, 800])
 #Kp = np.array([400, 400, 800])
 #Kd = Kp * (0.01)
 Kd = Kp * (0.1)
@@ -83,19 +85,19 @@ IDX_x0, IDX_y0, IDX_dx0, IDX_dy0 = IDX_0*2, IDX_0*2+1, IDX_VEL+IDX_0*2, IDX_VEL+
 IDX_x2, IDX_y2, IDX_dx2, IDX_dy2 = IDX_2*2, IDX_2*2+1, IDX_VEL+IDX_2*2, IDX_VEL+IDX_2*2+1
 IDX_xt, IDX_yt, IDX_dxt, IDX_dyt = IDX_t*2, IDX_t*2+1, IDX_VEL+IDX_t*2, IDX_VEL+IDX_t*2+1
 
-def reset_state(pr, thr, tht, d, vr = np.array([0,0]), dthr=0, dtht=0, dd=0, z = 0, dz = 0):
+def reset_state(pr, thr, th0, a, vr = np.array([0,0]), dthr=0, dth0=0, dd=0, z = 0, dz = 0):
 
     dir_thr = np.array([-np.sin(thr), np.cos(thr)])
-    dir_thr0t = np.array([-np.sin(thr+tht), np.cos(thr+tht)])
+    dir_thr0 = np.array([-np.sin(thr+th0), np.cos(thr+th0)])
     dir_dthr = np.array([-np.cos(thr), -np.sin(thr)])
-    dir_dthr0t = np.array([-np.cos(thr+tht), -np.sin(thr+tht)])
+    dir_dthr0 = np.array([-np.cos(thr+th0), -np.sin(thr+th0)])
     p0 = pr + (z0 + z) * dir_thr
     pt = p0 + lt * dir_thr
-    p2 = pt + d * dir_thr0t
+    p2 = p0 + a * dir_thr0
 
     v0 = vr + dz*dir_thr + dthr*(z0+z)*dir_dthr
     vt = v0 + dthr*lt*dir_dthr
-    v2 = vt + dd*dir_thr0t + (dthr+dtht)*d*dir_dthr0t
+    v2 = v0 + dd*dir_thr0 + (dthr+dth0)*a*dir_dthr0
 
     s = np.zeros(IDX_MAX, dtype=np.float64)
     s[IDX_xr:IDX_yr+1]  = pr
@@ -155,22 +157,22 @@ def calc_joint_property(s):
     pt = s[IDX_xt:IDX_yt+1]
     pr0 = p0 - pr
     p0t = pt - p0
-    pt2 = p2 - pt
+    p02 = p2 - p0
     lr0 = np.linalg.norm(pr0)
-    ret['d'] = d = max(limit_min_d, np.linalg.norm(pt2))
+    ret['a'] = a = max(limit_min_a, np.linalg.norm(p02))
     ret['z'] = lr0 -z0
     ret['thr'] = atan2(pr0[1], pr0[0]) - np.pi/2
-    ret['tht'] = vec2rad(p0t/lt, pt2/d)
+    ret['th0'] = vec2rad(p0t/lt, p02/a)
 
     vr = s[IDX_dxr:IDX_dyr+1]
     v0 = s[IDX_dx0:IDX_dy0+1]
     v2 = s[IDX_dx2:IDX_dy2+1]
     vt = s[IDX_dxt:IDX_dyt+1]
 
-    ret['dd'] = (pt2/d) @ (v2 -vt)
+    ret['da'] = (p02/a) @ (v2 -v0)
     ret['dz'] = (pr0/lr0) @ (v0 - vr)
     ret['dthr'] = dthr = np.cross(pr0, v0-vr)/lr0**2
-    ret['dtht'] = dtht = np.cross(pt2, v2-vt)/d**2 - dthr
+    ret['dth0'] = dth0 = np.cross(p02, v2-v0)/a**2 - dthr
 
     ret['prx'] = s[IDX_xr]
     ret['pry'] = s[IDX_yr]
@@ -182,8 +184,8 @@ def calc_joint_property(s):
 def ground(s):
     return s[IDX_yr] < 0.05 or cog(s)[1] < 0.8
 
-OBS_MIN = np.array([0, -MAX_SPEED, -np.pi,     0, limit_min_tht, limit_min_d])
-OBS_MAX = np.array([5,  MAX_SPEED,  np.pi, max_z, limit_max_tht, limit_max_d])
+OBS_MIN = np.array([0, -np.pi,     0, limit_min_th0, limit_min_a, -MAX_SPEED, -MAX_SPEED])
+OBS_MAX = np.array([5,  np.pi, max_z, limit_max_th0, limit_max_a,  MAX_SPEED,  MAX_SPEED])
 
 def obs(s):
     vcog = dcog(s)
@@ -191,10 +193,10 @@ def obs(s):
     prop = calc_joint_property(s)
     return np.array([ pcog[1]
                     , prop['thr']
-                    , prop['tht']
-                    , prop['d']
+                    , prop['th0']
+                    , prop['a']
                     , vcog[0]
-                    #, prop['dz']
+                    , prop['dz']
                     ])
 
 def reward_imitation_jump(s, t):
@@ -225,7 +227,7 @@ def reward(s):
 
 def init_ref(s):
     prop = calc_joint_property(s)
-    return np.array([prop['tht'], prop['d']])
+    return np.array([prop['th0'], prop['a']])
 
 def check_invariant(s):
     ps = list(node_pos(s))
@@ -423,8 +425,8 @@ def pred_ne0(C):
 
 extforce = [ ("g", lambda t, s, u: force_gravity(s))
            , ("s", lambda t, s, u: force_spring(s, z0, K, IDX_r, IDX_0))
-           , ("mt-rev", lambda t, s, u: force_motor(s, IDX_0, IDX_t, IDX_2, u[0], -MAX_TORQUE2, MAX_TORQUE2)) # trick
-           , ("mt-linear", lambda t, s, u: force_linear(s, IDX_2, IDX_t, u[1], -MAX_FORCE, MAX_FORCE))
+           , ("m2-rev", lambda t, s, u: force_motor(s, IDX_t, IDX_0, IDX_2, u[0], -MAX_TORQUE2, MAX_TORQUE2)) # trick
+           , ("m2-linear", lambda t, s, u: force_linear(s, IDX_0, IDX_2, u[1], -MAX_FORCE, MAX_FORCE))
            ]
 
 constraints = [ ("ground-pen", lambda s, dt: constraint_ground_penetration(s, IDX_r, 0, dt, 0.1, pred_gt0), (-inf, 0))
@@ -561,8 +563,8 @@ def moment(s):
 
 def pdcontrol(s, ref):
     prop = calc_joint_property(s)
-    dob  = np.array([prop['dtht'], prop['dd']])
-    ob = np.array([prop['tht'], prop['d']])
+    dob  = np.array([prop['dth0'], prop['da']])
+    ob = np.array([prop['th0'], prop['a']])
     err = ref - ob
     debug_print(f"PD-ref: {np.rad2deg(ref[0])} {ref[1]}")
     debug_print(f"PD-obs: {np.rad2deg(ob[0])}  {ob[1]}")
