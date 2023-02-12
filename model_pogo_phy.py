@@ -161,6 +161,7 @@ def calc_joint_property(s):
 
     vr = s[IDX_dxr:IDX_dyr+1]
     v0 = s[IDX_dx0:IDX_dy0+1]
+    v2 = s[IDX_dx2:IDX_dy2+1]
     vt = s[IDX_dxt:IDX_dyt+1]
 
     ret['dd'] = (pt2/d) @ (v2 -vt)
@@ -189,7 +190,7 @@ def obs(s):
                     , prop['thr']
                     , prop['tht']
                     , prop['d']
-                    , dcog[0]
+                    , vcog[0]
                     #, prop['dz']
                     ])
 
@@ -419,8 +420,8 @@ def pred_ne0(C):
 
 extforce = [ ("g", lambda t, s, u: force_gravity(s))
            , ("s", lambda t, s, u: force_spring(s, z0, K, IDX_r, IDX_0))
-           , ("mt-rev", lambda t, s, u: force_motor(s, IDX_0, IDX_t, IDX_2, u[1], -MAX_TORQUE2, MAX_TORQUE2)) # trick
-           , ("mt-linear", lambda t, s, u: force_linear(s, IDX_2, IDX_t, u[2], -MAX_FORCE, MAX_FORCE))
+           , ("mt-rev", lambda t, s, u: force_motor(s, IDX_0, IDX_t, IDX_2, u[0], -MAX_TORQUE2, MAX_TORQUE2)) # trick
+           , ("mt-linear", lambda t, s, u: force_linear(s, IDX_2, IDX_t, u[1], -MAX_FORCE, MAX_FORCE))
            ]
 
 constraints = [ ("ground-pen", lambda s, dt: constraint_ground_penetration(s, IDX_r, 0, dt, 0.1, pred_gt0), (-inf, 0))

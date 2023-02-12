@@ -112,7 +112,7 @@ class RabbitViewer():
         for i in range(len(ps)):
             ps[i] = self.conv_pos(ps[i])
         cog = self.conv_pos(mp.cog(state))
-        head = self.conv_pos(mp.head_pos(state))
+        #head = self.conv_pos(mp.head_pos(state))
 
         self.screen.fill(WHITE)
         for i in range(len(ps)-2):
@@ -120,18 +120,20 @@ class RabbitViewer():
         pygame.draw.line(self.screen, BLACK, ps[-2], ps[-1],  width=int(100 * RSCALE))
         pygame.draw.line(self.screen, BLACK, ps[1], ps[-1],  width=int(100 * RSCALE))
 
-        for i in range(len(ps)):
-            pygame.draw.circle(self.screen, BLUE if i > 0 else RED, ps[i], 150/5 * np.sqrt(RSCALE))
+        pygame.draw.circle(self.screen, RED, ps[0], 150/5 * np.sqrt(RSCALE))
+        pygame.draw.circle(self.screen, GRAY, ps[1], 150/5 * np.sqrt(RSCALE))
+        pygame.draw.circle(self.screen, YELLOW, ps[2], 150/5 * np.sqrt(RSCALE))
+        pygame.draw.circle(self.screen, GRAY, ps[3], 150/5 * np.sqrt(RSCALE))
 
         pygame.draw.circle(self.screen, GREEN, cog, 150/5 * np.sqrt(RSCALE))
-        pygame.draw.circle(self.screen, YELLOW, head, 150/5 * np.sqrt(RSCALE))
+        #pygame.draw.circle(self.screen, YELLOW, head, 150/5 * np.sqrt(RSCALE))
         pygame.draw.line(self.screen, BLACK, [0,SCREEN_SIZE[1]/2 + OFFSET_VERT], [SCREEN_SIZE[0], SCREEN_SIZE[1]/2 + OFFSET_VERT],  width=int(100 * RSCALE))
-        pygame.draw.line(self.screen, BLACK, ps[-2], head,  width=int(100 * RSCALE))
+        #pygame.draw.line(self.screen, BLACK, ps[-2], head,  width=int(100 * RSCALE))
         tmx, tmy, am = mp.moment(state)
         text = self.font.render(f"mode={mode:} t={t:.03f} E={energy:.01f}", True, BLACK)
-        text1 = self.font.render(f"ref={degrees(ref[0]):.01f} {degrees(ref[1]):.01f} {(ref[2]):.02f}", True, BLACK)
+        text1 = self.font.render(f"ref={degrees(ref[0]):.01f} {(ref[1]):.02f}", True, BLACK)
         info = mp.calc_joint_property(state)
-        text2 = self.font.render(f"obs={degrees(info['thk']):.01f} {degrees(info['th2']):.01f} {(info['d']):.02f}", True, BLACK)
+        text2 = self.font.render(f"obs={degrees(info['tht']):.01f} {(info['d']):.02f}", True, BLACK)
         self.screen.blit(text, [300, 50])
         self.screen.blit(text1, [300, 100])
         self.screen.blit(text2, [300, 150])
@@ -173,36 +175,15 @@ class RabbitEnv():
             if int(os.environ.get('AUTOSAVE', "0")):
                 self.autosave("normal")
 
-        if random is None:
-            th0 = np.deg2rad(15.131)
-            thk = np.deg2rad(-39.49)
-            th1 = np.deg2rad(33.082)
-            pr = np.array([0, 1])
-            thr =  0
-            vr = np.array([0, 0])
-            dthr = 0
-        else:
-            if random.randint(0, 2) == 0:
-                th0 = np.deg2rad(15.131)
-                thk = np.deg2rad(-39.49)
-                th1 = np.deg2rad(33.082)
-                pr = np.array([0, 0.1])
-                thr = np.deg2rad(5)
-                vr = np.array([0, 0])
-                dthr = 0
-            else:
-                th0 = np.deg2rad(10)
-                thk = np.deg2rad(-20)
-                th1 = np.deg2rad(10)
-                pr = np.array([0, np.random.rand()])
-                thr = 0
-                vr = np.array([0, 0])
-                dthr = 0
+        tht = np.deg2rad(20)
+        d   = 0.2
+        pr = np.array([0, 1])
+        thr =  0
 
-        s = mp.reset_state(pr, thr, th0, thk, th1, vr, dthr)
+        s = mp.reset_state(pr, thr, tht, d)
         self.mode = NORMAL_MODE
         t = 0
-        u = (0, 0, 0)
+        u = (0, 0)
         reward = 0
         ref = mp.init_ref(s)
         self.history = [(self.mode, t, s, ref, u, reward)]
@@ -235,7 +216,7 @@ class RabbitEnv():
         is_ok, reason = mp.check_invariant(s)
         return not is_ok, reason
 
-    def step_plant(self, u, ref=np.array([0, 0, 0])):
+    def step_plant(self, u, ref=np.array([0, 0])):
         _, t, s, _, _, _ = self.history[-1]
         success, t, s = mp.step(t, s, u, DELTA)
         if not success:
@@ -317,7 +298,7 @@ class RabbitEnv():
         print(f"--")
         print(f"t:{t:.3f} E: {energy:.2f} mode: {mode:} reward: {reward:}")
         print(f"INPUT: u: {100*(u/mp.max_u())} [%]")
-        print(f"INPUT: ref: thk {degrees(ref[0]):.2f} th2 {degrees(ref[1]):.2f} d {ref[2]:.2f}")
+        print(f"INPUT: ref: tht {degrees(ref[0]):.2f}  d {ref[1]:.2f}")
         print(f"OUTPUT:")
         self.joint_info(frame)
         #mp.print_state(s)
@@ -395,7 +376,7 @@ class RabbitEnv():
                     dz,
                     )
             self.mode = NORMAL_MODE
-            u = (0, 0, 0)
+            u = (0, 0)
             mode ='normal'
             ref = mp.init_ref(s)
             reward = self.calc_reward(s, mode, t, False)
@@ -409,15 +390,13 @@ def exec_cmd(env, v):
     #ctr_mode = 'torq'
     ctr_mode = 'vel'
     if ctr_mode == 'vel':
-        k_th0 = SPEED*np.pi/360
-        k_th2 = SPEED*np.pi/360
+        k_tht = SPEED*np.pi/360
         k_a   = SPEED/6 * 0.01
-        _, _, done, _ = env.step_vel_control(np.array([k_th0, k_th2, k_a]) * v)
+        _, _, done, _ = env.step_vel_control(np.array([k_tht, k_a]) * v)
     else:
-        k_th0 = 100000
-        k_th2 = 100000
+        k_tht = 100000
         k_a   = 100000
-        _, _, done, _ = env.step_plant(np.array([k_th0, k_th2, k_a]) * v)
+        _, _, done, _ = env.step_plant(np.array([k_tht, k_a]) * v)
     return done
 
 def fetch_episodes(dirname):
@@ -433,7 +412,7 @@ def main():
 
     env = RabbitEnv()
 
-    v = np.array([0, 0, 0])
+    v = np.array([0, 0])
     frame = env.num_of_frames() - 1
     last_frame = -1
     start = False
@@ -554,19 +533,15 @@ def main():
                         eidx = min(eidx + 1, len(episodes)-1)
                 # input
                 elif keyname == 'j':
-                    v = np.array([-1, 0, 0])
+                    v = np.array([-1, 0])
                 elif keyname == 'k':
-                    v = np.array([1, 0, 0])
+                    v = np.array([1, 0])
                 elif keyname == 'h':
-                    v =  -np.array([0, 1, 0])
+                    v =  -np.array([0, 1])
                 elif keyname == 'l':
-                    v = -np.array([0, -1, 0])
-                elif keyname == 'n':
-                    v =  np.array([0, 0, 1])
-                elif keyname == 'p':
-                    v = np.array([0, 0, -1])
+                    v = -np.array([0, -1])
             elif event.type == pl.KEYUP:
-                v = np.array([0, 0, 0])
+                v = np.array([0, 0])
 
         if replay:
             if start:
