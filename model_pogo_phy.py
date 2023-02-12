@@ -210,22 +210,22 @@ def reward_imitation_flip(s, t):
 
 def reward(s):
     vcog = dcog(s)
-    dir0r = np.array([s[IDX_xr] - s[IDX_x0], s[IDX_yr]-s[IDX_y0]])
+    dir0t = np.array([s[IDX_xt] - s[IDX_x0], s[IDX_yt]-s[IDX_y0]])
 
     pcog = cog(s)
     r_y = (energyU(s) + energyTy(s))/600
     r_thr = 0
     r_cogx = 0
 
-    if ground(s):
-        mode = "ground"
-        r_cogx = np.exp(-(pcog[0]-s[IDX_xr])**2)*3
-        r_thr = (2-np.linalg.norm(normalize(dir0r) - np.array([0, -1])))/2
-    else:
-        mode = "air"
-        if vcog[1] < 0:
-            r_thr = (2-np.linalg.norm(normalize(dir0r) - normalize(vcog))) * (3/(1+pcog[1]))
-    debug_print((mode, r_y, r_thr, r_cogx))
+    #if ground(s):
+    #mode = "ground"
+    r_cogx = np.exp(-(pcog[0]-s[IDX_xr])**2)*3
+    r_thr = (2-np.linalg.norm(normalize(dir0t) - np.array([0, 1])))/2
+    #else:
+    #    mode = "air"
+    #    #if vcog[1] < 0:
+    #    #    r_thr = (2-np.linalg.norm(normalize(dir0t) - normalize(vcog))) * (3/(1+pcog[1]))
+    #debug_print((mode, r_y, r_thr, r_cogx))
     return r_y + r_thr + r_cogx
 
 def init_ref(s):
