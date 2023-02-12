@@ -57,7 +57,7 @@ MAX_FORCE=800 # arm [N]
 
 inf = float('inf')
 #Kp = np.array([4000, 13000])
-Kp = np.array([400, 800])
+Kp = 5*np.array([400, 800])
 #Kp = np.array([400, 800])
 #Kp = np.array([400, 400, 800])
 #Kd = Kp * (0.01)
@@ -261,6 +261,7 @@ def force_linear(s, idx0, idx1, u, umin, umax, flip=1):
     return f
 
 def force_spring(s, d, k, idx0, idx1):
+    f = np.zeros_like(M)
     p0 = s[2*idx0:2*idx0+2]
     p1 = s[2*idx1:2*idx1+2]
     v0 = s[IDX_VEL+2*idx0:IDX_VEL+2*idx0+2]
@@ -269,7 +270,6 @@ def force_spring(s, d, k, idx0, idx1):
     l01 = np.linalg.norm(p0 - p1)
     u01 = p01/l01
     v01 = v0 - v1
-    f = np.zeros_like(M)
     fspring = k * (l01 - d)
     fric = c * (v01 @ u01) * u01
     f[2*idx0:2*idx0+2] = fspring * u01 - fric
@@ -438,7 +438,7 @@ constraints = [ ("ground-pen", lambda s, dt: constraint_ground_penetration(s, ID
               #, ("fixed-pointer0", lambda s, dt: constraint_fixed_point_distant(s, IDX_0, np.array([0, 1+z0]), 0, dt, 0.1, pred_ne0), (-inf, inf))
               #, ("fixed-pointert", lambda s, dt: constraint_fixed_point_distant(s, IDX_t, np.array([0, 1 + z0+lt]), 0, dt, 0.1, pred_ne0), (-inf, inf))
               , ("dist-0t", lambda s, dt: constraint_distant(s, IDX_0, IDX_t, lt, dt, 0.3, pred_ne0), (-inf, inf))
-              #, ("stick > 2", lambda s, dt: constraint_point_line_penetration(s, IDX_0, IDX_t, IDX_2, dt, 0.1, pred_lt0), (0, inf))
+              , ("stick > 2", lambda s, dt: constraint_point_line_penetration(s, IDX_0, IDX_t, IDX_2, dt, 0.1, pred_lt0), (0, inf))
               #, ("limit-0t2-min", lambda s, dt: constraint_angleR(s, IDX_0, IDX_t, IDX_2, limit_min_tht, dt, 0.1, pred_lt0), (0, inf))
               #, ("limit-0t2-max", lambda s, dt: constraint_angleR(s, IDX_0, IDX_t, IDX_2, limit_max_tht, dt, 0.1, pred_gt0), (-inf, 0))
               #, ("limit-2t-min", lambda s, dt: constraint_distant(s, IDX_2, IDX_t, limit_min_d, dt, 0.1, pred_lt0), (0, inf))
@@ -500,8 +500,12 @@ def calc_constraint_impulse(s, fext, dt):
     lmd = np.clip(lmd, np.array(cmin), np.array(cmax))
     #debug_print(("check lmd", lmd))
     impulse = J.T @ lmd
+    k = abs(np.amax(impulse))
+    if k > MAX_IMPULSE:
+        impulse = impulse * MAX_IMPULSE / k
+    #ret = np.clip(impulse, -MAX_IMPULSE, MAX_IMPULSE)
     debug_print(("check impulse", impulse))
-    return np.clip(impulse, -MAX_IMPULSE, MAX_IMPULSE)
+    return impulse
 
 def calc_ext_force(t, s, u, dt):
     fext = np.zeros(2*NUM_OF_MASS_POINTS)
@@ -509,19 +513,28 @@ def calc_ext_force(t, s, u, dt):
         f = ff(t, s, u)
         fext = fext + f
         debug_print(("ext-force impulse", name, f*dt))
+
     return fext
 
 def step(t, s, u, dt):
     try:
         prev_tx, prev_ty, prev_a = moment(s)
+        print("moment-prev", prev_tx, prev_ty, prev_a)
         new_s = s.copy()
         fext = calc_ext_force(t, s, u, dt)
         pc = calc_constraint_impulse(new_s, fext, dt)
         pe = fext * dt
         new_s[IDX_VEL:] = new_s[IDX_VEL:] + invM @ (pc + pe)
         new_s[0:IDX_VEL] = new_s[0:IDX_VEL] + dt * new_s[IDX_VEL:]
+        tx, ty, a = moment(new_s)
+        print("constraint-impulseX", sum(pc[0::2]))
+        print("constraint-impulseY", sum(pc[1::2]))
+        print("extforce-impulseX", sum(pe[0::2]))
+        print("extforce-impulseY", sum(pe[1::2]))
+        print("moment-new", tx, ty, a)
         return True, t+dt, new_s
     except np.linalg.LinAlgError as err:
+        print("??????????????/")
         print(err)
         return False, t+dt, s
 

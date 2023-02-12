@@ -134,9 +134,11 @@ class RabbitViewer():
         text1 = self.font.render(f"ref={degrees(ref[0]):.01f} {(ref[1]):.02f}", True, BLACK)
         info = mp.calc_joint_property(state)
         text2 = self.font.render(f"obs={degrees(info['th0']):.01f} {(info['a']):.02f}", True, BLACK)
+        text3 = self.font.render(f"moment={tmx:.01f} {tmy:.02f} {am:.02f}", True, BLACK)
         self.screen.blit(text, [300, 50])
         self.screen.blit(text1, [300, 100])
         self.screen.blit(text2, [300, 150])
+        self.screen.blit(text3, [300, 200])
         pygame.display.flip()
         self.clock.tick(60)
 
