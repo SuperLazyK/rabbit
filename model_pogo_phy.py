@@ -47,8 +47,10 @@ K  = 15000 # mgh = 1/2 k x^2 -> T=2*pi sqrt(m/k)
 c = 0
 #c = 10
 
-MAX_TORQUE2=300 # arm
-MAX_FORCE=800 # arm [N]
+#MAX_TORQUE2=300 # arm
+#MAX_FORCE=800 # arm [N]
+MAX_TORQUE2=600 # arm
+MAX_FORCE=1200 # arm [N]
 
 inf = float('inf')
 #Kp = np.array([2000, 8000])
@@ -431,6 +433,7 @@ constraints = [ ("ground-pen", lambda s, dt: constraint_ground_penetration(s, ID
               #, ("fixed-pointer0", lambda s, dt: constraint_fixed_point_distant(s, IDX_0, np.array([0, 1+z0]), 0, dt, 0.1, pred_ne0), (-inf, inf))
               #, ("fixed-pointert", lambda s, dt: constraint_fixed_point_distant(s, IDX_t, np.array([0, 1 + z0+lt]), 0, dt, 0.1, pred_ne0), (-inf, inf))
               , ("dist-0t", lambda s, dt: constraint_distant(s, IDX_0, IDX_t, lt, dt, 0.3, pred_ne0), (-inf, inf))
+              , ("stick > 2", lambda s, dt: constraint_point_line_penetration(s, IDX_0, IDX_t, IDX_2, dt, 0.1, pred_lt0), (0, inf))
               #, ("limit-0t2-min", lambda s, dt: constraint_angleR(s, IDX_0, IDX_t, IDX_2, limit_min_tht, dt, 0.1, pred_lt0), (0, inf))
               #, ("limit-0t2-max", lambda s, dt: constraint_angleR(s, IDX_0, IDX_t, IDX_2, limit_max_tht, dt, 0.1, pred_gt0), (-inf, 0))
               #, ("limit-2t-min", lambda s, dt: constraint_distant(s, IDX_2, IDX_t, limit_min_d, dt, 0.1, pred_lt0), (0, inf))
