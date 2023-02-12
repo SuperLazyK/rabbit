@@ -110,12 +110,12 @@ class RabbitViewer():
         for i in range(len(ps)):
             ps[i] = self.conv_pos(ps[i])
         cog = self.conv_pos(mp.cog(state))
-        head = ps[-2]
+        head = self.conv_pos(mp.head_pos(state))
 
         self.screen.fill(WHITE)
         for i in range(len(ps)-2):
             pygame.draw.line(self.screen, BLACK, ps[i], ps[i+1],  width=int(100 * RSCALE))
-        pygame.draw.line(self.screen, BLACK, ps[-3], ps[-1],  width=int(100 * RSCALE))
+        pygame.draw.line(self.screen, BLACK, ps[-2], ps[-1],  width=int(100 * RSCALE))
         pygame.draw.line(self.screen, BLACK, ps[1], ps[-1],  width=int(100 * RSCALE))
 
         for i in range(len(ps)):
@@ -124,6 +124,7 @@ class RabbitViewer():
         pygame.draw.circle(self.screen, GREEN, cog, 150/5 * np.sqrt(RSCALE))
         pygame.draw.circle(self.screen, YELLOW, head, 150/5 * np.sqrt(RSCALE))
         pygame.draw.line(self.screen, BLACK, [0,SCREEN_SIZE[1]/2 + OFFSET_VERT], [SCREEN_SIZE[0], SCREEN_SIZE[1]/2 + OFFSET_VERT],  width=int(100 * RSCALE))
+        pygame.draw.line(self.screen, BLACK, ps[-2], head,  width=int(100 * RSCALE))
         tmx, tmy, am = mp.moment(state)
         text = self.font.render(f"mode={mode:} t={t:.03f} E={energy:.01f}", True, BLACK)
         self.screen.blit(text, [300, 50])
