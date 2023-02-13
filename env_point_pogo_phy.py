@@ -459,7 +459,7 @@ def main():
                     env.set_fixed_constraint_0t(frame)
                 elif keyname == '1':
                     print("load")
-                    env.load('autodump/last_episode.pkl')
+                    env.load('dump.pkl')
                     frame = 0
                     replay = True
                     done = True
