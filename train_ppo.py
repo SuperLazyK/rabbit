@@ -17,6 +17,6 @@ ppo(env_fn=env_fn, ac_kwargs=ac_kwargs
         , epochs=6000
         , gamma=0.9
         , lam=0.95,
-        , pi_lr=3e-5
-        , vf_lr=1e-4
+        #, pi_lr=3e-5
+        #, vf_lr=1e-4
         , logger_kwargs=logger_kwargs)
