@@ -23,8 +23,8 @@ mr = 1
 m0 = 20
 m2 = 50
 mt = 7
-#g  = 0
-g  = 9.8
+g  = 0
+#g  = 9.8
 #g  = -9.8
 K  = 15000 # mgh = 1/2 k x^2 -> T=2*pi sqrt(m/k)
 c = 0
@@ -33,7 +33,7 @@ c = 0
 
 # ccw is positive
 ref_min_th0 = np.deg2rad(0)
-ref_max_th0 = np.deg2rad(10)
+ref_max_th0 = np.deg2rad(20)
 ref_min_d = 0.10
 ref_max_d = 0.45
 ref_min_a = lt + ref_min_d - 0.05
@@ -42,7 +42,7 @@ REF_MIN = np.array([ref_min_th0, ref_min_a])
 REF_MAX = np.array([ref_max_th0, ref_max_a])
 
 limit_min_th0 = np.deg2rad(-10)
-limit_max_th0 = np.deg2rad(120)
+limit_max_th0 = np.deg2rad(20)
 limit_min_a = 0.50
 limit_max_a = 1.40
 limit_max_d = 0.55
