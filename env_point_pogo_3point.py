@@ -257,7 +257,7 @@ class RabbitEnv():
         print(f"--")
         print(f"t:{t:.3f} E: {energy:.2f} mode: {mode:} reward: {reward:}")
         print(f"INPUT: u: {100*(u/mp.max_u())} [%]")
-        print(f"INPUT: ref: th0 {degrees(ref[0]):.2f}  a {ref[1]:.2f}")
+        print(f"INPUT: ref: th0 {degrees(ref[0]):.2f}  thk {ref[1]:.2f}")
         print(f"OUTPUT:")
         self.joint_info(frame)
         #mp.print_state(s)
@@ -292,7 +292,7 @@ def exec_cmd(env, v):
     ctr_mode = 'vel'
     if ctr_mode == 'vel':
         k_th0 = SPEED/6*np.pi/360
-        k_a   = SPEED/6 * 0.01
+        k_a   = SPEED/6 * 0.02
         _, _, done, _ = env.step_vel_control(np.array([k_th0, k_a]) * v)
     else:
         k_th0 = 100000
@@ -387,8 +387,8 @@ def main():
                 elif keyname == 'i':
                     env.info(frame)
                     d = env.joint_info(frame)
-                    plot_data.append( {k: d[k] for k in ['t', 'z', 'prx', 'pry', 'thr', 'th0', 'a']})
-                    dump_plot(plot_data)
+                    #plot_data.append( {k: d[k] for k in ['t', 'z', 'prx', 'pry', 'thr', 'th0', 'thk']})
+                    #dump_plot(plot_data)
 
                 elif keyname == 'u':
                     slow = slow ^ True
@@ -428,9 +428,9 @@ def main():
                         eidx = min(eidx + 1, len(episodes)-1)
                 # input
                 elif keyname == 'j':
-                    v =  -np.array([0, 1])
-                elif keyname == 'k':
                     v = -np.array([0, -1])
+                elif keyname == 'k':
+                    v =  -np.array([0, 1])
                 elif keyname == 'h':
                     v = np.array([1, 0])
                 elif keyname == 'l':

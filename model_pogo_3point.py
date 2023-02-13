@@ -20,9 +20,10 @@ z0 = 0.55
 lt = 0.83
 mr = 0
 m0 = 20
+mk = 0
 m1 = 50
 mt = 7
-M=np.array([mr, m0, m1, mt])
+M=np.array([mr, m0, mk, m1, mt])
 l = 1.2
 g  = 0
 #g  = 9.8
@@ -35,14 +36,14 @@ c = 0
 # ccw is positive
 ref_min_th0 = np.deg2rad(0)
 ref_max_th0 = np.deg2rad(20)
-ref_min_thk = np.deg2rad(0)
+ref_min_thk = np.deg2rad(10)
 ref_max_thk = np.deg2rad(30)
 REF_MIN = np.array([ref_min_th0, ref_min_thk])
 REF_MAX = np.array([ref_max_th0, ref_max_thk])
 
 limit_min_th0 = np.deg2rad(-10)
 limit_max_th0 = np.deg2rad(40)
-limit_min_thk = np.deg2rad(-10)
+limit_min_thk = np.deg2rad(0)
 limit_max_thk = np.deg2rad(40)
 
 MAX_ROT_SPEED=100
@@ -129,11 +130,13 @@ def node_pos(s):
 
     dir_thr = np.array([-np.sin(thr), np.cos(thr)])
     dir_thr0 = np.array([-np.sin(thr+th0), np.cos(thr+th0)])
+    #dir_thrk = np.array([-np.sin(thr+th0-thk), np.cos(thr+th0-thk)])
 
     l1 = l * np.cos(thk)
     p0 = pr + (z0 + z) * dir_thr
+    #pk = p0 + l/2 * dir_thr0k
     pt = p0 + lt * dir_thr
-    p1 = p0 + l * dir_thr0
+    p1 = p0 + l1 * dir_thr0
 
     return pr, p0, p1, pt
 
