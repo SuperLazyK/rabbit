@@ -285,13 +285,13 @@ def impulse_collision(s):
     A22[3][2]= 0
     A22[3][3]= l**2*m1*sin(thk)**2
 
-    #z,thr,th0,thk
-    y = -np.linalg.solve(A22, A21 @ s[IDX_dxr:IDX_dyr+1]).reshape(4)
+    #solve  A22 y(z,thr,th0,thk) = A21 (dx,dy)
+    y = np.linalg.solve(A22, A21 @ s[IDX_dxr:IDX_dyr+1]).reshape(4)
 
     d = np.zeros(IDX_MAX)
     d[IDX_xr] = 0
     d[IDX_yr] = 0
-    d[IDX_z]  = y[0]
+    d[IDX_z]   = y[0]
     d[IDX_thr] = y[1]
     d[IDX_th0] = y[2]
     d[IDX_thk] = y[3]
