@@ -25,8 +25,8 @@ m1 = 50
 mt = 7
 M=np.array([mr, m0, mk, m1, mt])
 l = 1.2
-#g  = 0
-g  = 9.8
+g  = 0
+#g  = 9.8
 #g  = -9.8
 k  = 15000 # mgh = 1/2 k x**2 -> T=2*pi sqrt(m/k)
 c = 0
@@ -210,7 +210,6 @@ def energyTy(s):
 
 def energyT(s):
     vs = list(node_vel(s))
-    print(vs)
     return sum([1/2 * (vs[i] @ vs[i]) * M[i] for i in range(len(vs))])
 
 def energy(s):
@@ -253,12 +252,11 @@ def jumpup(s):
     ret[IDX_dyr] = s[IDX_dz] * np.cos(s[IDX_thr])
     ret[IDX_z] = 0
     ret[IDX_dz] = 0
-    print("jumpup-before", calc_joint_property(s))
-    print("jumpup-after", calc_joint_property(ret))
+    #print("jumpup-before", calc_joint_property(s))
+    #print("jumpup-after", calc_joint_property(ret))
     return ret
 
 def impulse_collision(s):
-    print(calc_joint_property(s))
 
     z    = s[IDX_z]
     thr  = s[IDX_thr]
@@ -311,8 +309,8 @@ def land(s):
     ret[IDX_yr] = 0
     ret[IDX_z] = 0
     ret[IDX_MAX:] = d
-    print("land-before", calc_joint_property(s))
-    print("land-after", calc_joint_property(ret))
+    #print("land-before", calc_joint_property(s))
+    #print("land-after", calc_joint_property(ret))
     return ret
 
 def groundAb(s, u):
