@@ -423,6 +423,24 @@ def f_air(s, u):
     f[IDX_thk] = y[4]
     return f
 
+def jump_time(s, s1, dt): # z = 0
+    z = s[IDX_z]
+    z1 = s1[IDX_z]
+    if z > 0 and z1 <= 0 or z < 0 and z1 >= 0:
+        if abs(z - z1) > epsilon:
+            return z * dt / (z - z1)
+        else:
+            return dt
+    else:
+        return None
+
+def collision_time(s, s1, dt): # y0 = 0
+    yr = s[IDX_yr]
+    yr1 = s1[IDX_yr]
+    if yr > 0 and yr1 <= 0:
+        return yr * dt / (yr - yr1)
+    else:
+        return None
 
 def step(t, s, u, dt):
     u = torq_limit(s, u)
