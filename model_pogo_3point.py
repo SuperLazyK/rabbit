@@ -90,7 +90,7 @@ def reset_state(pr, thr, th0, thk, vr = np.array([0,0]), dthr=0, dth0=0, dthk=0,
 def print_state(s, titlePrefix="", fieldPrefix=""):
     ps = node_pos(s)
     for i in range(len(ps)):
-        print(f"{titlePrefix}OBJ{i:}: P{i}: {ps[i]}:.2f}")
+        print(f"{titlePrefix} OBJ{i:}: P{i}: {ps[i]:.2f}")
 
 def max_u():
     return np.array([MAX_TORQUE0, MAX_TORQUEK])
@@ -104,7 +104,7 @@ def ref_clip(ref):
     return np.clip(ref, REF_MIN, REF_MAX)
 
 def node_pos(s):
-    pr = np.array([s[IDX_xr], s[IDX_yr ])
+    pr = np.array([s[IDX_xr], s[IDX_yr]])
     thr = s[IDX_thr]
     z   = s[IDX_z  ]
     th0 = s[IDX_th0]
@@ -201,7 +201,7 @@ def moment(s):
 
 def pdcontrol(s, ref):
     dob  = np.array([s[IDX_MAX + IDX_th0], s[IDX_MAX + IDX_thk]])
-    ob = np.array([s[IDX_th0], s[IDX_thk])
+    ob = np.array([s[IDX_th0], s[IDX_thk]])
     err = ref - ob
     debug_print(f"PD-ref: {np.rad2deg(ref[0])} {ref[1]}")
     debug_print(f"PD-obs: {np.rad2deg(ob[0])}  {ob[1]}")
