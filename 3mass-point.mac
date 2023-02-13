@@ -139,11 +139,26 @@ X : [xr, yr, z, thr, th0, thk]$
 dX : [xr', yr', z', thr', th0', thk']$
 ddX : symbolilze([xr'', yr'', z'', thr'', th0'', thk''])$
 rhs : symbolilze(expand(diff(jacobian([L],dX), t) - jacobian([L], X)))$
-A:(trigsimp(expand(trigexpand(jacobian(args(rhs)[1], ddX)))))$
-A1:submatrix(1,2,A,3,4,5,6)$
-A2:submatrix(1,2,A,1,2)$
-showmat(A1)$
-showmat(A2)$
+A:(trigsimp(expand(trigexpand(subst([z=0], jacobian(args(rhs)[1], ddX))))))$
+A21:submatrix(1,2,A,3,4,5,6)$
+A22:submatrix(1,2,A,1,2)$
+showmatf90(A21)$
+showmatf90(A22)$
 
-/*
+/* CASE4: jump */
+/* 
+[A11, A12] dz   = df
+[A21, A22] dX    0
+<=>
+dX = - A22 ^-1 A21 dx
 */
+X : [z, xr, yr, thr, th0, thk]$
+dX : [z', xr', yr', thr', th0', thk']$
+ddX : symbolilze([z'', xr'', yr'', thr'', th0'', thk''])$
+rhs : symbolilze(expand(diff(jacobian([L],dX), t) - jacobian([L], X)))$
+A:(trigsimp(expand(trigexpand(subst([z=0], jacobian(args(rhs)[1], ddX))))))$
+A21:submatrix(1,A,2,3,4,5,6)$
+A22:submatrix(1,A,1)$
+showmatf90(A21)$
+showmatf90(A22)$
+
