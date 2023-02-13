@@ -42,16 +42,16 @@ symbolilze(M):= subst([ diff(xr,t,2)=ddx0
 ground(M):= subst([dx0=0 , ddx0=0 , dy0=0, ddy0=0 ], M)$
 
 
-x0: xr + (z + z0) * cos(thr)$
-y0: yr + (z + z0) * sin(thr)$
+x0: xr + (z + z0) - sin(thr)$
+y0: yr + (z + z0) + cos(thr)$
 
-xt: x0 + lt * cos(thr)$
-yt: y0 + lt * sin(thr)$
+xt: x0 - lt * sin(thr)$
+yt: y0 + lt * cos(thr)$
 
 l1: l * cos(thk)$
 
-x1: x0 + l1 * cos(th0 + thr)$
-y1: y0 + l1 * sin(th0 + thr)$
+x1: x0 - l1 * sin(th0 + thr)$
+y1: y0 + l1 * cos(th0 + thr)$
 
 xc: (m0 * x0 + m1 * x1 + mt * xt) / (m0 + m1 + mt) $
 yc: (m0 * y0 + m1 * y1 + mt * yt) / (m0 + m1 + mt) $
