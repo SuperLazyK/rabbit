@@ -48,8 +48,10 @@ limit_max_thk = np.deg2rad(40)
 
 MAX_ROT_SPEED=100
 MAX_SPEED=100
-MAX_TORQUEK=3000 # arm
-MAX_TORQUE0=8000 # arm
+#MAX_TORQUEK=3000 # arm
+#MAX_TORQUE0=8000 # arm
+MAX_TORQUEK=300 # arm
+MAX_TORQUE0=800 # arm
 
 inf = float('inf')
 #Kp = np.array([4000, 13000])
@@ -186,6 +188,12 @@ def check_invariant(s):
     for i in range(1,len(ps)):
         if ps[i][1] <= 0.001:
             reason = f"GAME OVER @ p{i}={ps[i]:}"
+            return False, reason
+    if s[IDX_th0] < limit_min_th0 or s[IDX_th0] > limit_max_th0:
+            reason = f"GAME OVER @ range error th0={s[IDX_th0]:}"
+            return False, reason
+    if s[IDX_thk] < limit_min_thk or s[IDX_thk] > limit_max_thk:
+            reason = f"GAME OVER @ range error thk={s[IDX_thk]:}"
             return False, reason
     return True, ""
 
