@@ -48,12 +48,12 @@ limit_max_thk = np.deg2rad(40)
 
 MAX_ROT_SPEED=100
 MAX_SPEED=100
-MAX_TORQUEK=300 # arm
-MAX_TORQUE0=800 # arm
+MAX_TORQUEK=3000 # arm
+MAX_TORQUE0=8000 # arm
 
 inf = float('inf')
 #Kp = np.array([4000, 13000])
-Kp = 5*np.array([400, 800])
+Kp = 50*np.array([400, 800])
 #Kp = np.array([400, 800])
 #Kp = np.array([400, 400, 800])
 #Kd = Kp * (0.01)
@@ -108,6 +108,12 @@ def calc_joint_property(s):
     d['z'] = s[IDX_z  ]
     d['th0'] = s[IDX_th0]
     d['thk'] = s[IDX_thk]
+    d['dxr'] = s[IDX_dxr ]
+    d['dyr'] = s[IDX_dyr ]
+    d['dthr'] = s[IDX_dthr]
+    d['dz'] = s[IDX_dz  ]
+    d['dth0'] = s[IDX_dth0]
+    d['dthk'] = s[IDX_dthk]
     return d
 
 def max_u():
@@ -373,15 +379,19 @@ def step(t, s, u, dt):
         ret[IDX_MAX:] = s[IDX_MAX:] + impulse
         ret[:IDX_MAX] = s[:IDX_MAX] + ret[IDX_MAX:] * dt
         if ret[IDX_z] >= 0:
-            return "jump", t + dt, jumpup(ret)
+            mode = "jump"
+            ret = jumpup(ret)
         else:
-            return "ground", t + dt, ret
+            mode = "ground"
     else:
         impulse = f_air(s, u) * dt
         ret[IDX_MAX:] = s[IDX_MAX:] + impulse
         ret[:IDX_MAX] = s[:IDX_MAX] + ret[IDX_MAX:] * dt
         if ret[IDX_yr] <= 0:
-            return "land", t + dt, land(ret)
+            mode = "land"
+            ret = land(ret)
         else:
-            return "air", t + dt, ret
+            mode ="air"
+    print(mode, calc_joint_property(ret))
+    return mode, t+dt, ret
 
