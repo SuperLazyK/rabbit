@@ -1,0 +1,136 @@
+/* 4 mass point */
+/* 3 mass point leads det A = 0 for no-constraint*/
+
+
+ratprint: false$
+
+declare ("'", alphabetic)$
+depends([xr, yr] , t)$
+depends([z] , t)$
+depends([thr, thk, th0] , t)$
+depends([u1, u2] , t)$
+
+size(M):=[length(M),length(args(M))]$
+sizev(M):=length(M)$
+
+sqsum(x, y):= x**2 + y**2$
+
+grind:true;
+showmat(m):= for i thru length(m) do
+    for j thru length(transpose(m)) do
+        block([], printf(true,"~d:~d=~%  ~a~%", i-1,j-1, m[i][j]))$
+
+load ("f90")$
+f90_output_line_length_max:10000000$
+showmatf90(m):= for i thru length(m) do
+    for j thru length(transpose(m)) do
+    block([], printf(true,"[~d][~d] = ", i-1,j-1), f90(m[i][j]))$
+
+symbolilze(M):= subst([ diff(xr,t,2)=ddx0
+                      , diff(yr,t,2)=ddy0
+                      , diff(z,t,2)=ddz
+                      , diff(thr,t,2)=ddth0
+                      , diff(thk,t,2)=ddthk
+                      , diff(th0,t,2)=ddth2
+                      , diff(xr,t,1)=dx0
+                      , diff(yr,t,1)=dy0
+                      , diff(z,t,1)=dz
+                      , diff(thr,t,1)=dth0
+                      , diff(thk,t,1)=dthk
+                      , diff(th0,t,1)=dth2
+                    ], M)$
+ground(M):= subst([dx0=0 , ddx0=0 , dy0=0, ddy0=0 ], M)$
+
+
+x0: xr + (z + z0) * cos(thr)$
+y0: yr + (z + z0) * sin(thr)$
+
+xt: x0 + lt * cos(thr)$
+yt: y0 + lt * sin(thr)$
+
+xk: x0 + l0 * cos(th0 + thr)$
+yk: y0 + l0 * sin(th0 + thr)$
+
+x1: xk + l1 * cos(thk + th0 + thr)$
+y1: yk + l1 * sin(thk + th0 + thr)$
+
+xc: (m0 * x0 + m1 * x1 + mt * xt) / (m0 + m1 + mt) $
+yc: (m0 * y0 + m1 * y1 + mt * yt) / (m0 + m1 + mt) $
+
+f90(expand(xc - xr))$
+f90(expand(yc - yr))$
+
+/*----------*/
+/* dynamics */
+/*----------*/
+
+thr': diff(thr, t)$
+thk': diff(thk, t)$
+th0': diff(th0, t)$
+xr': diff(xr, t)$
+yr': diff(yr, t)$
+z': diff(z, t)$
+x0': diff(x0, t)$
+y0': diff(y0, t)$
+x1': diff(x1, t)$
+y1': diff(y1, t)$
+xk': diff(xk, t)$
+yk': diff(yk, t)$
+xt': diff(xt, t)$
+yt': diff(yt, t)$
+
+f90(symbolilze(x0'-xr'))$
+f90(symbolilze(y0'-yr'))$
+f90(symbolilze(xk'-x0'))$
+f90(symbolilze(yk'-y0'))$
+f90(symbolilze(x1'-xk'))$
+f90(symbolilze(y1'-yk'))$
+f90(symbolilze(xt'-x0'))$
+f90(symbolilze(yt'-y0'))$
+
+thr'': diff(thr', t)$
+thk'': diff(thk', t)$
+th0'': diff(th0', t)$
+xr'': diff(xr', t)$
+yr'': diff(yr', t)$
+z'': diff(z', t)$
+
+/*----------*/
+/* Lagrange */
+/*----------*/
+U0: y0 * m0 * g$
+K0_trs: 1/2 * m0 * sqsum(x0', y0')$
+
+U1: y1 * m1 * g$
+K1_trs: 1/2 * m1 * sqsum(x1', y1')$
+
+Uk: yk * mk * g$
+Kk_trs: 1/2 * mk * sqsum(xk', yk')$
+
+Ut: yt * mt * g$
+Kt_trs: 1/2 * mt * sqsum(xt', yt')$
+
+L: K0_trs + K1_trs + Kk_trs + Kt_trs - U0 - U1 - Uk - Ut - 1/2*k*(z)*(z)$
+
+/* CASE1: air  fx0=fy0=0*/
+X : [xr, yr, z, thr, th0, thk]$
+dX : [xr', yr', z', thr', th0', thk']$
+ddX : symbolilze([xr'', yr'', z'', thr'', th0'', thk''])$
+rhs : symbolilze(expand(diff(jacobian([L],dX), t) - jacobian([L], X)))$
+A:trigrat(trigsimp(expand(trigexpand(jacobian(args(rhs)[1], ddX)))))$
+b:(expand(transpose(rhs) - (jacobian(args(rhs)[1], ddX)).transpose(matrix(ddX))))$
+showmatf90(A)$
+showmatf90(b)$
+
+
+
+/* CASE2: ground*/
+X : [z, thr, th0, thk]$
+dX : [z', thr', th0', thk']$
+ddX : symbolilze([z'', thr'', th0'', thk''])$
+rhs : expand(ground(symbolilze(diff(jacobian([L],dX), t) - jacobian([L], X))))$
+A:trigrat(trigsimp(expand(trigexpand(jacobian(args(rhs)[1], ddX)))))$
+b:(expand(transpose(rhs) - (jacobian(args(rhs)[1], ddX)).transpose(matrix(ddX))))$
+showmatf90(A)$
+showmatf90(b)$
+
