@@ -40,10 +40,11 @@ symbolilze(M):= subst([ diff(xr,t,2)=ddx0
                       , diff(th0,t,1)=dth2
                     ], M)$
 ground(M):= subst([dx0=0 , ddx0=0 , dy0=0, ddy0=0 ], M)$
+air(M):= subst([dz=0 , z=0], M)$
 
 
-x0: xr + (z + z0) - sin(thr)$
-y0: yr + (z + z0) + cos(thr)$
+x0: xr - (z + z0) * sin(thr)$
+y0: yr + (z + z0) * cos(thr)$
 
 xt: x0 - lt * sin(thr)$
 yt: y0 + lt * cos(thr)$
@@ -106,11 +107,11 @@ L: K0_trs + K1_trs + Kt_trs - U0 - U1 - Ut - 1/2*k*(z)*(z)$
 disp(L)$
 
 /* CASE1: air  fx0=fy0=0*/
-X : [xr, yr, z, thr, th0, thk]$
-dX : [xr', yr', z', thr', th0', thk']$
-ddX : symbolilze([xr'', yr'', z'', thr'', th0'', thk''])$
-rhs : symbolilze(expand(diff(jacobian([L],dX), t) - jacobian([L], X)))$
-A:trigrat(trigsimp(expand(trigexpand(jacobian(args(rhs)[1], ddX)))))$
+X : [xr, yr, thr, th0, thk]$
+dX : [xr', yr', thr', th0', thk']$
+ddX : symbolilze([xr'', yr'', thr'', th0'', thk''])$
+rhs : air(symbolilze(expand(diff(jacobian([L],dX), t) - jacobian([L], X))))$
+A:(trigsimp(expand(trigexpand(jacobian(args(rhs)[1], ddX)))))$
 b:(expand(transpose(rhs) - (jacobian(args(rhs)[1], ddX)).transpose(matrix(ddX))))$
 showmatf90(A)$
 showmatf90(b)$
@@ -122,7 +123,7 @@ X : [z, thr, th0, thk]$
 dX : [z', thr', th0', thk']$
 ddX : symbolilze([z'', thr'', th0'', thk''])$
 rhs : expand(ground(symbolilze(diff(jacobian([L],dX), t) - jacobian([L], X))))$
-A:trigrat(trigsimp(expand(trigexpand(jacobian(args(rhs)[1], ddX)))))$
+A:(trigsimp(expand(trigexpand(jacobian(args(rhs)[1], ddX)))))$
 b:(expand(transpose(rhs) - (jacobian(args(rhs)[1], ddX)).transpose(matrix(ddX))))$
 showmatf90(A)$
 showmatf90(b)$
