@@ -25,10 +25,10 @@ m1 = 50
 mt = 7
 M=np.array([mr, m0, mk, m1, mt])
 l = 1.2
-g  = 0
-#g  = 9.8
+#g  = 0
+g  = 9.8
 #g  = -9.8
-K  = 15000 # mgh = 1/2 k x^2 -> T=2*pi sqrt(m/k)
+k  = 15000 # mgh = 1/2 k x^2 -> T=2*pi sqrt(m/k)
 c = 0
 #c = 10
 
@@ -184,7 +184,7 @@ def check_invariant(s):
     return True, ""
 
 def energyS(s):
-    return 1/2 * K * s[IDX_z] ** 2
+    return 1/2 * k * s[IDX_z] ** 2
 
 def energyU(s):
     ps = list(node_pos(s))
@@ -238,6 +238,7 @@ def jumpup(s):
     s[IDX_dyr] = s[IDX_dz] * np.cos(s[IDX_thr])
     s[IDX_z] = 0
     s[IDX_dz] = 0
+    return s
 
 def land(s):
     s[IDX_z] = 0
@@ -245,6 +246,7 @@ def land(s):
     s[IDX_dxr] = 0
     s[IDX_dyr] = 0
     s[IDX_yr] = 0
+    return s
 
 def groundAb(s, u):
     z    = s[IDX_z]
