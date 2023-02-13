@@ -48,11 +48,10 @@ y0: yr + (z + z0) * sin(thr)$
 xt: x0 + lt * cos(thr)$
 yt: y0 + lt * sin(thr)$
 
-xk: x0 + l0 * cos(th0 + thr)$
-yk: y0 + l0 * sin(th0 + thr)$
+l1: l * cos(thk)$
 
-x1: xk + l1 * cos(thk + th0 + thr)$
-y1: yk + l1 * sin(thk + th0 + thr)$
+x1: x0 + l1 * cos(th0 + thr)$
+y1: y0 + l1 * sin(th0 + thr)$
 
 xc: (m0 * x0 + m1 * x1 + mt * xt) / (m0 + m1 + mt) $
 yc: (m0 * y0 + m1 * y1 + mt * yt) / (m0 + m1 + mt) $
@@ -74,17 +73,13 @@ x0': diff(x0, t)$
 y0': diff(y0, t)$
 x1': diff(x1, t)$
 y1': diff(y1, t)$
-xk': diff(xk, t)$
-yk': diff(yk, t)$
 xt': diff(xt, t)$
 yt': diff(yt, t)$
 
 f90(symbolilze(x0'-xr'))$
 f90(symbolilze(y0'-yr'))$
-f90(symbolilze(xk'-x0'))$
-f90(symbolilze(yk'-y0'))$
-f90(symbolilze(x1'-xk'))$
-f90(symbolilze(y1'-yk'))$
+f90(symbolilze(x1'-x0'))$
+f90(symbolilze(y1'-y0'))$
 f90(symbolilze(xt'-x0'))$
 f90(symbolilze(yt'-y0'))$
 
@@ -104,13 +99,11 @@ K0_trs: 1/2 * m0 * sqsum(x0', y0')$
 U1: y1 * m1 * g$
 K1_trs: 1/2 * m1 * sqsum(x1', y1')$
 
-Uk: yk * mk * g$
-Kk_trs: 1/2 * mk * sqsum(xk', yk')$
-
 Ut: yt * mt * g$
 Kt_trs: 1/2 * mt * sqsum(xt', yt')$
 
-L: K0_trs + K1_trs + Kk_trs + Kt_trs - U0 - U1 - Uk - Ut - 1/2*k*(z)*(z)$
+L: K0_trs + K1_trs + Kt_trs - U0 - U1 - Ut - 1/2*k*(z)*(z)$
+disp(L)$
 
 /* CASE1: air  fx0=fy0=0*/
 X : [xr, yr, z, thr, th0, thk]$
