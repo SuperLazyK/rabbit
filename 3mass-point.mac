@@ -29,15 +29,15 @@ showmatf90(m):= for i thru length(m) do
 symbolilze(M):= subst([ diff(xr,t,2)=ddx0
                       , diff(yr,t,2)=ddy0
                       , diff(z,t,2)=ddz
-                      , diff(thr,t,2)=ddth0
+                      , diff(thr,t,2)=ddthr
                       , diff(thk,t,2)=ddthk
-                      , diff(th0,t,2)=ddth2
+                      , diff(th0,t,2)=ddth0
                       , diff(xr,t,1)=dx0
                       , diff(yr,t,1)=dy0
                       , diff(z,t,1)=dz
-                      , diff(thr,t,1)=dth0
+                      , diff(thr,t,1)=dthr
                       , diff(thk,t,1)=dthk
-                      , diff(th0,t,1)=dth2
+                      , diff(th0,t,1)=dth0
                     ], M)$
 ground(M):= subst([dx0=0 , ddx0=0 , dy0=0, ddy0=0 ], M)$
 air(M):= subst([dz=0 , z=0], M)$

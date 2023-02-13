@@ -71,13 +71,14 @@ IDX_thk  = 5
 IDX_MAX = 12
 
 def reset_state(pr, thr, th0, thk, vr = np.array([0,0]), dthr=0, dth0=0, dthk=0, z = 0, dz = 0):
-    s = np.zeros(IDX_MAX)
+    s = np.zeros(2*IDX_MAX)
     s[IDX_xr ] = pr[0]
     s[IDX_yr ] = pr[1]
     s[IDX_thr] = thr
     s[IDX_z  ] = z
     s[IDX_th0] = th0
     s[IDX_thk] = thk
+
     s[IDX_xr  + IDX_MAX] = vr[0]
     s[IDX_yr  + IDX_MAX] = vr[1]
     s[IDX_thr + IDX_MAX] = dthr
@@ -91,6 +92,16 @@ def print_state(s, titlePrefix="", fieldPrefix=""):
     ps = node_pos(s)
     for i in range(len(ps)):
         print(f"{titlePrefix} OBJ{i:}: P{i}: {ps[i]:.2f}")
+
+def calc_joint_property(s):
+    d = {}
+    d['xr'] = s[IDX_xr ]
+    d['yr'] = s[IDX_yr ]
+    d['thr'] = s[IDX_thr]
+    d['z'] = s[IDX_z  ]
+    d['th0'] = s[IDX_th0]
+    d['thk'] = s[IDX_thk]
+    return d
 
 def max_u():
     return np.array([MAX_TORQUE0, MAX_TORQUEK])
@@ -122,11 +133,15 @@ def node_pos(s):
 
 
 def node_vel(s):
+    thr = s[IDX_thr]
+    z   = s[IDX_z  ]
+    th0 = s[IDX_th0]
+    thk = s[IDX_thk]
     dir_thr = np.array([-np.sin(thr), np.cos(thr)])
     dir_thr0 = np.array([-np.sin(thr+th0), np.cos(thr+th0)])
     dir_dthr = np.array([-np.cos(thr), -np.sin(thr)])
     dir_dthr0 = np.array([-np.cos(thr+th0), -np.sin(thr+th0)])
-    vr = np.array(s[IDX_xr  + IDX_MAX], s[IDX_yr  + IDX_MAX])
+    vr = np.array([s[IDX_xr  + IDX_MAX], s[IDX_yr  + IDX_MAX]])
     dthr = s[IDX_thr + IDX_MAX]
     dz   = s[IDX_z   + IDX_MAX]
     dth0 = s[IDX_th0 + IDX_MAX]
@@ -134,8 +149,7 @@ def node_vel(s):
 
     v0 = vr + dz*dir_thr + dthr*(z0+z)*dir_dthr
     vt = v0 + dthr*lt*dir_dthr
-    v1 = v0 + dd*dir_thr0 + (dthr+dth0)*a*dir_dthr0
-
+    v1 = v0 - dthk*l*sin(thk)*dir_thr + (dthr+dth0)*l*cos(thk)*dir_dthr0
     return vr, v0, v1, vt
 
 OBS_MIN = np.array([0, limit_min_th0, limit_min_thk, -max_z, -MAX_SPEED, -MAX_SPEED, -MAX_ROT_SPEED, -MAX_ROT_SPEED, -MAX_SPEED])
@@ -161,7 +175,7 @@ def check_invariant(s):
     return True, ""
 
 def energyS(s):
-    return 1/2 * K * z[IDX_z] ** 2
+    return 1/2 * K * s[IDX_z] ** 2
 
 def energyU(s):
     ps = list(node_pos(s))
@@ -173,6 +187,7 @@ def energyTy(s):
 
 def energyT(s):
     vs = list(node_vel(s))
+    print(vs)
     return sum([1/2 * (vs[i] @ vs[i]) * M[i] for i in range(len(vs))])
 
 def energy(s):
@@ -256,10 +271,10 @@ def groundAb(s, u):
     A[3][3] = l**2*m1*sin(thk)**2
 
     b = np.zeros((4,1))
-    b[0] = (-dth0**2*mt*sin(thr)**2*z0)-dth0**2*m1*sin(thr)**2*z0-dth0**2*m0*sin(thr)**2*z0-dth0**2*mt*cos(thr)**2*z0-dth0**2*m1*cos(thr)**2*z0-dth0**2*m0*cos(thr)**2*z0-dth0**2*mt*sin(thr)**2*z-dth0**2*m1*sin(thr)**2*z-dth0**2*m0*sin(thr)**2*z-dth0**2*mt*cos(thr)**2*z-dth0**2*m1*cos(thr)**2*z-dth0**2*m0*cos(thr)**2*z+k*z-dthk**2*l*m1*cos(thk)*sin(thr)*sin(thr+th0)-dth2**2*l*m1*cos(thk)*sin(thr)*sin(thr+th0)-2*dth0*dth2*l*m1*cos(thk)*sin(thr)*sin(thr+th0)-dth0**2*l*m1*cos(thk)*sin(thr)*sin(thr+th0)+2*dth2*dthk*l*m1*sin(thk)*cos(thr)*sin(thr+th0)+2*dth0*dthk*l*m1*sin(thk)*cos(thr)*sin(thr+th0)-2*dth2*dthk*l*m1*sin(thk)*sin(thr)*cos(thr+th0)-2*dth0*dthk*l*m1*sin(thk)*sin(thr)*cos(thr+th0)-dthk**2*l*m1*cos(thk)*cos(thr)*cos(thr+th0)-dth2**2*l*m1*cos(thk)*cos(thr)*cos(thr+th0)-2*dth0*dth2*l*m1*cos(thk)*cos(thr)*cos(thr+th0)-dth0**2*l*m1*cos(thk)*cos(thr)*cos(thr+th0)-dth0**2*lt*mt*sin(thr)**2-dth0**2*lt*mt*cos(thr)**2+g*mt*cos(thr)+g*m1*cos(thr)+g*m0*cos(thr)
-    b[1] = (-2*dth2*dthk*l*m1*sin(thk)*sin(thr)*sin(thr+th0)*z0)-2*dth0*dthk*l*m1*sin(thk)*sin(thr)*sin(thr+th0)*z0-dthk**2*l*m1*cos(thk)*cos(thr)*sin(thr+th0)*z0-dth2**2*l*m1*cos(thk)*cos(thr)*sin(thr+th0)*z0-2*dth0*dth2*l*m1*cos(thk)*cos(thr)*sin(thr+th0)*z0+dthk**2*l*m1*cos(thk)*sin(thr)*cos(thr+th0)*z0+dth2**2*l*m1*cos(thk)*sin(thr)*cos(thr+th0)*z0+2*dth0*dth2*l*m1*cos(thk)*sin(thr)*cos(thr+th0)*z0-2*dth2*dthk*l*m1*sin(thk)*cos(thr)*cos(thr+th0)*z0-2*dth0*dthk*l*m1*sin(thk)*cos(thr)*cos(thr+th0)*z0+2*dth0*dz*mt*sin(thr)**2*z0+2*dth0*dz*m1*sin(thr)**2*z0+2*dth0*dz*m0*sin(thr)**2*z0-g*mt*sin(thr)*z0-g*m1*sin(thr)*z0-g*m0*sin(thr)*z0+2*dth0*dz*mt*cos(thr)**2*z0+2*dth0*dz*m1*cos(thr)**2*z0+2*dth0*dz*m0*cos(thr)**2*z0-2*dth2*dthk*l*m1*sin(thk)*sin(thr)*sin(thr+th0)*z-2*dth0*dthk*l*m1*sin(thk)*sin(thr)*sin(thr+th0)*z-dthk**2*l*m1*cos(thk)*cos(thr)*sin(thr+th0)*z-dth2**2*l*m1*cos(thk)*cos(thr)*sin(thr+th0)*z-2*dth0*dth2*l*m1*cos(thk)*cos(thr)*sin(thr+th0)*z+dthk**2*l*m1*cos(thk)*sin(thr)*cos(thr+th0)*z+dth2**2*l*m1*cos(thk)*sin(thr)*cos(thr+th0)*z+2*dth0*dth2*l*m1*cos(thk)*sin(thr)*cos(thr+th0)*z-2*dth2*dthk*l*m1*sin(thk)*cos(thr)*cos(thr+th0)*z-2*dth0*dthk*l*m1*sin(thk)*cos(thr)*cos(thr+th0)*z+2*dth0*dz*mt*sin(thr)**2*z+2*dth0*dz*m1*sin(thr)**2*z+2*dth0*dz*m0*sin(thr)**2*z-g*mt*sin(thr)*z-g*m1*sin(thr)*z-g*m0*sin(thr)*z+2*dth0*dz*mt*cos(thr)**2*z+2*dth0*dz*m1*cos(thr)**2*z+2*dth0*dz*m0*cos(thr)**2*z-2*dth2*dthk*l**2*m1*cos(thk)*sin(thk)*sin(thr+th0)**2-2*dth0*dthk*l**2*m1*cos(thk)*sin(thk)*sin(thr+th0)**2+2*dth0*dz*l*m1*cos(thk)*sin(thr)*sin(thr+th0)-g*l*m1*cos(thk)*sin(thr+th0)-2*dth2*dthk*l**2*m1*cos(thk)*sin(thk)*cos(thr+th0)**2-2*dth0*dthk*l**2*m1*cos(thk)*sin(thk)*cos(thr+th0)**2+2*dth0*dz*l*m1*cos(thk)*cos(thr)*cos(thr+th0)+2*dth0*dz*lt*mt*sin(thr)**2-g*lt*mt*sin(thr)+2*dth0*dz*lt*mt*cos(thr)**2
-    b[2] = dth0**2*l*m1*cos(thk)*cos(thr)*sin(thr+th0)*z0-dth0**2*l*m1*cos(thk)*sin(thr)*cos(thr+th0)*z0+dth0**2*l*m1*cos(thk)*cos(thr)*sin(thr+th0)*z-dth0**2*l*m1*cos(thk)*sin(thr)*cos(thr+th0)*z-2*dth2*dthk*l**2*m1*cos(thk)*sin(thk)*sin(thr+th0)**2-2*dth0*dthk*l**2*m1*cos(thk)*sin(thk)*sin(thr+th0)**2+2*dth0*dz*l*m1*cos(thk)*sin(thr)*sin(thr+th0)-g*l*m1*cos(thk)*sin(thr+th0)-2*dth2*dthk*l**2*m1*cos(thk)*sin(thk)*cos(thr+th0)**2-2*dth0*dthk*l**2*m1*cos(thk)*sin(thk)*cos(thr+th0)**2+2*dth0*dz*l*m1*cos(thk)*cos(thr)*cos(thr+th0)
-    b[3] = dth0**2*l*m1*sin(thk)*sin(thr)*sin(thr+th0)*z0+dth0**2*l*m1*sin(thk)*cos(thr)*cos(thr+th0)*z0+dth0**2*l*m1*sin(thk)*sin(thr)*sin(thr+th0)*z+dth0**2*l*m1*sin(thk)*cos(thr)*cos(thr+th0)*z+dthk**2*l**2*m1*cos(thk)*sin(thk)*sin(thr+th0)**2+dth2**2*l**2*m1*cos(thk)*sin(thk)*sin(thr+th0)**2+2*dth0*dth2*l**2*m1*cos(thk)*sin(thk)*sin(thr+th0)**2+dth0**2*l**2*m1*cos(thk)*sin(thk)*sin(thr+th0)**2-2*dth0*dz*l*m1*sin(thk)*cos(thr)*sin(thr+th0)+dthk**2*l**2*m1*cos(thk)*sin(thk)*cos(thr+th0)**2+dth2**2*l**2*m1*cos(thk)*sin(thk)*cos(thr+th0)**2+2*dth0*dth2*l**2*m1*cos(thk)*sin(thk)*cos(thr+th0)**2+dth0**2*l**2*m1*cos(thk)*sin(thk)*cos(thr+th0)**2+2*dth0*dz*l*m1*sin(thk)*sin(thr)*cos(thr+th0)-g*l*m1*sin(thk)*cos(thr+th0)
+    b[0] = (-dthr**2*mt*sin(thr)**2*z0)-dthr**2*m1*sin(thr)**2*z0-dthr**2*m0*sin(thr)**2*z0-dthr**2*mt*cos(thr)**2*z0-dthr**2*m1*cos(thr)**2*z0-dthr**2*m0*cos(thr)**2*z0-dthr**2*mt*sin(thr)**2*z-dthr**2*m1*sin(thr)**2*z-dthr**2*m0*sin(thr)**2*z-dthr**2*mt*cos(thr)**2*z-dthr**2*m1*cos(thr)**2*z-dthr**2*m0*cos(thr)**2*z+k*z-dthr**2*l*m1*cos(thk)*sin(thr)*sin(thr+th0)-2*dth0*dthr*l*m1*cos(thk)*sin(thr)*sin(thr+th0)-dthk**2*l*m1*cos(thk)*sin(thr)*sin(thr+th0)-dth0**2*l*m1*cos(thk)*sin(thr)*sin(thr+th0)+2*dthk*dthr*l*m1*sin(thk)*cos(thr)*sin(thr+th0)+2*dth0*dthk*l*m1*sin(thk)*cos(thr)*sin(thr+th0)-2*dthk*dthr*l*m1*sin(thk)*sin(thr)*cos(thr+th0)-2*dth0*dthk*l*m1*sin(thk)*sin(thr)*cos(thr+th0)-dthr**2*l*m1*cos(thk)*cos(thr)*cos(thr+th0)-2*dth0*dthr*l*m1*cos(thk)*cos(thr)*cos(thr+th0)-dthk**2*l*m1*cos(thk)*cos(thr)*cos(thr+th0)-dth0**2*l*m1*cos(thk)*cos(thr)*cos(thr+th0)-dthr**2*lt*mt*sin(thr)**2-dthr**2*lt*mt*cos(thr)**2+g*mt*cos(thr)+g*m1*cos(thr)+g*m0*cos(thr)
+    b[1] = (-2*dthk*dthr*l*m1*sin(thk)*sin(thr)*sin(thr+th0)*z0)-2*dth0*dthk*l*m1*sin(thk)*sin(thr)*sin(thr+th0)*z0-2*dth0*dthr*l*m1*cos(thk)*cos(thr)*sin(thr+th0)*z0-dthk**2*l*m1*cos(thk)*cos(thr)*sin(thr+th0)*z0-dth0**2*l*m1*cos(thk)*cos(thr)*sin(thr+th0)*z0+2*dth0*dthr*l*m1*cos(thk)*sin(thr)*cos(thr+th0)*z0+dthk**2*l*m1*cos(thk)*sin(thr)*cos(thr+th0)*z0+dth0**2*l*m1*cos(thk)*sin(thr)*cos(thr+th0)*z0-2*dthk*dthr*l*m1*sin(thk)*cos(thr)*cos(thr+th0)*z0-2*dth0*dthk*l*m1*sin(thk)*cos(thr)*cos(thr+th0)*z0+2*dthr*dz*mt*sin(thr)**2*z0+2*dthr*dz*m1*sin(thr)**2*z0+2*dthr*dz*m0*sin(thr)**2*z0-g*mt*sin(thr)*z0-g*m1*sin(thr)*z0-g*m0*sin(thr)*z0+2*dthr*dz*mt*cos(thr)**2*z0+2*dthr*dz*m1*cos(thr)**2*z0+2*dthr*dz*m0*cos(thr)**2*z0-2*dthk*dthr*l*m1*sin(thk)*sin(thr)*sin(thr+th0)*z-2*dth0*dthk*l*m1*sin(thk)*sin(thr)*sin(thr+th0)*z-2*dth0*dthr*l*m1*cos(thk)*cos(thr)*sin(thr+th0)*z-dthk**2*l*m1*cos(thk)*cos(thr)*sin(thr+th0)*z-dth0**2*l*m1*cos(thk)*cos(thr)*sin(thr+th0)*z+2*dth0*dthr*l*m1*cos(thk)*sin(thr)*cos(thr+th0)*z+dthk**2*l*m1*cos(thk)*sin(thr)*cos(thr+th0)*z+dth0**2*l*m1*cos(thk)*sin(thr)*cos(thr+th0)*z-2*dthk*dthr*l*m1*sin(thk)*cos(thr)*cos(thr+th0)*z-2*dth0*dthk*l*m1*sin(thk)*cos(thr)*cos(thr+th0)*z+2*dthr*dz*mt*sin(thr)**2*z+2*dthr*dz*m1*sin(thr)**2*z+2*dthr*dz*m0*sin(thr)**2*z-g*mt*sin(thr)*z-g*m1*sin(thr)*z-g*m0*sin(thr)*z+2*dthr*dz*mt*cos(thr)**2*z+2*dthr*dz*m1*cos(thr)**2*z+2*dthr*dz*m0*cos(thr)**2*z-2*dthk*dthr*l**2*m1*cos(thk)*sin(thk)*sin(thr+th0)**2-2*dth0*dthk*l**2*m1*cos(thk)*sin(thk)*sin(thr+th0)**2+2*dthr*dz*l*m1*cos(thk)*sin(thr)*sin(thr+th0)-g*l*m1*cos(thk)*sin(thr+th0)-2*dthk*dthr*l**2*m1*cos(thk)*sin(thk)*cos(thr+th0)**2-2*dth0*dthk*l**2*m1*cos(thk)*sin(thk)*cos(thr+th0)**2+2*dthr*dz*l*m1*cos(thk)*cos(thr)*cos(thr+th0)+2*dthr*dz*lt*mt*sin(thr)**2-g*lt*mt*sin(thr)+2*dthr*dz*lt*mt*cos(thr)**2
+    b[2] = dthr**2*l*m1*cos(thk)*cos(thr)*sin(thr+th0)*z0-dthr**2*l*m1*cos(thk)*sin(thr)*cos(thr+th0)*z0+dthr**2*l*m1*cos(thk)*cos(thr)*sin(thr+th0)*z-dthr**2*l*m1*cos(thk)*sin(thr)*cos(thr+th0)*z-2*dthk*dthr*l**2*m1*cos(thk)*sin(thk)*sin(thr+th0)**2-2*dth0*dthk*l**2*m1*cos(thk)*sin(thk)*sin(thr+th0)**2+2*dthr*dz*l*m1*cos(thk)*sin(thr)*sin(thr+th0)-g*l*m1*cos(thk)*sin(thr+th0)-2*dthk*dthr*l**2*m1*cos(thk)*sin(thk)*cos(thr+th0)**2-2*dth0*dthk*l**2*m1*cos(thk)*sin(thk)*cos(thr+th0)**2+2*dthr*dz*l*m1*cos(thk)*cos(thr)*cos(thr+th0)
+    b[3] = dthr**2*l*m1*sin(thk)*sin(thr)*sin(thr+th0)*z0+dthr**2*l*m1*sin(thk)*cos(thr)*cos(thr+th0)*z0+dthr**2*l*m1*sin(thk)*sin(thr)*sin(thr+th0)*z+dthr**2*l*m1*sin(thk)*cos(thr)*cos(thr+th0)*z+dthr**2*l**2*m1*cos(thk)*sin(thk)*sin(thr+th0)**2+2*dth0*dthr*l**2*m1*cos(thk)*sin(thk)*sin(thr+th0)**2+dthk**2*l**2*m1*cos(thk)*sin(thk)*sin(thr+th0)**2+dth0**2*l**2*m1*cos(thk)*sin(thk)*sin(thr+th0)**2-2*dthr*dz*l*m1*sin(thk)*cos(thr)*sin(thr+th0)+dthr**2*l**2*m1*cos(thk)*sin(thk)*cos(thr+th0)**2+2*dth0*dthr*l**2*m1*cos(thk)*sin(thk)*cos(thr+th0)**2+dthk**2*l**2*m1*cos(thk)*sin(thk)*cos(thr+th0)**2+dth0**2*l**2*m1*cos(thk)*sin(thk)*cos(thr+th0)**2+2*dthr*dz*l*m1*sin(thk)*sin(thr)*cos(thr+th0)-g*l*m1*sin(thk)*cos(thr+th0)
     return A, b, extf
 
 
@@ -304,11 +319,11 @@ def airAb(s, u):
     A[4][4] = l**2*m1*sin(thk)**2
 
     b = np.zeros((5,1))
-    b[0] = dth0**2*mt*sin(thr)*z0+dth0**2*m1*sin(thr)*z0+dth0**2*m0*sin(thr)*z0+dthk**2*l*m1*cos(thk)*sin(thr+th0)+dth2**2*l*m1*cos(thk)*sin(thr+th0)+2*dth0*dth2*l*m1*cos(thk)*sin(thr+th0)+dth0**2*l*m1*cos(thk)*sin(thr+th0)+2*dth2*dthk*l*m1*sin(thk)*cos(thr+th0)+2*dth0*dthk*l*m1*sin(thk)*cos(thr+th0)+dth0**2*lt*mt*sin(thr)-ddz*mt*sin(thr)-ddz*m1*sin(thr)-ddz*m0*sin(thr)
-    b[1] = (-dth0**2*mt*cos(thr)*z0)-dth0**2*m1*cos(thr)*z0-dth0**2*m0*cos(thr)*z0+2*dth2*dthk*l*m1*sin(thk)*sin(thr+th0)+2*dth0*dthk*l*m1*sin(thk)*sin(thr+th0)-dthk**2*l*m1*cos(thk)*cos(thr+th0)-dth2**2*l*m1*cos(thk)*cos(thr+th0)-2*dth0*dth2*l*m1*cos(thk)*cos(thr+th0)-dth0**2*l*m1*cos(thk)*cos(thr+th0)-dth0**2*lt*mt*cos(thr)+ddz*mt*cos(thr)+ddz*m1*cos(thr)+ddz*m0*cos(thr)+g*mt+g*m1+g*m0
-    b[2] = (-2*dth2*dthk*l*m1*sin(thk)*sin(thr)*sin(thr+th0)*z0)-2*dth0*dthk*l*m1*sin(thk)*sin(thr)*sin(thr+th0)*z0-dthk**2*l*m1*cos(thk)*cos(thr)*sin(thr+th0)*z0-dth2**2*l*m1*cos(thk)*cos(thr)*sin(thr+th0)*z0-2*dth0*dth2*l*m1*cos(thk)*cos(thr)*sin(thr+th0)*z0+dthk**2*l*m1*cos(thk)*sin(thr)*cos(thr+th0)*z0+dth2**2*l*m1*cos(thk)*sin(thr)*cos(thr+th0)*z0+2*dth0*dth2*l*m1*cos(thk)*sin(thr)*cos(thr+th0)*z0-2*dth2*dthk*l*m1*sin(thk)*cos(thr)*cos(thr+th0)*z0-2*dth0*dthk*l*m1*sin(thk)*cos(thr)*cos(thr+th0)*z0-g*mt*sin(thr)*z0-g*m1*sin(thr)*z0-g*m0*sin(thr)*z0-2*dth2*dthk*l**2*m1*cos(thk)*sin(thk)*sin(thr+th0)**2-2*dth0*dthk*l**2*m1*cos(thk)*sin(thk)*sin(thr+th0)**2-ddz*l*m1*cos(thk)*cos(thr)*sin(thr+th0)-g*l*m1*cos(thk)*sin(thr+th0)-2*dth2*dthk*l**2*m1*cos(thk)*sin(thk)*cos(thr+th0)**2-2*dth0*dthk*l**2*m1*cos(thk)*sin(thk)*cos(thr+th0)**2+ddz*l*m1*cos(thk)*sin(thr)*cos(thr+th0)-g*lt*mt*sin(thr)
-    b[3] = dth0**2*l*m1*cos(thk)*cos(thr)*sin(thr+th0)*z0-dth0**2*l*m1*cos(thk)*sin(thr)*cos(thr+th0)*z0-2*dth2*dthk*l**2*m1*cos(thk)*sin(thk)*sin(thr+th0)**2-2*dth0*dthk*l**2*m1*cos(thk)*sin(thk)*sin(thr+th0)**2-ddz*l*m1*cos(thk)*cos(thr)*sin(thr+th0)-g*l*m1*cos(thk)*sin(thr+th0)-2*dth2*dthk*l**2*m1*cos(thk)*sin(thk)*cos(thr+th0)**2-2*dth0*dthk*l**2*m1*cos(thk)*sin(thk)*cos(thr+th0)**2+ddz*l*m1*cos(thk)*sin(thr)*cos(thr+th0)
-    b[4] = dth0**2*l*m1*sin(thk)*sin(thr)*sin(thr+th0)*z0+dth0**2*l*m1*sin(thk)*cos(thr)*cos(thr+th0)*z0+dthk**2*l**2*m1*cos(thk)*sin(thk)*sin(thr+th0)**2+dth2**2*l**2*m1*cos(thk)*sin(thk)*sin(thr+th0)**2+2*dth0*dth2*l**2*m1*cos(thk)*sin(thk)*sin(thr+th0)**2+dth0**2*l**2*m1*cos(thk)*sin(thk)*sin(thr+th0)**2-ddz*l*m1*sin(thk)*sin(thr)*sin(thr+th0)+dthk**2*l**2*m1*cos(thk)*sin(thk)*cos(thr+th0)**2+dth2**2*l**2*m1*cos(thk)*sin(thk)*cos(thr+th0)**2+2*dth0*dth2*l**2*m1*cos(thk)*sin(thk)*cos(thr+th0)**2+dth0**2*l**2*m1*cos(thk)*sin(thk)*cos(thr+th0)**2-ddz*l*m1*sin(thk)*cos(thr)*cos(thr+th0)-g*l*m1*sin(thk)*cos(thr+th0)
+    b[0] = dthr**2*mt*sin(thr)*z0+dthr**2*m1*sin(thr)*z0+dthr**2*m0*sin(thr)*z0+dthr**2*l*m1*cos(thk)*sin(thr+th0)+2*dth0*dthr*l*m1*cos(thk)*sin(thr+th0)+dthk**2*l*m1*cos(thk)*sin(thr+th0)+dth0**2*l*m1*cos(thk)*sin(thr+th0)+2*dthk*dthr*l*m1*sin(thk)*cos(thr+th0)+2*dth0*dthk*l*m1*sin(thk)*cos(thr+th0)+dthr**2*lt*mt*sin(thr)-ddz*mt*sin(thr)-ddz*m1*sin(thr)-ddz*m0*sin(thr)
+    b[1] = (-dthr**2*mt*cos(thr)*z0)-dthr**2*m1*cos(thr)*z0-dthr**2*m0*cos(thr)*z0+2*dthk*dthr*l*m1*sin(thk)*sin(thr+th0)+2*dth0*dthk*l*m1*sin(thk)*sin(thr+th0)-dthr**2*l*m1*cos(thk)*cos(thr+th0)-2*dth0*dthr*l*m1*cos(thk)*cos(thr+th0)-dthk**2*l*m1*cos(thk)*cos(thr+th0)-dth0**2*l*m1*cos(thk)*cos(thr+th0)-dthr**2*lt*mt*cos(thr)+ddz*mt*cos(thr)+ddz*m1*cos(thr)+ddz*m0*cos(thr)+g*mt+g*m1+g*m0
+    b[2] = (-2*dthk*dthr*l*m1*sin(thk)*sin(thr)*sin(thr+th0)*z0)-2*dth0*dthk*l*m1*sin(thk)*sin(thr)*sin(thr+th0)*z0-2*dth0*dthr*l*m1*cos(thk)*cos(thr)*sin(thr+th0)*z0-dthk**2*l*m1*cos(thk)*cos(thr)*sin(thr+th0)*z0-dth0**2*l*m1*cos(thk)*cos(thr)*sin(thr+th0)*z0+2*dth0*dthr*l*m1*cos(thk)*sin(thr)*cos(thr+th0)*z0+dthk**2*l*m1*cos(thk)*sin(thr)*cos(thr+th0)*z0+dth0**2*l*m1*cos(thk)*sin(thr)*cos(thr+th0)*z0-2*dthk*dthr*l*m1*sin(thk)*cos(thr)*cos(thr+th0)*z0-2*dth0*dthk*l*m1*sin(thk)*cos(thr)*cos(thr+th0)*z0-g*mt*sin(thr)*z0-g*m1*sin(thr)*z0-g*m0*sin(thr)*z0-2*dthk*dthr*l**2*m1*cos(thk)*sin(thk)*sin(thr+th0)**2-2*dth0*dthk*l**2*m1*cos(thk)*sin(thk)*sin(thr+th0)**2-ddz*l*m1*cos(thk)*cos(thr)*sin(thr+th0)-g*l*m1*cos(thk)*sin(thr+th0)-2*dthk*dthr*l**2*m1*cos(thk)*sin(thk)*cos(thr+th0)**2-2*dth0*dthk*l**2*m1*cos(thk)*sin(thk)*cos(thr+th0)**2+ddz*l*m1*cos(thk)*sin(thr)*cos(thr+th0)-g*lt*mt*sin(thr)
+    b[3] = dthr**2*l*m1*cos(thk)*cos(thr)*sin(thr+th0)*z0-dthr**2*l*m1*cos(thk)*sin(thr)*cos(thr+th0)*z0-2*dthk*dthr*l**2*m1*cos(thk)*sin(thk)*sin(thr+th0)**2-2*dth0*dthk*l**2*m1*cos(thk)*sin(thk)*sin(thr+th0)**2-ddz*l*m1*cos(thk)*cos(thr)*sin(thr+th0)-g*l*m1*cos(thk)*sin(thr+th0)-2*dthk*dthr*l**2*m1*cos(thk)*sin(thk)*cos(thr+th0)**2-2*dth0*dthk*l**2*m1*cos(thk)*sin(thk)*cos(thr+th0)**2+ddz*l*m1*cos(thk)*sin(thr)*cos(thr+th0)
+    b[4] = dthr**2*l*m1*sin(thk)*sin(thr)*sin(thr+th0)*z0+dthr**2*l*m1*sin(thk)*cos(thr)*cos(thr+th0)*z0+dthr**2*l**2*m1*cos(thk)*sin(thk)*sin(thr+th0)**2+2*dth0*dthr*l**2*m1*cos(thk)*sin(thk)*sin(thr+th0)**2+dthk**2*l**2*m1*cos(thk)*sin(thk)*sin(thr+th0)**2+dth0**2*l**2*m1*cos(thk)*sin(thk)*sin(thr+th0)**2-ddz*l*m1*sin(thk)*sin(thr)*sin(thr+th0)+dthr**2*l**2*m1*cos(thk)*sin(thk)*cos(thr+th0)**2+2*dth0*dthr*l**2*m1*cos(thk)*sin(thk)*cos(thr+th0)**2+dthk**2*l**2*m1*cos(thk)*sin(thk)*cos(thr+th0)**2+dth0**2*l**2*m1*cos(thk)*sin(thk)*cos(thr+th0)**2-ddz*l*m1*sin(thk)*cos(thr)*cos(thr+th0)-g*l*m1*sin(thk)*cos(thr+th0)
 
     return A, b, extf
 
