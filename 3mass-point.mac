@@ -40,7 +40,7 @@ symbolilze(M):= subst([ diff(xr,t,2)=ddx0
                       , diff(th0,t,1)=dth0
                     ], M)$
 ground(M):= subst([dx0=0 , ddx0=0 , dy0=0, ddy0=0 ], M)$
-air(M):= subst([dz=0 , z=0], M)$
+air(M):= subst([dz=0 , z=0, ddz=0], M)$
 
 
 x0: xr - (z + z0) * sin(thr)$

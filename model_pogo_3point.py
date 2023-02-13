@@ -68,7 +68,13 @@ IDX_thr  = 2
 IDX_z    = 3
 IDX_th0  = 4
 IDX_thk  = 5
-IDX_MAX = 12
+IDX_MAX = 6
+IDX_dxr   = IDX_MAX+IDX_xr 
+IDX_dyr   = IDX_MAX+IDX_yr 
+IDX_dthr  = IDX_MAX+IDX_thr
+IDX_dz    = IDX_MAX+IDX_z  
+IDX_dth0  = IDX_MAX+IDX_th0
+IDX_dthk  = IDX_MAX+IDX_thk
 
 def reset_state(pr, thr, th0, thk, vr = np.array([0,0]), dthr=0, dth0=0, dthk=0, z = 0, dz = 0):
     s = np.zeros(2*IDX_MAX)
@@ -79,12 +85,12 @@ def reset_state(pr, thr, th0, thk, vr = np.array([0,0]), dthr=0, dth0=0, dthk=0,
     s[IDX_th0] = th0
     s[IDX_thk] = thk
 
-    s[IDX_xr  + IDX_MAX] = vr[0]
-    s[IDX_yr  + IDX_MAX] = vr[1]
-    s[IDX_thr + IDX_MAX] = dthr
-    s[IDX_z   + IDX_MAX] = dz
-    s[IDX_th0 + IDX_MAX] = dth0
-    s[IDX_thk + IDX_MAX] = dthk
+    s[IDX_dxr ] = vr[0]
+    s[IDX_dyr ] = vr[1]
+    s[IDX_dthr] = dthr
+    s[IDX_dz  ] = dz
+    s[IDX_dth0] = dth0
+    s[IDX_dthk] = dthk
     return s
 
 
@@ -141,11 +147,11 @@ def node_vel(s):
     dir_thr0 = np.array([-np.sin(thr+th0), np.cos(thr+th0)])
     dir_dthr = np.array([-np.cos(thr), -np.sin(thr)])
     dir_dthr0 = np.array([-np.cos(thr+th0), -np.sin(thr+th0)])
-    vr = np.array([s[IDX_xr  + IDX_MAX], s[IDX_yr  + IDX_MAX]])
-    dthr = s[IDX_thr + IDX_MAX]
-    dz   = s[IDX_z   + IDX_MAX]
-    dth0 = s[IDX_th0 + IDX_MAX]
-    dthk = s[IDX_thk + IDX_MAX]
+    vr = np.array([s[IDX_dxr], s[IDX_dyr]])
+    dthr = s[IDX_dthr]
+    dz   = s[IDX_dz  ]
+    dth0 = s[IDX_dth0]
+    dthk = s[IDX_dthk]
 
     v0 = vr + dz*dir_thr + dthr*(z0+z)*dir_dthr
     vt = v0 + dthr*lt*dir_dthr
@@ -211,7 +217,7 @@ def moment(s):
     return tm[0], tm[1], am
 
 def pdcontrol(s, ref):
-    dob  = np.array([s[IDX_MAX + IDX_th0], s[IDX_MAX + IDX_thk]])
+    dob  = np.array([s[IDX_dth0], s[IDX_dthk]])
     ob = np.array([s[IDX_th0], s[IDX_thk]])
     err = ref - ob
     debug_print(f"PD-ref: {np.rad2deg(ref[0])} {ref[1]}")
@@ -222,19 +228,19 @@ def pdcontrol(s, ref):
 
 
 def ground(s):
-    return s[IDX_yr] == 0 and s[IDX_xr+IDX_MAX] == 0 and s[IDX_yr+IDX_MAX] == 0
+    return s[IDX_yr] == 0 and s[IDX_dxr] == 0 and s[IDX_dyr] == 0
 
 def jumpup(s):
-    s[IDX_MAX + IDX_xr] = - s[IDX_dz] * np.sin(s[IDX_thr])
-    s[IDX_MAX + IDX_yr] = s[IDX_dz] * np.cos(s[IDX_thr])
+    s[IDX_dxr] = - s[IDX_dz] * np.sin(s[IDX_thr])
+    s[IDX_dyr] = s[IDX_dz] * np.cos(s[IDX_thr])
     s[IDX_z] = 0
-    s[IDX_MAX + IDX_z] = 0
+    s[IDX_dz] = 0
 
 def land(s):
     s[IDX_z] = 0
-    s[IDX_MAX + IDX_z] = sqrt(s[IDX_MAX + IDX_xr]**2 + s[IDX_MAX + IDX_xr]**2)
-    s[IDX_MAX + IDX_xr] = 0
-    s[IDX_MAX + IDX_yr] = 0
+    s[IDX_dz] = sqrt(s[IDX_dxr]**2 + s[IDX_dxr]**2)
+    s[IDX_dxr] = 0
+    s[IDX_dyr] = 0
     s[IDX_yr] = 0
 
 def groundAb(s, u):
@@ -319,11 +325,11 @@ def airAb(s, u):
     A[4][4] = l**2*m1*sin(thk)**2
 
     b = np.zeros((5,1))
-    b[0] = dthr**2*mt*sin(thr)*z0+dthr**2*m1*sin(thr)*z0+dthr**2*m0*sin(thr)*z0+dthr**2*l*m1*cos(thk)*sin(thr+th0)+2*dth0*dthr*l*m1*cos(thk)*sin(thr+th0)+dthk**2*l*m1*cos(thk)*sin(thr+th0)+dth0**2*l*m1*cos(thk)*sin(thr+th0)+2*dthk*dthr*l*m1*sin(thk)*cos(thr+th0)+2*dth0*dthk*l*m1*sin(thk)*cos(thr+th0)+dthr**2*lt*mt*sin(thr)-ddz*mt*sin(thr)-ddz*m1*sin(thr)-ddz*m0*sin(thr)
-    b[1] = (-dthr**2*mt*cos(thr)*z0)-dthr**2*m1*cos(thr)*z0-dthr**2*m0*cos(thr)*z0+2*dthk*dthr*l*m1*sin(thk)*sin(thr+th0)+2*dth0*dthk*l*m1*sin(thk)*sin(thr+th0)-dthr**2*l*m1*cos(thk)*cos(thr+th0)-2*dth0*dthr*l*m1*cos(thk)*cos(thr+th0)-dthk**2*l*m1*cos(thk)*cos(thr+th0)-dth0**2*l*m1*cos(thk)*cos(thr+th0)-dthr**2*lt*mt*cos(thr)+ddz*mt*cos(thr)+ddz*m1*cos(thr)+ddz*m0*cos(thr)+g*mt+g*m1+g*m0
-    b[2] = (-2*dthk*dthr*l*m1*sin(thk)*sin(thr)*sin(thr+th0)*z0)-2*dth0*dthk*l*m1*sin(thk)*sin(thr)*sin(thr+th0)*z0-2*dth0*dthr*l*m1*cos(thk)*cos(thr)*sin(thr+th0)*z0-dthk**2*l*m1*cos(thk)*cos(thr)*sin(thr+th0)*z0-dth0**2*l*m1*cos(thk)*cos(thr)*sin(thr+th0)*z0+2*dth0*dthr*l*m1*cos(thk)*sin(thr)*cos(thr+th0)*z0+dthk**2*l*m1*cos(thk)*sin(thr)*cos(thr+th0)*z0+dth0**2*l*m1*cos(thk)*sin(thr)*cos(thr+th0)*z0-2*dthk*dthr*l*m1*sin(thk)*cos(thr)*cos(thr+th0)*z0-2*dth0*dthk*l*m1*sin(thk)*cos(thr)*cos(thr+th0)*z0-g*mt*sin(thr)*z0-g*m1*sin(thr)*z0-g*m0*sin(thr)*z0-2*dthk*dthr*l**2*m1*cos(thk)*sin(thk)*sin(thr+th0)**2-2*dth0*dthk*l**2*m1*cos(thk)*sin(thk)*sin(thr+th0)**2-ddz*l*m1*cos(thk)*cos(thr)*sin(thr+th0)-g*l*m1*cos(thk)*sin(thr+th0)-2*dthk*dthr*l**2*m1*cos(thk)*sin(thk)*cos(thr+th0)**2-2*dth0*dthk*l**2*m1*cos(thk)*sin(thk)*cos(thr+th0)**2+ddz*l*m1*cos(thk)*sin(thr)*cos(thr+th0)-g*lt*mt*sin(thr)
-    b[3] = dthr**2*l*m1*cos(thk)*cos(thr)*sin(thr+th0)*z0-dthr**2*l*m1*cos(thk)*sin(thr)*cos(thr+th0)*z0-2*dthk*dthr*l**2*m1*cos(thk)*sin(thk)*sin(thr+th0)**2-2*dth0*dthk*l**2*m1*cos(thk)*sin(thk)*sin(thr+th0)**2-ddz*l*m1*cos(thk)*cos(thr)*sin(thr+th0)-g*l*m1*cos(thk)*sin(thr+th0)-2*dthk*dthr*l**2*m1*cos(thk)*sin(thk)*cos(thr+th0)**2-2*dth0*dthk*l**2*m1*cos(thk)*sin(thk)*cos(thr+th0)**2+ddz*l*m1*cos(thk)*sin(thr)*cos(thr+th0)
-    b[4] = dthr**2*l*m1*sin(thk)*sin(thr)*sin(thr+th0)*z0+dthr**2*l*m1*sin(thk)*cos(thr)*cos(thr+th0)*z0+dthr**2*l**2*m1*cos(thk)*sin(thk)*sin(thr+th0)**2+2*dth0*dthr*l**2*m1*cos(thk)*sin(thk)*sin(thr+th0)**2+dthk**2*l**2*m1*cos(thk)*sin(thk)*sin(thr+th0)**2+dth0**2*l**2*m1*cos(thk)*sin(thk)*sin(thr+th0)**2-ddz*l*m1*sin(thk)*sin(thr)*sin(thr+th0)+dthr**2*l**2*m1*cos(thk)*sin(thk)*cos(thr+th0)**2+2*dth0*dthr*l**2*m1*cos(thk)*sin(thk)*cos(thr+th0)**2+dthk**2*l**2*m1*cos(thk)*sin(thk)*cos(thr+th0)**2+dth0**2*l**2*m1*cos(thk)*sin(thk)*cos(thr+th0)**2-ddz*l*m1*sin(thk)*cos(thr)*cos(thr+th0)-g*l*m1*sin(thk)*cos(thr+th0)
+    b[0] = dthr**2*mt*sin(thr)*z0+dthr**2*m1*sin(thr)*z0+dthr**2*m0*sin(thr)*z0+dthr**2*l*m1*cos(thk)*sin(thr+th0)+2*dth0*dthr*l*m1*cos(thk)*sin(thr+th0)+dthk**2*l*m1*cos(thk)*sin(thr+th0)+dth0**2*l*m1*cos(thk)*sin(thr+th0)+2*dthk*dthr*l*m1*sin(thk)*cos(thr+th0)+2*dth0*dthk*l*m1*sin(thk)*cos(thr+th0)+dthr**2*lt*mt*sin(thr)
+    b[1] = (-dthr**2*mt*cos(thr)*z0)-dthr**2*m1*cos(thr)*z0-dthr**2*m0*cos(thr)*z0+2*dthk*dthr*l*m1*sin(thk)*sin(thr+th0)+2*dth0*dthk*l*m1*sin(thk)*sin(thr+th0)-dthr**2*l*m1*cos(thk)*cos(thr+th0)-2*dth0*dthr*l*m1*cos(thk)*cos(thr+th0)-dthk**2*l*m1*cos(thk)*cos(thr+th0)-dth0**2*l*m1*cos(thk)*cos(thr+th0)-dthr**2*lt*mt*cos(thr)+g*mt+g*m1+g*m0
+    b[2] = (-2*dthk*dthr*l*m1*sin(thk)*sin(thr)*sin(thr+th0)*z0)-2*dth0*dthk*l*m1*sin(thk)*sin(thr)*sin(thr+th0)*z0-2*dth0*dthr*l*m1*cos(thk)*cos(thr)*sin(thr+th0)*z0-dthk**2*l*m1*cos(thk)*cos(thr)*sin(thr+th0)*z0-dth0**2*l*m1*cos(thk)*cos(thr)*sin(thr+th0)*z0+2*dth0*dthr*l*m1*cos(thk)*sin(thr)*cos(thr+th0)*z0+dthk**2*l*m1*cos(thk)*sin(thr)*cos(thr+th0)*z0+dth0**2*l*m1*cos(thk)*sin(thr)*cos(thr+th0)*z0-2*dthk*dthr*l*m1*sin(thk)*cos(thr)*cos(thr+th0)*z0-2*dth0*dthk*l*m1*sin(thk)*cos(thr)*cos(thr+th0)*z0-g*mt*sin(thr)*z0-g*m1*sin(thr)*z0-g*m0*sin(thr)*z0-2*dthk*dthr*l**2*m1*cos(thk)*sin(thk)*sin(thr+th0)**2-2*dth0*dthk*l**2*m1*cos(thk)*sin(thk)*sin(thr+th0)**2-g*l*m1*cos(thk)*sin(thr+th0)-2*dthk*dthr*l**2*m1*cos(thk)*sin(thk)*cos(thr+th0)**2-2*dth0*dthk*l**2*m1*cos(thk)*sin(thk)*cos(thr+th0)**2-g*lt*mt*sin(thr)
+    b[3] = dthr**2*l*m1*cos(thk)*cos(thr)*sin(thr+th0)*z0-dthr**2*l*m1*cos(thk)*sin(thr)*cos(thr+th0)*z0-2*dthk*dthr*l**2*m1*cos(thk)*sin(thk)*sin(thr+th0)**2-2*dth0*dthk*l**2*m1*cos(thk)*sin(thk)*sin(thr+th0)**2-g*l*m1*cos(thk)*sin(thr+th0)-2*dthk*dthr*l**2*m1*cos(thk)*sin(thk)*cos(thr+th0)**2-2*dth0*dthk*l**2*m1*cos(thk)*sin(thk)*cos(thr+th0)**2
+    b[4] = dthr**2*l*m1*sin(thk)*sin(thr)*sin(thr+th0)*z0+dthr**2*l*m1*sin(thk)*cos(thr)*cos(thr+th0)*z0+dthr**2*l**2*m1*cos(thk)*sin(thk)*sin(thr+th0)**2+2*dth0*dthr*l**2*m1*cos(thk)*sin(thk)*sin(thr+th0)**2+dthk**2*l**2*m1*cos(thk)*sin(thk)*sin(thr+th0)**2+dth0**2*l**2*m1*cos(thk)*sin(thk)*sin(thr+th0)**2+dthr**2*l**2*m1*cos(thk)*sin(thk)*cos(thr+th0)**2+2*dth0*dthr*l**2*m1*cos(thk)*sin(thk)*cos(thr+th0)**2+dthk**2*l**2*m1*cos(thk)*sin(thk)*cos(thr+th0)**2+dth0**2*l**2*m1*cos(thk)*sin(thk)*cos(thr+th0)**2-g*l*m1*sin(thk)*cos(thr+th0)
 
     return A, b, extf
 
@@ -332,12 +338,12 @@ def f_ground(s, u):
     assert np.linalg.matrix_rank(A) == 4
     y = np.linalg.solve(A, extf-b).reshape(4)
     f = np.zeros(IDX_MAX)
-    f[IDX_dx]   = 0
-    f[IDX_dy]   = 0
-    f[IDX_dz]   = y[0]
-    f[IDX_dthr] = y[1]
-    f[IDX_dth0] = y[2]
-    f[IDX_dthk] = y[3]
+    f[IDX_xr]   = 0
+    f[IDX_yr]   = 0
+    f[IDX_z]   = y[0]
+    f[IDX_thr] = y[1]
+    f[IDX_th0] = y[2]
+    f[IDX_thk] = y[3]
     return f
 
 def f_air(s, u):
@@ -345,12 +351,12 @@ def f_air(s, u):
     assert np.linalg.matrix_rank(A) == 5, (s, A)
     y = np.linalg.solve(A, extf-b).reshape(5)
     f = np.zeros(IDX_MAX)
-    f[IDX_dx]   = y[0]
-    f[IDX_dy]   = y[1]
-    f[IDX_dthr] = y[2]
-    f[IDX_dz]   = 0
-    f[IDX_dth0] = y[3]
-    f[IDX_dthk] = y[4]
+    f[IDX_xr]   = y[0]
+    f[IDX_yr]   = y[1]
+    f[IDX_thr] = y[2]
+    f[IDX_z]   = 0
+    f[IDX_th0] = y[3]
+    f[IDX_thk] = y[4]
     return f
 
 

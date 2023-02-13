@@ -144,7 +144,7 @@ class RabbitEnv():
         th0 = np.deg2rad(10)
         pr = np.array([0, 1])
         thr =  0
-        thk =  0
+        thk = np.deg2rad(10)
 
         s = mp.reset_state(pr, thr, th0, thk)
         self.mode = NORMAL_MODE
