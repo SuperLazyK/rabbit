@@ -103,23 +103,22 @@ IDX_dth0  = IDX_MAX+IDX_th0
 IDX_dthk  = IDX_MAX+IDX_thk
 IDX_dthw  = IDX_MAX+IDX_thw
 
-def reset_state(pr, thr, th0, thk, thw, vr = np.array([0,0]), dthr=0, dth0=0, dthk=0, dthw=0, z = 0, dz = 0):
+def reset_state(d = {}):
     s = np.zeros(2*IDX_MAX)
-    s[IDX_xr ] = pr[0]
-    s[IDX_yr ] = pr[1]
-    s[IDX_thr] = thr
-    s[IDX_z  ] = z
-    s[IDX_th0] = th0
-    s[IDX_thk] = thk
-    s[IDX_thw] = thw
-
-    s[IDX_dxr ] = vr[0]
-    s[IDX_dyr ] = vr[1]
-    s[IDX_dthr] = dthr
-    s[IDX_dz  ] = dz
-    s[IDX_dth0] = dth0
-    s[IDX_dthk] = dthk
-    s[IDX_dthw] = dthw
+    s[IDX_xr ] = d.get('prx', 0)
+    s[IDX_yr ] = d.get('pry', 0.4)
+    s[IDX_thr] = d.get('thr', 0)
+    s[IDX_z  ] = d.get('z', 0)
+    s[IDX_th0] = d.get('thr', np.deg2rad(-10))
+    s[IDX_thk] = d.get('thk', np.deg2rad(20))
+    s[IDX_thw] = d.get('thw', np.deg2rad(-20))
+    s[IDX_dxr ] = d.get('dprx', 0)
+    s[IDX_dyr ] = d.get('dpry', 0)
+    s[IDX_dthr] = d.get('dthr', 0)
+    s[IDX_dz  ] = d.get('dz'  , 0)  
+    s[IDX_dth0] = d.get('dthr', 0)
+    s[IDX_dthk] = d.get('dthk', 0)
+    s[IDX_dthw] = d.get('dthw', 0)
     return s
 
 

@@ -166,17 +166,7 @@ class RabbitEnv():
         if len(self.history ) > 1:
             if int(os.environ.get('AUTOSAVE', "0")):
                 self.autosave("normal")
-
-        pr = np.array([0, 0.4])
-        thr =  0
-        #th0 = np.deg2rad(5)
-        #thk = np.deg2rad(20)
-        #thw = np.deg2rad(-20)
-        th0 = np.deg2rad(-10)
-        thk = np.deg2rad(20)
-        thw = np.deg2rad(-20)
-
-        s = mp.reset_state(pr, thr, th0, thk, thw)
+        s = mp.reset_state()
         done, msg = self.game_over(s)
         assert not done, "???before-start???" + msg
         self.mode = NORMAL_MODE
