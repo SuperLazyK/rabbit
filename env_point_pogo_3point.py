@@ -26,7 +26,7 @@ DELTA = 0.001
 FRAME_RATE=30
 #DELTA = 0.002
 #DELTA = 0.005
-SPEED=6
+SPEED=800
 
 NORMAL_MODE=0
 JUMP_MODE=1
@@ -144,7 +144,7 @@ class RabbitEnv():
                 self.autosave("normal")
 
         th0 = np.deg2rad(0)
-        pr = np.array([0, 1])
+        pr = np.array([0, 0])
         thr =  0
         thk = np.deg2rad(2)
 
