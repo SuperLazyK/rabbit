@@ -217,11 +217,15 @@ def obs(s):
 
 def reward(s):
     pcog = cog(s)
-    r_y = (energyU(s) + energyTy(s))/2000
+    r_y = (energyU(s) + energyTy(s))/3000
     r_thr = -abs(s[IDX_thr])*2/np.pi
     r_cogx = -abs(pcog[0]-s[IDX_xr])
-
-    return np.exp(r_y + r_thr + r_cogx)
+    r = max(np.exp(r_y + r_thr + r_cogx), 0.1)
+    if r > 1000:
+        print("TOO MUCH REWARD")
+        print(r_y, r_thr, r_cogx)
+        print(s)
+    return r
 
 def init_ref(s):
     return np.array([s[IDX_th0], s[IDX_thk], s[IDX_thw]])
@@ -246,8 +250,12 @@ def check_invariant(s):
     vec_0w = ps[IDX_pw] - ps[IDX_p0]
 
     if  np.cross(vec_0t, vec_0w) < 0:
-            reason = f"GAME OVER @ line-w1 < line-0t"
-            return False, reason
+        reason = f"GAME OVER @ line-w1 < line-0t"
+        return False, reason
+
+    if energy(s) > 3000:
+        reason = f"GAME OVER @ energy is too big"
+        return False, reason
 
     pc = cog(s)
     if pc[1] < 0.4:

@@ -173,7 +173,12 @@ class RabbitEnv():
         self.max_obs = mp.OBS_MAX
 
     def autosave(self, dirname='autodump'):
-        pass
+        print("dump!!!")
+        os.makedirs(dirname, exist_ok=True)
+        self.save(dirname + '/last_episode.pkl')
+        dt = datetime.datetime.now()
+        timestamp = dt.strftime("%Y-%m-%d-%H-%M-%S")
+        self.save(dirname + '/{}.pkl'.format(timestamp))
 
     def reset(self, random=None):
         if len(self.history ) > 1:
@@ -200,7 +205,7 @@ class RabbitEnv():
 
     def calc_reward(self, s, mode, t, done):
         if done:
-            return 0
+            return 0.1
         r = mp.reward(s)
         return max(0, r)
 
