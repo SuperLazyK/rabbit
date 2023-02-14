@@ -23,6 +23,7 @@ from scipy import interpolate
 pygame.init()
 # input U
 DELTA = 0.001
+FRAME_RATE=30
 #DELTA = 0.002
 #DELTA = 0.005
 SPEED=6
@@ -201,8 +202,8 @@ class RabbitEnv():
 
     def step_pos_control(self, pos_ref):
         _, t, s, prev, _, _ = self.history[-1]
-        #t1 = t + 0.033 #30Hz
-        t1 = t + DELTA #30Hz
+        t1 = t + 1.0/FRAME_RATE
+        #t1 = t + DELTA #30Hz
 
         while t < t1:
             prev = (1-self.alpha) * prev + (self.alpha) * pos_ref
