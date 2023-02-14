@@ -51,8 +51,10 @@ DIM_U = REF_MIN.shape
 DEFAULT_U = np.zeros(DIM_U)
 limit_min_thr = np.deg2rad(-90)
 limit_max_thr = np.deg2rad(90)
-limit_min_th0 = np.deg2rad(45)
+
+limit_min_th0 = np.deg2rad(-45)
 limit_max_th0 = np.deg2rad(45)
+
 limit_min_thk = np.deg2rad(0)
 limit_max_thk = np.deg2rad(90)
 limit_min_thw = np.deg2rad(-90)
@@ -227,10 +229,13 @@ def check_invariant(s):
             reason = f"GAME OVER @ p{i}={ps[i]:}"
             return False, reason
     if s[IDX_th0] < limit_min_th0 or s[IDX_th0] > limit_max_th0:
-            reason = f"GAME OVER @ range error th0={s[IDX_th0]:}"
+            reason = f"GAME OVER @ range error th0={np.rad2deg(s[IDX_th0]):}"
             return False, reason
     if s[IDX_thk] < limit_min_thk or s[IDX_thk] > limit_max_thk:
-            reason = f"GAME OVER @ range error thk={s[IDX_thk]:}"
+            reason = f"GAME OVER @ range error thk={np.rad2deg(s[IDX_thk]):}"
+            return False, reason
+    if s[IDX_thw] < limit_min_thw or s[IDX_thw] > limit_max_thw:
+            reason = f"GAME OVER @ range error thw={np.rad2deg(s[IDX_thw]):}"
             return False, reason
     pc = cog(s)
     if pc[1] < 0.4:
