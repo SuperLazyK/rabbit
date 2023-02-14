@@ -48,7 +48,8 @@ ref_min_thw = np.deg2rad(-50)
 ref_max_thw = np.deg2rad(0)
 REF_MIN = np.array([ref_min_th0, ref_min_thk, ref_min_thw])
 REF_MAX = np.array([ref_max_th0, ref_max_thk, ref_max_thw])
-
+DIM_U = REF_MIN.shape
+DEFAULT_U = np.zeros(DIM_U)
 limit_min_thr = np.deg2rad(-90)
 limit_max_thr = np.deg2rad(90)
 limit_min_th0 = np.deg2rad(45)
@@ -69,7 +70,7 @@ MAX_TORQUE0=800 # arm(800N x 1m)
 inf = float('inf')
 #Kp = np.array([4000, 13000])
 #Kp = 20*np.array([400, 800])
-Kp = 10*np.array([400, 800])
+Kp = 10*np.array([400, 800, 800])
 #Kp = np.array([400, 800])
 #Kp = np.array([400, 400, 800])
 #Kd = Kp * (0.01)
@@ -425,9 +426,11 @@ def airAb(s, u):
     thr  = s[IDX_thr]
     th0  = s[IDX_th0]
     thk  = s[IDX_thk]
+    thw  = s[IDX_thw]
     dthr = s[IDX_dthr]
     dth0 = s[IDX_dth0]
     dthk = s[IDX_dthk]
+    dthw = s[IDX_dthw]
     tau0 = u[0]
     tau1 = u[1]
     tau2 = u[2]
@@ -483,6 +486,7 @@ def airAb(s, u):
 
 def f_ground(s, u):
     A, b, extf = groundAb(s, u)
+    print(np.linalg.det(A))
     assert np.linalg.matrix_rank(A) == 5
     y = np.linalg.solve(A, extf-b).reshape(5)
     f = np.zeros(IDX_MAX)

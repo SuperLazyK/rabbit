@@ -144,15 +144,16 @@ class RabbitEnv():
             if int(os.environ.get('AUTOSAVE', "0")):
                 self.autosave("normal")
 
-        pr = np.array([0, 0])
+        pr = np.array([0, 1])
         thr =  0
         th0 = np.deg2rad(5)
-        thk = np.deg2rad(2)
+        thk = np.deg2rad(20)
+        thw = np.deg2rad(-20)
 
-        s = mp.reset_state(pr, thr, th0, thk)
+        s = mp.reset_state(pr, thr, th0, thk, thw)
         self.mode = NORMAL_MODE
         t = 0
-        u = (0, 0)
+        u = mp.DEFAULT_U
         reward = 0
         ref = mp.init_ref(s)
         self.history = [(self.mode, t, s, ref, u, reward)]
@@ -182,7 +183,7 @@ class RabbitEnv():
         is_ok, reason = mp.check_invariant(s)
         return not is_ok, reason
 
-    def step_plant(self, u, ref=np.array([0, 0])):
+    def step_plant(self, u, ref=mp.DEFAULT_U):
         _, t, s, _, _, _ = self.history[-1]
         mode, t, s = mp.step(t, s, u, DELTA)
         done, reason = self.game_over(s)
@@ -288,12 +289,14 @@ def exec_cmd(env, v):
     ctr_mode = 'vel'
     if ctr_mode == 'vel':
         k_th0 = SPEED/6*np.pi/360
-        k_a   = SPEED/6*np.pi/360
-        _, _, done, _ = env.step_vel_control(np.array([k_th0, k_a]) * v)
+        k_thk = SPEED/6*np.pi/360
+        k_thw = SPEED/6*np.pi/360
+        _, _, done, _ = env.step_vel_control(np.array([k_th0, k_thk, k_thw]) * v)
     else:
         k_th0 = 100000
-        k_a   = 100000
-        _, _, done, _ = env.step_plant(np.array([k_th0, k_a]) * v)
+        k_thk = 100000
+        k_thw = 100000
+        _, _, done, _ = env.step_plant(np.array([k_th0, k_thk, k_thw]) * v)
     return done
 
 def fetch_episodes(dirname):
@@ -309,7 +312,7 @@ def main():
 
     env = RabbitEnv()
 
-    v = np.array([0, 0])
+    v = mp.DEFAULT_U
     frame = env.num_of_frames() - 1
     last_frame = -1
     start = False
@@ -418,15 +421,19 @@ def main():
                         frame = n-1
                 # input
                 elif keyname == 'j':
-                    v = -np.array([0, -1])
+                    v = -np.array([0, -1, 0])
                 elif keyname == 'k':
-                    v =  -np.array([0, 1])
+                    v =  -np.array([0, 1, 0])
                 elif keyname == 'h':
-                    v = np.array([1, 0])
+                    v = np.array([1, 0, 0])
                 elif keyname == 'l':
-                    v = np.array([-1, 0])
+                    v = np.array([-1, 0, 0])
+                elif keyname == 'n':
+                    v = np.array([0, 0, 1])
+                elif keyname == 'p':
+                    v = np.array([0, 0, -1])
             elif event.type == pl.KEYUP:
-                v = np.array([0, 0])
+                v = mp.DEFAULT_U
 
         if replay:
             if start:
