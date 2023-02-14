@@ -380,6 +380,7 @@ def main():
                     start = False
                     s = env.reset()
                     n = env.num_of_frames()
+                    env.render(frame=0)
 
                 elif keyname == 's':
                     start = start ^ True
