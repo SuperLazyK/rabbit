@@ -34,6 +34,7 @@ SPEED=100
 NORMAL_MODE=0
 JUMP_MODE=1
 FLIP_MODE=2
+CSV_FIELDS=['t', 'prx', 'pry', 'thr', 'z', 'th0', 'thk', 'thw']
 
 #----------------------------
 # Rendering
@@ -52,10 +53,30 @@ RSCALE=1/SCALE
 OFFSET_VERT = SCREEN_SIZE[1]/3
 
 def dump_history_csv(history, filename='state.csv'):
-    pass
+    data = []
+    for mode, t, s, ref, u, reward in history:
+        energy = mp.energy(s)
+        dic = {}
+        dic['t'] = t
+        dic['ref_th0'] = ref[0]
+        dic['ref_thk'] = ref[1]
+        dic['ref_thw'] = ref[2]
+        dic['u_torq0%'] = u[0]/mp.max_u()[0]
+        dic['u_torqk%'] = u[1]/mp.max_u()[1]
+        dic['u_torqw%'] = u[2]/mp.max_u()[2]
+        dic = mp.calc_joint_property(s, dic)
+        data.append(dic)
+
+    with open(filename,'w',encoding='utf-8') as f:
+        writer = csv.DictWriter(f, fieldnames = dic.keys())
+        writer.writeheader()
+        writer.writerows(data)
 
 def dump_plot(d, filename='plot.csv'):
-    pass
+    with open(filename,'w',encoding='utf-8') as f:
+        writer = csv.DictWriter(f, fieldnames = CSV_FIELDS)
+        writer.writeheader()
+        writer.writerows(d)
 
 class RabbitViewer():
     def __init__(self):
@@ -272,10 +293,14 @@ class RabbitEnv():
         print(f"--------------")
 
     def save(self, filename='dump.pkl'):
-        pass
+        with open(filename,'wb') as f:
+            pickle.dump(self.history, f, pickle.HIGHEST_PROTOCOL)
 
     def load(self, filename='dump.pkl'):
-        pass
+        print(f"Load {filename}")
+        with open(filename,'rb') as f:
+            self.history = pickle.load(f)
+            #self.history.pop(-1)
 
     def joint_info(self, frame):
         s = self.history[frame][2]
@@ -290,6 +315,57 @@ class RabbitEnv():
 
     def load_plot(self, filename):
         pass
+
+        #with open(filename) as f:
+        #    reader = csv.DictReader(f)
+        #    jprops = [{field:float(row[field]) for field in row} for row in reader]
+
+        #self.history = []
+        #tsi = np.arange(jprops[0]['t'], jprops[-1]['t'], DELTA)
+        #data = {}
+        #for field in CSV_FIELDS[1:]:
+        #    # duplicate t=0 with velocity 0
+        #    ts = [jprops[0]['t']-1]
+        #    xs = [jprops[0][field]]
+        #    for jprop in jprops:
+        #        ts.append(jprop['t'])
+        #        xs.append(jprop[field])
+        #    data[field] = interpolate.interp1d(ts, xs, kind="cubic")(tsi)
+
+        #for i in range(len(tsi)):
+        #    t = tsi[i]
+        #    if i == 0:
+        #        dz = 0
+        #        vrx = 0
+        #        vry = 0
+        #        dthr = 0
+        #        dth0 = 0
+        #        da = 0
+        #    else:
+        #        dz   = (data['z']  [i]  - data['z']  [i-1]) / DELTA
+        #        vrx  = (data['prx'][i]  - data['prx'][i-1]) / DELTA
+        #        vry  = (data['pry'][i]  - data['pry'][i-1]) / DELTA
+        #        dthr = (data['thr'][i]  - data['thr'][i-1]) / DELTA
+        #        dth0 = (data['th0'][i]  - data['th0'][i-1]) / DELTA
+        #        da = (data['a'][i]  - data['a'][i-1]) / DELTA
+        #    s = mp.reset_state(
+        #            np.array([data['prx'][i], data['pry'][i]]),
+        #            np.deg2rad(data['thr'][i]),
+        #            np.deg2rad(data['th0'][i]),
+        #            np.deg2rad(data['a'][i]),
+        #            np.array([vrx, vry]),
+        #            np.deg2rad(dthr),
+        #            np.deg2rad(dth0),
+        #            np.deg2rad(da),
+        #            data['z'][i],
+        #            dz,
+        #            )
+        #    self.mode = NORMAL_MODE
+        #    u = (0, 0)
+        #    mode ='normal'
+        #    ref = mp.init_ref(s)
+        #    reward = self.calc_reward(s, mode, t, False)
+        #    self.history.append((self.mode, t, s, ref, u, reward))
 
 #----------------------------
 # main

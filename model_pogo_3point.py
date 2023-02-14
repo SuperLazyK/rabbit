@@ -128,8 +128,7 @@ def print_state(s, titlePrefix="", fieldPrefix=""):
     for i in range(len(ps)):
         print(f"{titlePrefix} OBJ{i:}: P{i}: {ps[i]:.2f}")
 
-def calc_joint_property(s):
-    d = {}
+def calc_joint_property(s, d = {}):
     d['xr'] = s[IDX_xr ]
     d['yr'] = s[IDX_yr ]
     d['thr'] = s[IDX_thr]
