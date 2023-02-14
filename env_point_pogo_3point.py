@@ -24,6 +24,7 @@ pygame.init()
 # input U
 DELTA = 0.001
 FRAME_RATE=30
+#FRAME_RATE=1000
 #DELTA = 0.002
 #DELTA = 0.005
 SPEED=1000
@@ -143,9 +144,9 @@ class RabbitEnv():
             if int(os.environ.get('AUTOSAVE', "0")):
                 self.autosave("normal")
 
-        th0 = np.deg2rad(0)
         pr = np.array([0, 0])
         thr =  0
+        th0 = np.deg2rad(5)
         thk = np.deg2rad(2)
 
         s = mp.reset_state(pr, thr, th0, thk)
@@ -168,10 +169,7 @@ class RabbitEnv():
     def calc_reward(self, s, mode, t, done):
         if done:
             return 0
-        if mode == JUMP_MODE:
-            r = mp.reward_imitation_jump(s, t)
-        else:
-            r = mp.reward(s)
+        r = mp.reward(s)
         return max(0, r)
 
     def num_of_frames(self):
@@ -186,17 +184,12 @@ class RabbitEnv():
 
     def step_plant(self, u, ref=np.array([0, 0])):
         _, t, s, _, _, _ = self.history[-1]
-        success, t, s = mp.step(t, s, u, DELTA)
-        if not success:
-            self.autosave("failure")
-            print("GAMEOVER : step-failure!!")
-            done = True
-        else:
-            done, reason = self.game_over(s)
-            if done:
-                print(reason)
+        mode, t, s = mp.step(t, s, u, DELTA)
+        done, reason = self.game_over(s)
+        if done:
+            print(reason)
         reward = self.calc_reward(s, self.mode, t, done)
-        self.history.append((self.mode, t, s, ref, u, reward))
+        self.history.append((mode, t, s, ref, u, reward))
 
         #if self.is_render_enabled != 0:
         #    self.render(-1)
@@ -248,10 +241,8 @@ class RabbitEnv():
         if frame == 0:
             return
         _, t, prev_s, _, _, _ = self.history[frame-1]
-        mode, _, _, ref, u, reward = self.history[frame]
-        success, t, s = mp.step(t, prev_s, u, DELTA)
-        if not success:
-            print("failure!!")
+        _, _, _, ref, u, reward = self.history[frame]
+        mode, t, s = mp.step(t, prev_s, u, DELTA)
         done, reason = self.game_over(s)
         reward = self.calc_reward(s, mode, t, done)
 
@@ -398,6 +389,11 @@ def main():
 
                 elif keyname == 'u':
                     slow = slow ^ True
+                    global FRAME_RATE
+                    if slow:
+                        FRAME_RATE = 1000
+                    else:
+                        FRAME_RATE = 30
                 elif keyname == 'space':
                     stepOne = True
                     start = True
@@ -420,18 +416,6 @@ def main():
                         frame = frame - 1
                     if frame < 0:
                         frame = n-1
-                elif replay and keyname == 'h':
-                    start = False
-                    if mods & pl.KMOD_LSHIFT:
-                        eidx = max(eidx - 10, 0)
-                    else:
-                        eidx = max(eidx - 1, 0)
-                elif replay and keyname == 'l':
-                    start = False
-                    if mods & pl.KMOD_LSHIFT:
-                        eidx = min(eidx + 10, len(episodes)-1)
-                    else:
-                        eidx = min(eidx + 1, len(episodes)-1)
                 # input
                 elif keyname == 'j':
                     v = -np.array([0, -1])

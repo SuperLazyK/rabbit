@@ -21,10 +21,14 @@ lt = 0.83
 mr = 0
 m0 = 20
 mk = 0
+mw = 0
 m1 = 50
 mt = 7
-M=np.array([mr, m0, mk, m1, mt])
-l = 1.2
+M=np.array([mr, m0, mk, mw, m1, mt])
+#M=np.array([mr, m0, mk, m1, mt])
+lw1 = 0.3
+l = 0.9
+#l = 1.2
 #g  = 0
 g  = 9.8
 #g  = -9.8
@@ -35,9 +39,9 @@ c = 0
 
 # ccw is positive
 ref_min_th0 = np.deg2rad(0)
-ref_max_th0 = np.deg2rad(25)
+ref_max_th0 = np.deg2rad(20)
 ref_min_thk = np.deg2rad(1)
-ref_max_thk = np.deg2rad(15)
+ref_max_thk = np.deg2rad(20)
 REF_MIN = np.array([ref_min_th0, ref_min_thk])
 REF_MAX = np.array([ref_max_th0, ref_max_thk])
 
@@ -57,7 +61,8 @@ MAX_TORQUE0=800 # arm(800N x 1m)
 
 inf = float('inf')
 #Kp = np.array([4000, 13000])
-Kp = 20*np.array([400, 800])
+#Kp = 20*np.array([400, 800])
+Kp = 10*np.array([400, 800])
 #Kp = np.array([400, 800])
 #Kp = np.array([400, 400, 800])
 #Kd = Kp * (0.01)
@@ -142,13 +147,16 @@ def node_pos(s):
     dir_thr0 = np.array([-np.sin(thr+th0), np.cos(thr+th0)])
     dir_thr0k = np.array([-np.sin(thr+th0-thk), np.cos(thr+th0-thk)])
 
-    l1 = l * np.cos(thk)
+    l0w = l * np.cos(thk)
+    l1 = l0w + lw1
     p0 = pr + (z0 + z) * dir_thr
     pk = p0 + l/2 * dir_thr0k
+    pw = p0 + l0w * dir_thr0
     pt = p0 + lt * dir_thr
     p1 = p0 + l1 * dir_thr0
 
-    return pr, p0, pk, p1, pt
+    return pr, p0, pk, pw, p1, pt
+    #return pr, p0, pk, p1, pt
 
 
 def node_vel(s):
@@ -168,11 +176,16 @@ def node_vel(s):
     dth0 = s[IDX_dth0]
     dthk = s[IDX_dthk]
 
+    l0w = l * np.cos(thk)
+    l1 = l0w + lw1
+
     v0 = vr + dz*dir_thr + dthr*(z0+z)*dir_dthr
     vk = v0 + (dthr+dth0-dthk) * l/2 * dir_dthr0k
     vt = v0 + dthr*lt*dir_dthr
-    v1 = v0 - dthk*l*sin(thk)*dir_thr + (dthr+dth0)*l*cos(thk)*dir_dthr0
-    return vr, v0, vk, v1, vt
+    v1 = v0 - dthk*l*sin(thk)*dir_thr + (dthr+dth0)*l1*cos(thk)*dir_dthr0
+    vw = v0 - dthk*l*sin(thk)*dir_thr + (dthr+dth0)*l0w*cos(thk)*dir_dthr0
+    return vr, v0, vk, vw, v1, vt
+    #return vr, v0, vk, v1, vt
 
 OBS_MIN = np.array([0, 0, limit_min_thr, -max_z, limit_min_th0, limit_min_thk,
                    -MAX_SPEED, -MAX_SPEED, -MAX_ROT_SPEED, -MAX_SPEED, -MAX_ROT_SPEED, -MAX_ROT_SPEED])
@@ -543,5 +556,5 @@ def step(t, s, u, dt):
             ret = land(ret)
         else:
             mode ="air"
-    return mode, t+dt, ret
+    return 1 if ground(ret) else 0, t+dt, ret
 
