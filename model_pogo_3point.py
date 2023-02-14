@@ -27,7 +27,9 @@ mt = 7
 M=np.array([mr, m0, mk, mw, m1, mt])
 #M=np.array([mr, m0, mk, m1, mt])
 lw1 = 0.3
-l = 0.9
+l0 = 0.4
+l1 = 0.5
+l2 = 0.3
 #l = 1.2
 #g  = 0
 g  = 9.8
@@ -38,25 +40,30 @@ c = 0
 
 
 # ccw is positive
-ref_min_th0 = np.deg2rad(0)
+ref_min_th0 = np.deg2rad(-30)
 ref_max_th0 = np.deg2rad(20)
 ref_min_thk = np.deg2rad(1)
-ref_max_thk = np.deg2rad(20)
-REF_MIN = np.array([ref_min_th0, ref_min_thk])
-REF_MAX = np.array([ref_max_th0, ref_max_thk])
+ref_max_thk = np.deg2rad(30)
+ref_min_thw = np.deg2rad(-50)
+ref_max_thw = np.deg2rad(0)
+REF_MIN = np.array([ref_min_th0, ref_min_thk, ref_min_thw])
+REF_MAX = np.array([ref_max_th0, ref_max_thk, ref_max_thw])
 
 limit_min_thr = np.deg2rad(-90)
 limit_max_thr = np.deg2rad(90)
-limit_min_th0 = np.deg2rad(-10)
+limit_min_th0 = np.deg2rad(45)
 limit_max_th0 = np.deg2rad(45)
 limit_min_thk = np.deg2rad(0)
-limit_max_thk = np.deg2rad(40)
+limit_max_thk = np.deg2rad(90)
+limit_min_thw = np.deg2rad(-90)
+limit_max_thw = np.deg2rad(0)
 
 MAX_ROT_SPEED=100
 MAX_SPEED=100
 #MAX_TORQUEK=3000 # arm
 #MAX_TORQUE0=8000 # arm
-MAX_TORQUEK=800 # knee(400Nm) + arm(800N * 0.5m)
+MAX_TORQUEK=400 # knee(400Nm) + arm(800N * 0.5m)
+MAX_TORQUEW=400 # knee(400Nm) + arm(800N * 0.5m)
 MAX_TORQUE0=800 # arm(800N x 1m)
 
 inf = float('inf')
@@ -78,15 +85,17 @@ IDX_thr  = 2
 IDX_z    = 3
 IDX_th0  = 4
 IDX_thk  = 5
-IDX_MAX = 6
+IDX_thw  = 6
+IDX_MAX = 7
 IDX_dxr   = IDX_MAX+IDX_xr 
 IDX_dyr   = IDX_MAX+IDX_yr 
 IDX_dthr  = IDX_MAX+IDX_thr
 IDX_dz    = IDX_MAX+IDX_z  
 IDX_dth0  = IDX_MAX+IDX_th0
 IDX_dthk  = IDX_MAX+IDX_thk
+IDX_dthw  = IDX_MAX+IDX_thw
 
-def reset_state(pr, thr, th0, thk, vr = np.array([0,0]), dthr=0, dth0=0, dthk=0, z = 0, dz = 0):
+def reset_state(pr, thr, th0, thk, thw, vr = np.array([0,0]), dthr=0, dth0=0, dthk=0, dthw=0, z = 0, dz = 0):
     s = np.zeros(2*IDX_MAX)
     s[IDX_xr ] = pr[0]
     s[IDX_yr ] = pr[1]
@@ -94,6 +103,7 @@ def reset_state(pr, thr, th0, thk, vr = np.array([0,0]), dthr=0, dth0=0, dthk=0,
     s[IDX_z  ] = z
     s[IDX_th0] = th0
     s[IDX_thk] = thk
+    s[IDX_thw] = thw
 
     s[IDX_dxr ] = vr[0]
     s[IDX_dyr ] = vr[1]
@@ -101,6 +111,7 @@ def reset_state(pr, thr, th0, thk, vr = np.array([0,0]), dthr=0, dth0=0, dthk=0,
     s[IDX_dz  ] = dz
     s[IDX_dth0] = dth0
     s[IDX_dthk] = dthk
+    s[IDX_dthw] = dthw
     return s
 
 
@@ -117,16 +128,18 @@ def calc_joint_property(s):
     d['z'] = s[IDX_z  ]
     d['th0'] = s[IDX_th0]
     d['thk'] = s[IDX_thk]
+    d['thw'] = s[IDX_thw]
     d['dxr'] = s[IDX_dxr ]
     d['dyr'] = s[IDX_dyr ]
     d['dthr'] = s[IDX_dthr]
     d['dz'] = s[IDX_dz  ]
     d['dth0'] = s[IDX_dth0]
     d['dthk'] = s[IDX_dthk]
+    d['dthw'] = s[IDX_dthw]
     return d
 
 def max_u():
-    return np.array([MAX_TORQUE0, MAX_TORQUEK])
+    return np.array([MAX_TORQUE0, MAX_TORQUEK, MAX_TORQUEW])
 
 def torq_limit(s, u):
     m = max_u()
@@ -142,21 +155,20 @@ def node_pos(s):
     z   = s[IDX_z  ]
     th0 = s[IDX_th0]
     thk = s[IDX_thk]
+    thw = s[IDX_thw]
 
     dir_thr = np.array([-np.sin(thr), np.cos(thr)])
     dir_thr0 = np.array([-np.sin(thr+th0), np.cos(thr+th0)])
-    dir_thr0k = np.array([-np.sin(thr+th0-thk), np.cos(thr+th0-thk)])
+    dir_thr0k = np.array([-np.sin(thr+th0+thk), np.cos(thr+th0+thk)])
+    dir_thr0kw = np.array([-np.sin(thr+th0+thk+thw), np.cos(thr+th0+thk+thw)])
 
-    l0w = l * np.cos(thk)
-    l1 = l0w + lw1
     p0 = pr + (z0 + z) * dir_thr
-    pk = p0 + l/2 * dir_thr0k
-    pw = p0 + l0w * dir_thr0
+    pk = p0 + l0 * dir_thr0
+    pw = pk + l1 * dir_thr0k
+    p1 = pw + l2 * dir_thr0kw
     pt = p0 + lt * dir_thr
-    p1 = p0 + l1 * dir_thr0
 
     return pr, p0, pk, pw, p1, pt
-    #return pr, p0, pk, p1, pt
 
 
 def node_vel(s):
@@ -164,33 +176,33 @@ def node_vel(s):
     z   = s[IDX_z  ]
     th0 = s[IDX_th0]
     thk = s[IDX_thk]
+    thw = s[IDX_thw]
     dir_thr = np.array([-np.sin(thr), np.cos(thr)])
     dir_thr0 = np.array([-np.sin(thr+th0), np.cos(thr+th0)])
-    dir_thr0k = np.array([-np.sin(thr+th0-thk), np.cos(thr+th0-thk)])
+    dir_thr0k = np.array([-np.sin(thr+th0+thk), np.cos(thr+th0+thk)])
+    dir_thr0kw = np.array([-np.sin(thr+th0+thk+thw), np.cos(thr+th0+thk+thw)])
     dir_dthr = np.array([-np.cos(thr), -np.sin(thr)])
     dir_dthr0 = np.array([-np.cos(thr+th0), -np.sin(thr+th0)])
-    dir_dthr0k = np.array([-np.cos(thr+th0-thk), -np.sin(thr+th0-thk)])
+    dir_dthr0k = np.array([-np.cos(thr+th0+thk), -np.sin(thr+th0+thk)])
+    dir_dthr0kw = np.array([-np.cos(thr+th0+thk+thw), -np.sin(thr+th0+thk+thw)])
     vr = np.array([s[IDX_dxr], s[IDX_dyr]])
     dthr = s[IDX_dthr]
     dz   = s[IDX_dz  ]
     dth0 = s[IDX_dth0]
     dthk = s[IDX_dthk]
-
-    l0w = l * np.cos(thk)
-    l1 = l0w + lw1
+    dthw = s[IDX_dthw]
 
     v0 = vr + dz*dir_thr + dthr*(z0+z)*dir_dthr
-    vk = v0 + (dthr+dth0-dthk) * l/2 * dir_dthr0k
+    vk = v0 + (dthr+dth0) * l0 * dir_dthr0
+    vw = vk + (dthr+dth0+dthk) * l1 * dir_dthr0k
+    v1 = vw + (dthr+dth0+dthk+dthw) * l2 * dir_dthr0kw
     vt = v0 + dthr*lt*dir_dthr
-    v1 = v0 - dthk*l*sin(thk)*dir_thr + (dthr+dth0)*l1*cos(thk)*dir_dthr0
-    vw = v0 - dthk*l*sin(thk)*dir_thr + (dthr+dth0)*l0w*cos(thk)*dir_dthr0
     return vr, v0, vk, vw, v1, vt
-    #return vr, v0, vk, v1, vt
 
-OBS_MIN = np.array([0, 0, limit_min_thr, -max_z, limit_min_th0, limit_min_thk,
-                   -MAX_SPEED, -MAX_SPEED, -MAX_ROT_SPEED, -MAX_SPEED, -MAX_ROT_SPEED, -MAX_ROT_SPEED])
-OBS_MAX = np.array([1, 5, limit_max_thr,      0, limit_max_th0, limit_max_thk,
-                    MAX_SPEED , MAX_SPEED , MAX_ROT_SPEED, MAX_SPEED, MAX_ROT_SPEED, MAX_ROT_SPEED  ])
+OBS_MIN = np.array([0, 0, limit_min_thr, -max_z, limit_min_th0, limit_min_thk, limit_min_thw,
+                   -MAX_SPEED, -MAX_SPEED, -MAX_ROT_SPEED, -MAX_SPEED, -MAX_ROT_SPEED, -MAX_ROT_SPEED, -MAX_ROT_SPEED])
+OBS_MAX = np.array([1, 5, limit_max_thr,      0, limit_max_th0, limit_max_thk, limit_max_thw,
+                    MAX_SPEED , MAX_SPEED , MAX_ROT_SPEED, MAX_SPEED, MAX_ROT_SPEED, MAX_ROT_SPEED, MAX_ROT_SPEED])
 
 def obs(s):
     o = s.copy()
@@ -206,7 +218,7 @@ def reward(s):
     return np.exp(r_y + r_thr + r_cogx)
 
 def init_ref(s):
-    return np.array([s[IDX_th0], s[IDX_thk]])
+    return np.array([s[IDX_th0], s[IDX_thk], s[IDX_thw]])
 
 def check_invariant(s):
     ps = list(node_pos(s))
@@ -262,11 +274,11 @@ def moment(s):
     return tm[0], tm[1], am
 
 def pdcontrol(s, ref):
-    dob  = np.array([s[IDX_dth0], s[IDX_dthk]])
-    ob = np.array([s[IDX_th0], s[IDX_thk]])
+    dob  = np.array([s[IDX_dth0], s[IDX_dthk], s[IDX_dthw]])
+    ob = np.array([s[IDX_th0], s[IDX_thk], s[IDX_thw]])
     err = ref - ob
-    debug_print(f"PD-ref: {np.rad2deg(ref[0])} {ref[1]}")
-    debug_print(f"PD-obs: {np.rad2deg(ob[0])}  {ob[1]}")
+    debug_print(f"PD-ref: {np.rad2deg(ref[0])} {np.rad2deg(ref[1])} {np.rad2deg(ref[2])} ")
+    debug_print(f"PD-obs: {np.rad2deg(ob[0])}  {np.rad2deg(ob[1])}  {np.rad2deg(ob[2])} ")
     debug_print(f"PD-vel: {dob}")
     ret = err * Kp - Kd * dob
     return ret
@@ -275,72 +287,12 @@ def pdcontrol(s, ref):
 def ground(s):
     return s[IDX_yr] == 0 and s[IDX_dxr] == 0 and s[IDX_dyr] == 0
 
-#def impulse_jumpup(s):
-#
-#    z    = s[IDX_z]
-#    thr  = s[IDX_thr]
-#    th0  = s[IDX_th0]
-#    thk  = s[IDX_thk]
-#
-#    A21 = np.zeros((5,1))
-#    A21[0][0] = ((-mt)-m1-m0)*sin(thr)
-#    A21[1][0] = (mt+m1+m0)*cos(thr)
-#    A21[2][0] = -l*m1*sin(th0)*cos(thk)
-#    A21[3][0] = -l*m1*sin(th0)*cos(thk)
-#    A21[4][0] = -l*m1*cos(th0)*sin(thk)
-#
-#    A22 = np.zeros((5,5))
-#    A22[0][0] = mt+m1+m0
-#    A22[0][1] = 0
-#    A22[0][2] = ((-mt)-m1-m0)*cos(thr)*z0+l*m1*sin(th0)*cos(thk)*sin(thr)+((-l*m1*cos(th0)*cos(thk))-lt*mt)*cos(thr)
-#    A22[0][3] = l*m1*sin(th0)*cos(thk)*sin(thr)-l*m1*cos(th0)*cos(thk)*cos(thr)
-#    A22[0][4] = l*m1*cos(th0)*sin(thk)*sin(thr)+l*m1*sin(th0)*sin(thk)*cos(thr)
-#    A22[1][0] = 0
-#    A22[1][1] = mt+m1+m0
-#    A22[1][2] = ((-mt)-m1-m0)*sin(thr)*z0+((-l*m1*cos(th0)*cos(thk))-lt*mt)*sin(thr)-l*m1*sin(th0)*cos(thk)*cos(thr)
-#    A22[1][3] = (-l*m1*cos(th0)*cos(thk)*sin(thr))-l*m1*sin(th0)*cos(thk)*cos(thr)
-#    A22[1][4] = l*m1*sin(th0)*sin(thk)*sin(thr)-l*m1*cos(th0)*sin(thk)*cos(thr)
-#    A22[2][0] = ((-mt)-m1-m0)*cos(thr)*z0+l*m1*sin(th0)*cos(thk)*sin(thr)+((-l*m1*cos(th0)*cos(thk))-lt*mt)*cos(thr)
-#    A22[2][1] = ((-mt)-m1-m0)*sin(thr)*z0+((-l*m1*cos(th0)*cos(thk))-lt*mt)*sin(thr)-l*m1*sin(th0)*cos(thk)*cos(thr)
-#    A22[2][2] = (mt+m1+m0)*z0**2+(2*l*m1*cos(th0)*cos(thk)+2*lt*mt)*z0+l**2*m1*cos(thk)**2+lt**2*mt
-#    A22[2][3] = l*m1*cos(th0)*cos(thk)*z0+l**2*m1*cos(thk)**2
-#    A22[2][4] = -l*m1*sin(th0)*sin(thk)*z0
-#    A22[3][0] = l*m1*sin(th0)*cos(thk)*sin(thr)-l*m1*cos(th0)*cos(thk)*cos(thr)
-#    A22[3][1] = (-l*m1*cos(th0)*cos(thk)*sin(thr))-l*m1*sin(th0)*cos(thk)*cos(thr)
-#    A22[3][2] = l*m1*cos(th0)*cos(thk)*z0+l**2*m1*cos(thk)**2
-#    A22[3][3] = l**2*m1*cos(thk)**2
-#    A22[3][4] = 0
-#    A22[4][0] = l*m1*cos(th0)*sin(thk)*sin(thr)+l*m1*sin(th0)*sin(thk)*cos(thr)
-#    A22[4][1] = l*m1*sin(th0)*sin(thk)*sin(thr)-l*m1*cos(th0)*sin(thk)*cos(thr)
-#    A22[4][2] = -l*m1*sin(th0)*sin(thk)*z0
-#    A22[4][3] = 0
-#    A22[4][4] = l**2*m1*sin(thk)**2
-#
-#    #solve  A22 y(z,thr,th0,thk) = A21 (dx,dy)
-#    y = np.linalg.solve(A22, A21 * s[IDX_dz]).reshape(5)
-#
-#    d = np.zeros(IDX_MAX)
-#    d[IDX_xr] = y[0]
-#    d[IDX_yr] = y[1]
-#    d[IDX_z]   = 0
-#    d[IDX_thr] = y[2]
-#    d[IDX_th0] = y[3]
-#    d[IDX_thk] = y[4]
-#    return d
-
 def jumpup(s):
     ret = s.copy()
-    if True:
-        ret[IDX_dxr] = - s[IDX_dz] * np.sin(s[IDX_thr])
-        ret[IDX_dyr] = s[IDX_dz] * np.cos(s[IDX_thr])
-        ret[IDX_z] = 0
-        ret[IDX_dz] = 0
-    #else:
-    #    d = impulse_jumpup(s)
-    #    ret[IDX_z] = 0
-    #    ret[IDX_MAX:] = d
-    #print("land-before", calc_joint_property(s))
-    #print("land-after", calc_joint_property(ret))
+    ret[IDX_dxr] = - s[IDX_dz] * np.sin(s[IDX_thr])
+    ret[IDX_dyr] = s[IDX_dz] * np.cos(s[IDX_thr])
+    ret[IDX_z] = 0
+    ret[IDX_dz] = 0
     return ret
 
 def impulse_collision(s):
