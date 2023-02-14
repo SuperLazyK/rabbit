@@ -253,58 +253,58 @@ def pdcontrol(s, ref):
 def ground(s):
     return s[IDX_yr] == 0 and s[IDX_dxr] == 0 and s[IDX_dyr] == 0
 
-def impulse_jumpup(s):
-
-    z    = s[IDX_z]
-    thr  = s[IDX_thr]
-    th0  = s[IDX_th0]
-    thk  = s[IDX_thk]
-
-    A21 = np.zeros((5,1))
-    A21[0][0] = ((-mt)-m1-m0)*sin(thr)
-    A21[1][0] = (mt+m1+m0)*cos(thr)
-    A21[2][0] = -l*m1*sin(th0)*cos(thk)
-    A21[3][0] = -l*m1*sin(th0)*cos(thk)
-    A21[4][0] = -l*m1*cos(th0)*sin(thk)
-
-    A22 = np.zeros((5,5))
-    A22[0][0] = mt+m1+m0
-    A22[0][1] = 0
-    A22[0][2] = ((-mt)-m1-m0)*cos(thr)*z0+l*m1*sin(th0)*cos(thk)*sin(thr)+((-l*m1*cos(th0)*cos(thk))-lt*mt)*cos(thr)
-    A22[0][3] = l*m1*sin(th0)*cos(thk)*sin(thr)-l*m1*cos(th0)*cos(thk)*cos(thr)
-    A22[0][4] = l*m1*cos(th0)*sin(thk)*sin(thr)+l*m1*sin(th0)*sin(thk)*cos(thr)
-    A22[1][0] = 0
-    A22[1][1] = mt+m1+m0
-    A22[1][2] = ((-mt)-m1-m0)*sin(thr)*z0+((-l*m1*cos(th0)*cos(thk))-lt*mt)*sin(thr)-l*m1*sin(th0)*cos(thk)*cos(thr)
-    A22[1][3] = (-l*m1*cos(th0)*cos(thk)*sin(thr))-l*m1*sin(th0)*cos(thk)*cos(thr)
-    A22[1][4] = l*m1*sin(th0)*sin(thk)*sin(thr)-l*m1*cos(th0)*sin(thk)*cos(thr)
-    A22[2][0] = ((-mt)-m1-m0)*cos(thr)*z0+l*m1*sin(th0)*cos(thk)*sin(thr)+((-l*m1*cos(th0)*cos(thk))-lt*mt)*cos(thr)
-    A22[2][1] = ((-mt)-m1-m0)*sin(thr)*z0+((-l*m1*cos(th0)*cos(thk))-lt*mt)*sin(thr)-l*m1*sin(th0)*cos(thk)*cos(thr)
-    A22[2][2] = (mt+m1+m0)*z0**2+(2*l*m1*cos(th0)*cos(thk)+2*lt*mt)*z0+l**2*m1*cos(thk)**2+lt**2*mt
-    A22[2][3] = l*m1*cos(th0)*cos(thk)*z0+l**2*m1*cos(thk)**2
-    A22[2][4] = -l*m1*sin(th0)*sin(thk)*z0
-    A22[3][0] = l*m1*sin(th0)*cos(thk)*sin(thr)-l*m1*cos(th0)*cos(thk)*cos(thr)
-    A22[3][1] = (-l*m1*cos(th0)*cos(thk)*sin(thr))-l*m1*sin(th0)*cos(thk)*cos(thr)
-    A22[3][2] = l*m1*cos(th0)*cos(thk)*z0+l**2*m1*cos(thk)**2
-    A22[3][3] = l**2*m1*cos(thk)**2
-    A22[3][4] = 0
-    A22[4][0] = l*m1*cos(th0)*sin(thk)*sin(thr)+l*m1*sin(th0)*sin(thk)*cos(thr)
-    A22[4][1] = l*m1*sin(th0)*sin(thk)*sin(thr)-l*m1*cos(th0)*sin(thk)*cos(thr)
-    A22[4][2] = -l*m1*sin(th0)*sin(thk)*z0
-    A22[4][3] = 0
-    A22[4][4] = l**2*m1*sin(thk)**2
-
-    #solve  A22 y(z,thr,th0,thk) = A21 (dx,dy)
-    y = np.linalg.solve(A22, A21 * s[IDX_dz]).reshape(5)
-
-    d = np.zeros(IDX_MAX)
-    d[IDX_xr] = y[0]
-    d[IDX_yr] = y[1]
-    d[IDX_z]   = 0
-    d[IDX_thr] = y[2]
-    d[IDX_th0] = y[3]
-    d[IDX_thk] = y[4]
-    return d
+#def impulse_jumpup(s):
+#
+#    z    = s[IDX_z]
+#    thr  = s[IDX_thr]
+#    th0  = s[IDX_th0]
+#    thk  = s[IDX_thk]
+#
+#    A21 = np.zeros((5,1))
+#    A21[0][0] = ((-mt)-m1-m0)*sin(thr)
+#    A21[1][0] = (mt+m1+m0)*cos(thr)
+#    A21[2][0] = -l*m1*sin(th0)*cos(thk)
+#    A21[3][0] = -l*m1*sin(th0)*cos(thk)
+#    A21[4][0] = -l*m1*cos(th0)*sin(thk)
+#
+#    A22 = np.zeros((5,5))
+#    A22[0][0] = mt+m1+m0
+#    A22[0][1] = 0
+#    A22[0][2] = ((-mt)-m1-m0)*cos(thr)*z0+l*m1*sin(th0)*cos(thk)*sin(thr)+((-l*m1*cos(th0)*cos(thk))-lt*mt)*cos(thr)
+#    A22[0][3] = l*m1*sin(th0)*cos(thk)*sin(thr)-l*m1*cos(th0)*cos(thk)*cos(thr)
+#    A22[0][4] = l*m1*cos(th0)*sin(thk)*sin(thr)+l*m1*sin(th0)*sin(thk)*cos(thr)
+#    A22[1][0] = 0
+#    A22[1][1] = mt+m1+m0
+#    A22[1][2] = ((-mt)-m1-m0)*sin(thr)*z0+((-l*m1*cos(th0)*cos(thk))-lt*mt)*sin(thr)-l*m1*sin(th0)*cos(thk)*cos(thr)
+#    A22[1][3] = (-l*m1*cos(th0)*cos(thk)*sin(thr))-l*m1*sin(th0)*cos(thk)*cos(thr)
+#    A22[1][4] = l*m1*sin(th0)*sin(thk)*sin(thr)-l*m1*cos(th0)*sin(thk)*cos(thr)
+#    A22[2][0] = ((-mt)-m1-m0)*cos(thr)*z0+l*m1*sin(th0)*cos(thk)*sin(thr)+((-l*m1*cos(th0)*cos(thk))-lt*mt)*cos(thr)
+#    A22[2][1] = ((-mt)-m1-m0)*sin(thr)*z0+((-l*m1*cos(th0)*cos(thk))-lt*mt)*sin(thr)-l*m1*sin(th0)*cos(thk)*cos(thr)
+#    A22[2][2] = (mt+m1+m0)*z0**2+(2*l*m1*cos(th0)*cos(thk)+2*lt*mt)*z0+l**2*m1*cos(thk)**2+lt**2*mt
+#    A22[2][3] = l*m1*cos(th0)*cos(thk)*z0+l**2*m1*cos(thk)**2
+#    A22[2][4] = -l*m1*sin(th0)*sin(thk)*z0
+#    A22[3][0] = l*m1*sin(th0)*cos(thk)*sin(thr)-l*m1*cos(th0)*cos(thk)*cos(thr)
+#    A22[3][1] = (-l*m1*cos(th0)*cos(thk)*sin(thr))-l*m1*sin(th0)*cos(thk)*cos(thr)
+#    A22[3][2] = l*m1*cos(th0)*cos(thk)*z0+l**2*m1*cos(thk)**2
+#    A22[3][3] = l**2*m1*cos(thk)**2
+#    A22[3][4] = 0
+#    A22[4][0] = l*m1*cos(th0)*sin(thk)*sin(thr)+l*m1*sin(th0)*sin(thk)*cos(thr)
+#    A22[4][1] = l*m1*sin(th0)*sin(thk)*sin(thr)-l*m1*cos(th0)*sin(thk)*cos(thr)
+#    A22[4][2] = -l*m1*sin(th0)*sin(thk)*z0
+#    A22[4][3] = 0
+#    A22[4][4] = l**2*m1*sin(thk)**2
+#
+#    #solve  A22 y(z,thr,th0,thk) = A21 (dx,dy)
+#    y = np.linalg.solve(A22, A21 * s[IDX_dz]).reshape(5)
+#
+#    d = np.zeros(IDX_MAX)
+#    d[IDX_xr] = y[0]
+#    d[IDX_yr] = y[1]
+#    d[IDX_z]   = 0
+#    d[IDX_thr] = y[2]
+#    d[IDX_th0] = y[3]
+#    d[IDX_thk] = y[4]
+#    return d
 
 def jumpup(s):
     ret = s.copy()
@@ -313,10 +313,10 @@ def jumpup(s):
         ret[IDX_dyr] = s[IDX_dz] * np.cos(s[IDX_thr])
         ret[IDX_z] = 0
         ret[IDX_dz] = 0
-    else:
-        d = impulse_jumpup(s)
-        ret[IDX_z] = 0
-        ret[IDX_MAX:] = d
+    #else:
+    #    d = impulse_jumpup(s)
+    #    ret[IDX_z] = 0
+    #    ret[IDX_MAX:] = d
     #print("land-before", calc_joint_property(s))
     #print("land-after", calc_joint_property(ret))
     return ret
