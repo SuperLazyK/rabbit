@@ -25,8 +25,8 @@ m1 = 50
 mt = 7
 M=np.array([mr, m0, mk, m1, mt])
 l = 1.2
-g  = 0
-#g  = 9.8
+#g  = 0
+g  = 9.8
 #g  = -9.8
 k  = 15000 # mgh = 1/2 k x**2 -> T=2*pi sqrt(m/k)
 c = 0
