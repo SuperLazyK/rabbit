@@ -123,20 +123,20 @@ def reset_state(d = {}):
 
 
 def print_state(s, titlePrefix="", fieldPrefix=""):
-    ps = node_pos(s)
-    for i in range(len(ps)):
-        print(f"{titlePrefix} OBJ{i:}: P{i}: {ps[i]:.2f}")
+    d = calc_joint_property(s)
+    for i in d:
+        print(f"{titlePrefix} {i:}: {d[i]:.2f}")
 
 def calc_joint_property(s, d = {}):
-    d['xr'] = s[IDX_xr ]
-    d['yr'] = s[IDX_yr ]
+    d['prx'] = s[IDX_xr ]
+    d['pry'] = s[IDX_yr ]
     d['thr'] = s[IDX_thr]
     d['z'] = s[IDX_z  ]
     d['th0'] = s[IDX_th0]
     d['thk'] = s[IDX_thk]
     d['thw'] = s[IDX_thw]
-    d['dxr'] = s[IDX_dxr ]
-    d['dyr'] = s[IDX_dyr ]
+    d['dprx'] = s[IDX_dxr ]
+    d['dpry'] = s[IDX_dyr ]
     d['dthr'] = s[IDX_dthr]
     d['dz'] = s[IDX_dz  ]
     d['dth0'] = s[IDX_dth0]
@@ -380,8 +380,6 @@ def land(s):
     ret[IDX_yr] = 0
     ret[IDX_z] = 0
     ret[IDX_MAX:] = d
-    #print("land-before", calc_joint_property(s))
-    #print("land-after", calc_joint_property(ret))
     return ret
 
 def groundAb(s, u):
