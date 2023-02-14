@@ -50,6 +50,8 @@ xt: x0 - lt * sin(thr)$
 yt: y0 + lt * cos(thr)$
 
 l1: l * cos(thk)$
+xk: x0 - l/2 * sin(th0 + thr -thk)$
+yk: y0 + l/2 * cos(th0 + thr -thk)$
 
 x1: x0 - l1 * sin(th0 + thr)$
 y1: y0 + l1 * cos(th0 + thr)$
@@ -69,6 +71,8 @@ thk': diff(thk, t)$
 th0': diff(th0, t)$
 xr': diff(xr, t)$
 yr': diff(yr, t)$
+xk': diff(xk, t)$
+yk': diff(yk, t)$
 z': diff(z, t)$
 x0': diff(x0, t)$
 y0': diff(y0, t)$
@@ -79,6 +83,8 @@ yt': diff(yt, t)$
 
 f90(symbolilze(x0'-xr'))$
 f90(symbolilze(y0'-yr'))$
+f90(symbolilze(xk'-x0'))$
+f90(symbolilze(yk'-y0'))$
 f90(symbolilze(x1'-x0'))$
 f90(symbolilze(y1'-y0'))$
 f90(symbolilze(xt'-x0'))$
