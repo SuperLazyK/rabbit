@@ -41,6 +41,8 @@ ref_max_thk = np.deg2rad(15)
 REF_MIN = np.array([ref_min_th0, ref_min_thk])
 REF_MAX = np.array([ref_max_th0, ref_max_thk])
 
+limit_min_thr = np.deg2rad(-90)
+limit_max_thr = np.deg2rad(90)
 limit_min_th0 = np.deg2rad(-10)
 limit_max_th0 = np.deg2rad(45)
 limit_min_thk = np.deg2rad(0)
@@ -172,13 +174,15 @@ def node_vel(s):
     v1 = v0 - dthk*l*sin(thk)*dir_thr + (dthr+dth0)*l*cos(thk)*dir_dthr0
     return vr, v0, vk, v1, vt
 
-OBS_MIN = np.array([0, limit_min_th0, limit_min_thk, -max_z, -MAX_SPEED, -MAX_SPEED, -MAX_ROT_SPEED, -MAX_ROT_SPEED, -MAX_SPEED])
-OBS_MAX = np.array([5, limit_max_th0, limit_max_thk,   0, MAX_SPEED , MAX_SPEED , MAX_ROT_SPEED, MAX_ROT_SPEED, MAX_SPEED  ])
+OBS_MIN = np.array([0, 0, limit_min_thr, -max_z, limit_min_th0, limit_min_thk,
+                   -MAX_SPEED, -MAX_SPEED, -MAX_ROT_SPEED, -MAX_SPEED, -MAX_ROT_SPEED, -MAX_ROT_SPEED])
+OBS_MAX = np.array([1, 5, limit_max_thr,      0, limit_max_th0, limit_max_thk,
+                    MAX_SPEED , MAX_SPEED , MAX_ROT_SPEED, MAX_SPEED, MAX_ROT_SPEED, MAX_ROT_SPEED  ])
 
 def obs(s):
     o = s.copy()
     o[0] = 1 if ground(s) else 0
-    return s[1:]
+    return o
 
 def reward(s):
     return 0
