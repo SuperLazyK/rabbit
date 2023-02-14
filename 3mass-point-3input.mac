@@ -120,6 +120,7 @@ Kt_trs: 1/2 * mt * sqsum(xt', yt')$
 L: K0_trs + K1_trs + Kt_trs - U0 - U1 - Ut - 1/2*k*(z)*(z)$
 
 /* CASE1: air  fx0=fy0=0*/
+/*
 X : [xr, yr, thr, th0, thk, thw]$
 dX : [xr', yr', thr', th0', thk', thw']$
 ddX : symbolilze([xr'', yr'', thr'', th0'', thk'', thw''])$
@@ -130,10 +131,12 @@ A:(trigsimp(expand(trigexpand(jacobian(args(rhs)[1], ddX)))))$
 b:(expand(transpose(rhs) - (jacobian(args(rhs)[1], ddX)).transpose(matrix(ddX))))$
 showmatf90(A)$
 showmatf90(b)$
+*/
 
 
 
 /* CASE2: ground*/
+/*
 X : [z, thr, th0, thk, thw]$
 dX : [z', thr', th0', thk', thw']$
 ddX : symbolilze([z'', thr'', th0'', thk'', thw''])$
@@ -142,6 +145,7 @@ A:(trigsimp(expand(trigexpand(jacobian(args(rhs)[1], ddX)))))$
 b:(expand(transpose(rhs) - (jacobian(args(rhs)[1], ddX)).transpose(matrix(ddX))))$
 showmatf90(A)$
 showmatf90(b)$
+*/
 
 /* CASE3: collision */
 /* 
@@ -155,7 +159,7 @@ dX : [xr', yr', z', thr', th0', thk', thw']$
 ddX : symbolilze([xr'', yr'', z'', thr'', th0'', thk'', thw''])$
 rhs : symbolilze(expand(diff(jacobian([L],dX), t) - jacobian([L], X)))$
 A:(trigsimp(expand(trigexpand(subst([z=0], jacobian(args(rhs)[1], ddX))))))$
-A21:submatrix(1,2,A,3,4,5,6)$
+A21:submatrix(1,2,A,3,4,5,6,7)$
 A22:submatrix(1,2,A,1,2)$
 showmatf90(A21)$
 showmatf90(A22)$
