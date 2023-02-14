@@ -35,14 +35,14 @@ c = 0
 
 # ccw is positive
 ref_min_th0 = np.deg2rad(0)
-ref_max_th0 = np.deg2rad(20)
+ref_max_th0 = np.deg2rad(25)
 ref_min_thk = np.deg2rad(1)
 ref_max_thk = np.deg2rad(15)
 REF_MIN = np.array([ref_min_th0, ref_min_thk])
 REF_MAX = np.array([ref_max_th0, ref_max_thk])
 
 limit_min_th0 = np.deg2rad(-10)
-limit_max_th0 = np.deg2rad(40)
+limit_max_th0 = np.deg2rad(45)
 limit_min_thk = np.deg2rad(0)
 limit_max_thk = np.deg2rad(40)
 
