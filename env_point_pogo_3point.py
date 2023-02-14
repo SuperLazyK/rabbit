@@ -85,17 +85,18 @@ class RabbitViewer():
 
         self.screen.fill(WHITE)
 
-        for i in range(len(ps)-2):
+        for i in range(1, len(ps)-2):
             pygame.draw.line(self.screen, BLACK, ps[i], ps[i+1],  width=int(100 * RSCALE))
         pygame.draw.line(self.screen, BLACK, ps[-2], ps[-1],  width=int(100 * RSCALE))
-        pygame.draw.line(self.screen, BLACK, ps[1], ps[-1],  width=int(100 * RSCALE))
+        pygame.draw.line(self.screen, GREEN, ps[1], ps[-1],  width=int(100 * RSCALE))
+        pygame.draw.line(self.screen, GRAY, ps[0], ps[1],  width=int(100 * RSCALE))
 
         for i in range(len(ps)):
             pygame.draw.circle(self.screen, GRAY, ps[i], 150/5 * np.sqrt(RSCALE))
-        pygame.draw.circle(self.screen, RED, ps[0], 150/5 * np.sqrt(RSCALE))
+        #pygame.draw.circle(self.screen, RED, ps[0], 150/5 * np.sqrt(RSCALE))
         pygame.draw.circle(self.screen, BLUE, ps[4], 150/5 * np.sqrt(RSCALE))
 
-        pygame.draw.circle(self.screen, GREEN, cog, 150/5 * np.sqrt(RSCALE))
+        pygame.draw.circle(self.screen, RED, cog, 150/5 * np.sqrt(RSCALE))
         #pygame.draw.circle(self.screen, YELLOW, head, 150/5 * np.sqrt(RSCALE))
         pygame.draw.line(self.screen, BLACK, [0,SCREEN_SIZE[1]/2 + OFFSET_VERT], [SCREEN_SIZE[0], SCREEN_SIZE[1]/2 + OFFSET_VERT],  width=int(100 * RSCALE))
         #pygame.draw.line(self.screen, BLACK, ps[-2], head,  width=int(100 * RSCALE))

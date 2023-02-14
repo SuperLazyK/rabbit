@@ -25,8 +25,8 @@ m1 = 50
 mt = 7
 M=np.array([mr, m0, mk, m1, mt])
 l = 1.2
-#g  = 0
-g  = 9.8
+g  = 0
+#g  = 9.8
 #g  = -9.8
 k  = 15000 # mgh = 1/2 k x**2 -> T=2*pi sqrt(m/k)
 c = 0
@@ -185,7 +185,12 @@ def obs(s):
     return o
 
 def reward(s):
-    return 0
+    pcog = cog(s)
+    r_y = (energyU(s) + energyTy(s))/2000
+    r_thr = -abs(s[IDX_thr])*2/np.pi
+    r_cogx = -abs(pcog[0]-s[IDX_xr])
+
+    return np.exp(r_y + r_thr + r_cogx)
 
 def init_ref(s):
     return np.array([s[IDX_th0], s[IDX_thk]])
