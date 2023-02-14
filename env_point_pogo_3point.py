@@ -23,11 +23,12 @@ from scipy import interpolate
 pygame.init()
 # input U
 DELTA = 0.001
-#FRAME_RATE=30
-FRAME_RATE=1000
+FRAME_RATE=30
+#FRAME_RATE=1000
 #DELTA = 0.002
 #DELTA = 0.005
-SPEED=1000
+#SPEED=1000
+SPEED=100
 
 NORMAL_MODE=0
 JUMP_MODE=1
@@ -103,9 +104,9 @@ class RabbitViewer():
         #pygame.draw.line(self.screen, BLACK, ps[-2], head,  width=int(100 * RSCALE))
         tmx, tmy, am = mp.moment(state)
         text = self.font.render(f"mode={mode:} t={t:.03f} E={energy:.01f}", True, BLACK)
-        text1 = self.font.render(f"ref={degrees(ref[0]):.01f} {(ref[1]):.02f}", True, BLACK)
+        text1 = self.font.render(f"ref={degrees(ref[0]):.01f} {degrees(ref[1]):.02f} {degrees(ref[2]):.02f}", True, BLACK)
         info = mp.calc_joint_property(state)
-        text2 = self.font.render(f"obs={degrees(info['th0']):.01f} {(info['thk']):.02f}", True, BLACK)
+        text2 = self.font.render(f"obs={degrees(info['th0']):.01f} {degrees(info['thk']):.02f} {degrees(info['thw']):.02f}", True, BLACK)
         text3 = self.font.render(f"moment={tmx:.01f} {tmy:.02f} {am:.02f}", True, BLACK)
         self.screen.blit(text, [300, 50])
         self.screen.blit(text1, [300, 100])
