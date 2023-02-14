@@ -26,7 +26,7 @@ DELTA = 0.001
 FRAME_RATE=30
 #DELTA = 0.002
 #DELTA = 0.005
-SPEED=800
+SPEED=1000
 
 NORMAL_MODE=0
 JUMP_MODE=1
@@ -297,7 +297,7 @@ def exec_cmd(env, v):
     ctr_mode = 'vel'
     if ctr_mode == 'vel':
         k_th0 = SPEED/6*np.pi/360
-        k_a   = SPEED/6 * 0.02
+        k_a   = SPEED/6*np.pi/360
         _, _, done, _ = env.step_vel_control(np.array([k_th0, k_a]) * v)
     else:
         k_th0 = 100000
