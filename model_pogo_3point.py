@@ -25,8 +25,8 @@ m1 = 50
 mt = 7
 M=np.array([mr, m0, mk, m1, mt])
 l = 1.2
-g  = 0
-#g  = 9.8
+#g  = 0
+g  = 9.8
 #g  = -9.8
 k  = 15000 # mgh = 1/2 k x**2 -> T=2*pi sqrt(m/k)
 c = 0
@@ -36,8 +36,8 @@ c = 0
 # ccw is positive
 ref_min_th0 = np.deg2rad(0)
 ref_max_th0 = np.deg2rad(20)
-ref_min_thk = np.deg2rad(10)
-ref_max_thk = np.deg2rad(30)
+ref_min_thk = np.deg2rad(1)
+ref_max_thk = np.deg2rad(15)
 REF_MIN = np.array([ref_min_th0, ref_min_thk])
 REF_MAX = np.array([ref_max_th0, ref_max_thk])
 
@@ -50,12 +50,12 @@ MAX_ROT_SPEED=100
 MAX_SPEED=100
 #MAX_TORQUEK=3000 # arm
 #MAX_TORQUE0=8000 # arm
-MAX_TORQUEK=300 # arm
-MAX_TORQUE0=800 # arm
+MAX_TORQUEK=720 # knee(400Nm) + arm(800N * 0.3m)
+MAX_TORQUE0=800 # arm(800N x 1m)
 
 inf = float('inf')
 #Kp = np.array([4000, 13000])
-Kp = 50*np.array([400, 800])
+Kp = 500*np.array([400, 800])
 #Kp = np.array([400, 800])
 #Kp = np.array([400, 400, 800])
 #Kd = Kp * (0.01)
@@ -197,6 +197,10 @@ def check_invariant(s):
             return False, reason
     if s[IDX_thk] < limit_min_thk or s[IDX_thk] > limit_max_thk:
             reason = f"GAME OVER @ range error thk={s[IDX_thk]:}"
+            return False, reason
+    pc = cog(s)
+    if pc[1] < 0.4:
+            reason = f"GAME OVER @ cog too low cogy={pc[1]:}"
             return False, reason
     return True, ""
 

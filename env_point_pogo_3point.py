@@ -142,10 +142,10 @@ class RabbitEnv():
             if int(os.environ.get('AUTOSAVE', "0")):
                 self.autosave("normal")
 
-        th0 = np.deg2rad(10)
+        th0 = np.deg2rad(0)
         pr = np.array([0, 1])
         thr =  0
-        thk = np.deg2rad(15)
+        thk = np.deg2rad(2)
 
         s = mp.reset_state(pr, thr, th0, thk)
         self.mode = NORMAL_MODE
@@ -188,10 +188,12 @@ class RabbitEnv():
         success, t, s = mp.step(t, s, u, DELTA)
         if not success:
             self.autosave("failure")
-            print("failure!!")
+            print("GAMEOVER : step-failure!!")
             done = True
         else:
             done, reason = self.game_over(s)
+            if done:
+                print(reason)
         reward = self.calc_reward(s, self.mode, t, done)
         self.history.append((self.mode, t, s, ref, u, reward))
 
@@ -259,7 +261,7 @@ class RabbitEnv():
         print(f"--")
         print(f"t:{t:.3f} E: {energy:.2f} mode: {mode:} reward: {reward:}")
         print(f"INPUT: u: {100*(u/mp.max_u())} [%]")
-        print(f"INPUT: ref: th0 {degrees(ref[0]):.2f}  thk {ref[1]:.2f}")
+        print(f"INPUT: ref: th0 {degrees(ref[0]):.2f}  thk {degrees(ref[1]):.2f}")
         print(f"OUTPUT:")
         self.joint_info(frame)
         #mp.print_state(s)
