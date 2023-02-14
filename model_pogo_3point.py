@@ -55,7 +55,7 @@ MAX_TORQUE0=800 # arm(800N x 1m)
 
 inf = float('inf')
 #Kp = np.array([4000, 13000])
-Kp = 500*np.array([400, 800])
+Kp = 5*np.array([400, 800])
 #Kp = np.array([400, 800])
 #Kp = np.array([400, 400, 800])
 #Kd = Kp * (0.01)
