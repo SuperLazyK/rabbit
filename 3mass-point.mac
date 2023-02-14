@@ -53,8 +53,8 @@ l1: l * cos(thk)$
 xk: x0 - l/2 * sin(th0 + thr -thk)$
 yk: y0 + l/2 * cos(th0 + thr -thk)$
 
-x1: x0 - l1 * sin(th0 + thr)$
-y1: y0 + l1 * cos(th0 + thr)$
+x1: x0 - (l1+l0) * sin(th0 + thr)$
+y1: y0 + (l1+l0) * cos(th0 + thr)$
 
 xc: (m0 * x0 + m1 * x1 + mt * xt) / (m0 + m1 + mt) $
 yc: (m0 * y0 + m1 * y1 + mt * yt) / (m0 + m1 + mt) $
