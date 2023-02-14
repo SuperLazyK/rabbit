@@ -22,7 +22,8 @@ from scipy import interpolate
 
 pygame.init()
 # input U
-DELTA = 0.001
+DELTA = 0.002
+#DELTA = 0.001
 FRAME_RATE=30
 #FRAME_RATE=1000
 #DELTA = 0.002
@@ -145,9 +146,12 @@ class RabbitEnv():
             if int(os.environ.get('AUTOSAVE', "0")):
                 self.autosave("normal")
 
-        pr = np.array([0, 1])
+        pr = np.array([0, 0.4])
         thr =  0
-        th0 = np.deg2rad(5)
+        #th0 = np.deg2rad(5)
+        #thk = np.deg2rad(20)
+        #thw = np.deg2rad(-20)
+        th0 = np.deg2rad(-10)
         thk = np.deg2rad(20)
         thw = np.deg2rad(-20)
 
@@ -188,10 +192,14 @@ class RabbitEnv():
 
     def step_plant(self, u, ref=mp.DEFAULT_U):
         _, t, s, _, _, _ = self.history[-1]
-        mode, t, s = mp.step(t, s, u, DELTA)
+        success, mode, t, s = mp.step(t, s, u, DELTA)
         done, reason = self.game_over(s)
         if done:
             print(reason)
+        elif not success:
+            print("failure")
+            print(s)
+            done = True
         reward = self.calc_reward(s, self.mode, t, done)
         self.history.append((mode, t, s, ref, u, reward))
 
@@ -246,7 +254,7 @@ class RabbitEnv():
             return
         _, t, prev_s, _, _, _ = self.history[frame-1]
         _, _, _, ref, u, reward = self.history[frame]
-        mode, t, s = mp.step(t, prev_s, u, DELTA)
+        success, mode, t, s = mp.step(t, prev_s, u, DELTA)
         done, reason = self.game_over(s)
         reward = self.calc_reward(s, mode, t, done)
 
