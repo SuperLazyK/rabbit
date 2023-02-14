@@ -22,8 +22,8 @@ from scipy import interpolate
 
 pygame.init()
 # input U
-DELTA = 0.002
-#DELTA = 0.001
+#DELTA = 0.002
+DELTA = 0.001
 FRAME_RATE=30
 #FRAME_RATE=1000
 #DELTA = 0.002
@@ -157,7 +157,7 @@ class RabbitEnv():
 
         s = mp.reset_state(pr, thr, th0, thk, thw)
         done, msg = self.game_over(s)
-        assert not done, msg
+        assert not done, "???before-start???" + msg
         self.mode = NORMAL_MODE
         t = 0
         u = mp.DEFAULT_U

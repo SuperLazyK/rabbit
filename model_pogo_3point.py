@@ -506,8 +506,9 @@ def airAb(s, u):
 
 def f_ground(s, u):
     A, b, extf = groundAb(s, u)
-    print(np.linalg.det(A))
     if np.linalg.matrix_rank(A) < 5:
+        print(np.linalg.det(A))
+        print(A)
         raise Exception("rank")
     y = np.linalg.solve(A, extf-b).reshape(5)
     f = np.zeros(IDX_MAX)
