@@ -25,6 +25,12 @@ mw = 20
 m1 = 30
 mt = 7
 M=np.array([mr, m0, mk, mw, m1, mt])
+IDX_pr=0
+IDX_p0=1
+IDX_pk=2
+IDX_pw=3
+IDX_p1=4
+IDX_pt=5
 #M=np.array([mr, m0, mk, m1, mt])
 l0 = 0.4
 l1 = 0.5
@@ -237,6 +243,15 @@ def check_invariant(s):
     if s[IDX_thw] < limit_min_thw or s[IDX_thw] > limit_max_thw:
             reason = f"GAME OVER @ range error thw={np.rad2deg(s[IDX_thw]):}"
             return False, reason
+
+    vec_0t = ps[IDX_pt] - ps[IDX_p0]
+    vec_0w = ps[IDX_pw] - ps[IDX_p0]
+    vec_01 = ps[IDX_p1] - ps[IDX_p0]
+
+    if  np.cross(vec_0t, vec_0w) < 0 or np.cross(vec_0t, vec_01) < 0:
+            reason = f"GAME OVER @ line-w1 < line-0t"
+            return False, reason
+
     pc = cog(s)
     if pc[1] < 0.4:
             reason = f"GAME OVER @ cog too low cogy={pc[1]:}"
