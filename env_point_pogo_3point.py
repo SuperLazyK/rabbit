@@ -22,8 +22,8 @@ from scipy import interpolate
 
 pygame.init()
 # input U
-#DELTA = 0.002
-DELTA = 0.001
+DELTA = 0.002
+#DELTA = 0.001
 FRAME_RATE=30
 #FRAME_RATE=1000
 #DELTA = 0.002
