@@ -89,10 +89,10 @@ class RabbitViewer():
         pygame.draw.line(self.screen, BLACK, ps[-2], ps[-1],  width=int(100 * RSCALE))
         pygame.draw.line(self.screen, BLACK, ps[1], ps[-1],  width=int(100 * RSCALE))
 
+        for i in range(len(ps)):
+            pygame.draw.circle(self.screen, GRAY, ps[i], 150/5 * np.sqrt(RSCALE))
         pygame.draw.circle(self.screen, RED, ps[0], 150/5 * np.sqrt(RSCALE))
-        pygame.draw.circle(self.screen, GRAY, ps[1], 150/5 * np.sqrt(RSCALE))
-        pygame.draw.circle(self.screen, YELLOW, ps[2], 150/5 * np.sqrt(RSCALE))
-        pygame.draw.circle(self.screen, GRAY, ps[3], 150/5 * np.sqrt(RSCALE))
+        pygame.draw.circle(self.screen, BLUE, ps[4], 150/5 * np.sqrt(RSCALE))
 
         pygame.draw.circle(self.screen, GREEN, cog, 150/5 * np.sqrt(RSCALE))
         #pygame.draw.circle(self.screen, YELLOW, head, 150/5 * np.sqrt(RSCALE))

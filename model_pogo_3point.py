@@ -138,15 +138,15 @@ def node_pos(s):
 
     dir_thr = np.array([-np.sin(thr), np.cos(thr)])
     dir_thr0 = np.array([-np.sin(thr+th0), np.cos(thr+th0)])
-    #dir_thrk = np.array([-np.sin(thr+th0-thk), np.cos(thr+th0-thk)])
+    dir_thr0k = np.array([-np.sin(thr+th0-thk), np.cos(thr+th0-thk)])
 
     l1 = l * np.cos(thk)
     p0 = pr + (z0 + z) * dir_thr
-    #pk = p0 + l/2 * dir_thr0k
+    pk = p0 + l/2 * dir_thr0k
     pt = p0 + lt * dir_thr
     p1 = p0 + l1 * dir_thr0
 
-    return pr, p0, p1, pt
+    return pr, p0, pk, p1, pt
 
 
 def node_vel(s):
@@ -156,8 +156,10 @@ def node_vel(s):
     thk = s[IDX_thk]
     dir_thr = np.array([-np.sin(thr), np.cos(thr)])
     dir_thr0 = np.array([-np.sin(thr+th0), np.cos(thr+th0)])
+    dir_thr0k = np.array([-np.sin(thr+th0-thk), np.cos(thr+th0-thk)])
     dir_dthr = np.array([-np.cos(thr), -np.sin(thr)])
     dir_dthr0 = np.array([-np.cos(thr+th0), -np.sin(thr+th0)])
+    dir_dthr0k = np.array([-np.cos(thr+th0-thk), -np.sin(thr+th0-thk)])
     vr = np.array([s[IDX_dxr], s[IDX_dyr]])
     dthr = s[IDX_dthr]
     dz   = s[IDX_dz  ]
@@ -165,9 +167,10 @@ def node_vel(s):
     dthk = s[IDX_dthk]
 
     v0 = vr + dz*dir_thr + dthr*(z0+z)*dir_dthr
+    vk = v0 + (dthr+dth0-dthk) * l/2 * dir_dthr0k
     vt = v0 + dthr*lt*dir_dthr
     v1 = v0 - dthk*l*sin(thk)*dir_thr + (dthr+dth0)*l*cos(thk)*dir_dthr0
-    return vr, v0, v1, vt
+    return vr, v0, vk, v1, vt
 
 OBS_MIN = np.array([0, limit_min_th0, limit_min_thk, -max_z, -MAX_SPEED, -MAX_SPEED, -MAX_ROT_SPEED, -MAX_ROT_SPEED, -MAX_SPEED])
 OBS_MAX = np.array([5, limit_max_th0, limit_max_thk,   0, MAX_SPEED , MAX_SPEED , MAX_ROT_SPEED, MAX_ROT_SPEED, MAX_SPEED  ])
