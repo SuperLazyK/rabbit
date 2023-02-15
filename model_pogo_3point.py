@@ -552,30 +552,25 @@ def f_air(s, u):
     return f
 
 def step(t, s, u, dt):
-    try:
-        u = torq_limit(s, u)
-        ret = np.zeros(2*IDX_MAX)
-        if ground(s):
-            impulse = f_ground(s, u) * dt
-            ret[IDX_MAX:] = s[IDX_MAX:] + impulse
-            ret[:IDX_MAX] = s[:IDX_MAX] + ret[IDX_MAX:] * dt
-            if ret[IDX_z] >= 0:
-                mode = "jump"
-                ret = jumpup(ret)
-            else:
-                mode = "ground"
+    u = torq_limit(s, u)
+    ret = np.zeros(2*IDX_MAX)
+    if ground(s):
+        impulse = f_ground(s, u) * dt
+        ret[IDX_MAX:] = s[IDX_MAX:] + impulse
+        ret[:IDX_MAX] = s[:IDX_MAX] + ret[IDX_MAX:] * dt
+        if ret[IDX_z] >= 0:
+            mode = "jump"
+            ret = jumpup(ret)
         else:
-            impulse = f_air(s, u) * dt
-            ret[IDX_MAX:] = s[IDX_MAX:] + impulse
-            ret[:IDX_MAX] = s[:IDX_MAX] + ret[IDX_MAX:] * dt
-            if ret[IDX_yr] <= 0:
-                mode = "land"
-                ret = land(ret)
-            else:
-                mode ="air"
-        return True, 1 if ground(ret) else 0, t+dt, ret
-    except Exception as e:
-        print(e)
-        print(s)
-        return False, 0, t, s
+            mode = "ground"
+    else:
+        impulse = f_air(s, u) * dt
+        ret[IDX_MAX:] = s[IDX_MAX:] + impulse
+        ret[:IDX_MAX] = s[:IDX_MAX] + ret[IDX_MAX:] * dt
+        if ret[IDX_yr] <= 0:
+            mode = "land"
+            ret = land(ret)
+        else:
+            mode ="air"
+    return True, 1 if ground(ret) else 0, t+dt, ret
 
