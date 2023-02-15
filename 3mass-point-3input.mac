@@ -127,12 +127,32 @@ rc:hc[1]*vec_thr[1] + hc[2]*vec_thr[2]$
 rc': ratsimp(trigreduce(diff(rc, t)))$
 thc:hc[1]*vec_dthr[1] + hc[2]*vec_dthr[2]$
 thc': ratsimp(trigreduce(diff(thc, t)))$
+
+f90(symbolilze(rc'));
+f90(symbolilze(thc'));
+
+f90(subst([th0=0, dth0=0],symbolilze(rc')));
+f90(subst([th0=0, dth0=0],symbolilze(thc')));
+dX : [dthk, dthw]$
+rhs:ratsimp(subst([th0=0, dth0=0],symbolilze([rc', thc'])))$
+A:jacobian(rhs,dX)$
+showmatf90(A)$
+/*
+r1:(x1-x0)*vec_thr[1] + (y1-y0)*vec_thr[2]$
+r1': ratsimp(trigreduce(diff(r1, t)))$
+th1:(x1-x0)*vec_dthr[1] + (y1-y0)*vec_dthr[2]$
+th1': ratsimp(trigreduce(diff(th1, t)))$
+
+f90(symbolilze(r1'));
+f90(symbolilze(th1'));
+*/
+/*
 amoment:  ratsimp(trigreduce(trigsimp(m1 * cross(x1-x0, y1-y0, x1'-x0', y1'-y0')
         + mk * cross(xk-x0, yk-y0, xk'-x0', yk'-y0')
         + mw * cross(xw-x0, yw-y0, xw'-x0', yw'-y0')
         + mt * cross(xt-x0, yt-y0, xt'-x0', yt'-y0'))))$
-
 eq_dthr:rhs(solve(symbolilze(amoment)=Ma, dthr)[1]);
+*/
 /*
 */
 /*

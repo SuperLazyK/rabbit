@@ -574,3 +574,17 @@ def step(t, s, u, dt):
     ret[IDX_thr] = normalize_angle(ret[IDX_thr])
     return True, 1 if ground(ret) else 0, t+dt, ret
 
+def invkinematics(s, dr, dth):
+    thk  = s[IDX_thk]
+    thw  = s[IDX_thw]
+    A[0][0] = -(l2*m1*sin(thw+thk)+(l1*mw+l1*m1)*sin(thk))/(mw+mk+m1)
+    A[0][1] = -(l2*m1*sin(thw+thk))/(mw+mk+m1)
+    A[1][0] = (l2*m1*cos(thw+thk)+(l1*mw+l1*m1)*cos(thk))/(mw+mk+m1)
+    A[1][1] = (l2*m1*cos(thw+thk))/(mw+mk+m1)
+    if np.linalg.matrix_rank(A) < 2:
+        print("inv", np.linalg.det(A))
+        print("inv", A)
+        raise Exception("rank")
+    dth = np.linalg.solve(A, np.array([dr, dth])).reshape(6)
+    return dth
+
