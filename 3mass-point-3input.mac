@@ -42,7 +42,8 @@ symbolilze(M):= subst([ diff(xr,t,2)=ddx0
                     ], M)$
 ground(M):= subst([dx0=0 , ddx0=0 , dy0=0, ddy0=0 ], M)$
 air(M):= subst([dz=0 , z=0, ddz=0], M)$
-configure_param(M):= subst([ m0=20
+configure_param(M):= subst([ m0=15
+                           , mk=5
                            , mw=10
                            , m1=40
                            , mt=5
@@ -122,13 +123,16 @@ K0_trs: 1/2 * m0 * sqsum(x0', y0')$
 U1: y1 * m1 * g$
 K1_trs: 1/2 * m1 * sqsum(x1', y1')$
 
+Uk: yk * mk * g$
+Kk_trs: 1/2 * mk * sqsum(xk', yk')$
+
 Uw: yw * mw * g$
 Kw_trs: 1/2 * mw * sqsum(xw', yw')$
 
 Ut: yt * mt * g$
 Kt_trs: 1/2 * mt * sqsum(xt', yt')$
 
-L: K0_trs + Kw_trs + K1_trs + Kt_trs - U0 - U1 - Uw - Ut - 1/2*k*(z)*(z)$
+L: K0_trs + Kk_trs + Kw_trs + K1_trs + Kt_trs - U0 - U1 -Uk - Uw - Ut - 1/2*k*(z)*(z)$
 
 /* CASE1: air  fx0=fy0=0*/
 X : [xr, yr, thr, th0, thk, thw]$
@@ -139,12 +143,10 @@ rhs : air(symbolilze(expand(diff(jacobian([L],dX), t) - jacobian([L], X))))$
 /*
 rhs : configure_param(air(symbolilze(expand(diff(jacobian([L],dX), t) - jacobian([L], X)))))$
 */
-/*
 A:(trigsimp(expand(trigexpand(jacobian(args(rhs)[1], ddX)))))$
 b:(expand(transpose(rhs) - (jacobian(args(rhs)[1], ddX)).transpose(matrix(ddX))))$
 showmatf90(A)$
 showmatf90(b)$
-*/
 /*
 disp(ratsimp(trigsimp(expand(determinant(A)))));
 */
@@ -152,7 +154,6 @@ disp(ratsimp(trigsimp(expand(determinant(A)))));
 
 
 /* CASE2: ground*/
-/*
 X : [z, thr, th0, thk, thw]$
 dX : [z', thr', th0', thk', thw']$
 ddX : symbolilze([z'', thr'', th0'', thk'', thw''])$
@@ -161,7 +162,6 @@ A:(trigsimp(expand(trigexpand(jacobian(args(rhs)[1], ddX)))))$
 b:(expand(transpose(rhs) - (jacobian(args(rhs)[1], ddX)).transpose(matrix(ddX))))$
 showmatf90(A)$
 showmatf90(b)$
-*/
 
 /* CASE3: collision */
 /* 

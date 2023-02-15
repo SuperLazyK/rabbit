@@ -19,8 +19,8 @@ max_z = 0.55
 z0 = 0.55
 lt = 0.83
 mr = 0
-m0 = 20
-mk = 0
+m0 = 18
+mk = 2
 mw = 20
 m1 = 30
 mt = 7
@@ -225,6 +225,7 @@ def reward(s):
         print("TOO MUCH REWARD")
         print(r_y, r_thr, r_cogx)
         print(s)
+        sys.exit(0)
     return r
 
 def init_ref(s):
@@ -253,9 +254,9 @@ def check_invariant(s):
         reason = f"GAME OVER @ line-w1 < line-0t"
         return False, reason
 
-    if energy(s) > 3000:
-        reason = f"GAME OVER @ energy is too big"
-        return False, reason
+    #if energy(s) > 5000:
+    #    reason = f"GAME OVER @ energy is too big"
+    #    return False, reason
 
     pc = cog(s)
     if pc[1] < 0.4:
