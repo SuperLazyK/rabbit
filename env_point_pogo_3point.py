@@ -29,7 +29,8 @@ FRAME_RATE=30
 #DELTA = 0.002
 #DELTA = 0.005
 #SPEED=1000
-SPEED=100
+#SPEED=100
+SPEED=10
 
 NORMAL_MODE=0
 JUMP_MODE=1
@@ -497,9 +498,9 @@ def main():
                 elif keyname == 'k':
                     v =  -np.array([0, 1, 0])
                 elif keyname == 'h':
-                    v = np.array([1, 0, 0])
-                elif keyname == 'l':
                     v = np.array([-1, 0, 0])
+                elif keyname == 'l':
+                    v = np.array([1, 0, 0])
                 elif keyname == 'n':
                     v = np.array([0, 0, 1])
                 elif keyname == 'p':
