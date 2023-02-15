@@ -254,7 +254,7 @@ def check_invariant(s):
         reason = f"GAME OVER @ line-w1 < line-0t"
         return False, reason
 
-    if ground(s) and abs(s[IDX_thr]) > np.deg2rad(45):
+    if ground(s) and abs(s[IDX_thr]) > np.deg2rad(35):
         reason = f"GAME OVER @ thr is too big on ground"
         return False, reason
 

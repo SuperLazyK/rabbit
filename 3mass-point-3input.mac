@@ -70,8 +70,12 @@ y1: yw + l2 * cos(thr + th0 + thk + thw)$
 xc: (m0 * x0 + m1 * x1 + mt * xt) / (m0 + m1 + mt) $
 yc: (m0 * y0 + m1 * y1 + mt * yt) / (m0 + m1 + mt) $
 
-f90(expand(xc - xr))$
-f90(expand(yc - yr))$
+vec_c:[xc - xr, yc - yr]$
+vec_thr:[-sin(thr), cos(thr)]$
+vec_dthr:[-cos(thr), -sin(thr)]$
+f90(expand(vec_c))$
+rc:vec_c[1]*vec_thr[1] + vec_c[2]*vec_thr[2]$
+thc:vec_c[1]*vec_dthr[1] + vec_c[2]*vec_dthr[2]$
 
 /*----------*/
 /* dynamics */
@@ -94,6 +98,8 @@ x1': diff(x1, t)$
 y1': diff(y1, t)$
 xt': diff(xt, t)$
 yt': diff(yt, t)$
+rc': diff(rc, t)$
+thc': diff(thc, t)$
 
 f90(symbolilze(x0'-xr'))$
 f90(symbolilze(y0'-yr'))$
@@ -113,6 +119,11 @@ thw'': diff(thw', t)$
 xr'': diff(xr', t)$
 yr'': diff(yr', t)$
 z'': diff(z', t)$
+rc'': diff(rc', t)$
+thc'': diff(thc', t)$
+
+f90(subst([dthr=0, dz=0], symbolilze(rc')));
+f90(subst([dthr=0, dz=0], symbolilze(thc')));
 
 /*----------*/
 /* Lagrange */
@@ -135,18 +146,22 @@ Kt_trs: 1/2 * mt * sqsum(xt', yt')$
 L: K0_trs + Kk_trs + Kw_trs + K1_trs + Kt_trs - U0 - U1 -Uk - Uw - Ut - 1/2*k*(z)*(z)$
 
 /* CASE1: air  fx0=fy0=0*/
+/*
 X : [xr, yr, thr, th0, thk, thw]$
 dX : [xr', yr', thr', th0', thk', thw']$
 ddX : symbolilze([xr'', yr'', thr'', th0'', thk'', thw''])$
 disp(ddX);
 rhs : air(symbolilze(expand(diff(jacobian([L],dX), t) - jacobian([L], X))))$
+*/
 /*
 rhs : configure_param(air(symbolilze(expand(diff(jacobian([L],dX), t) - jacobian([L], X)))))$
 */
+/*
 A:(trigsimp(expand(trigexpand(jacobian(args(rhs)[1], ddX)))))$
 b:(expand(transpose(rhs) - (jacobian(args(rhs)[1], ddX)).transpose(matrix(ddX))))$
 showmatf90(A)$
 showmatf90(b)$
+*/
 /*
 disp(ratsimp(trigsimp(expand(determinant(A)))));
 */
@@ -154,6 +169,7 @@ disp(ratsimp(trigsimp(expand(determinant(A)))));
 
 
 /* CASE2: ground*/
+/*
 X : [z, thr, th0, thk, thw]$
 dX : [z', thr', th0', thk', thw']$
 ddX : symbolilze([z'', thr'', th0'', thk'', thw''])$
@@ -162,6 +178,7 @@ A:(trigsimp(expand(trigexpand(jacobian(args(rhs)[1], ddX)))))$
 b:(expand(transpose(rhs) - (jacobian(args(rhs)[1], ddX)).transpose(matrix(ddX))))$
 showmatf90(A)$
 showmatf90(b)$
+*/
 
 /* CASE3: collision */
 /* 
@@ -170,6 +187,7 @@ showmatf90(b)$
 <=>
 dth = - A22 ^-1 A21 dx
 */
+/*
 X : [xr, yr, z, thr, th0, thk, thw]$
 dX : [xr', yr', z', thr', th0', thk', thw']$
 ddX : symbolilze([xr'', yr'', z'', thr'', th0'', thk'', thw''])$
@@ -179,4 +197,5 @@ A21:submatrix(1,2,A,3,4,5,6,7)$
 A22:submatrix(1,2,A,1,2)$
 showmatf90(A21)$
 showmatf90(A22)$
+*/
 
