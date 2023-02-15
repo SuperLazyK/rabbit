@@ -124,15 +124,17 @@ hc': diff(hc, t)$
 vec_thr:[-sin(thr), cos(thr)]$
 vec_dthr:[-cos(thr), -sin(thr)]$
 rc:hc[1]*vec_thr[1] + hc[2]*vec_thr[2]$
-rc': diff(rc, t)$
+rc': ratsimp(trigreduce(diff(rc, t)))$
 thc:hc[1]*vec_dthr[1] + hc[2]*vec_dthr[2]$
-thc': diff(thc, t)$
-amoment:  trigsimp(m1 * cross(x1-x0, y1-y0, x1'-x0', y1'-y0')
+thc': ratsimp(trigreduce(diff(thc, t)))$
+amoment:  ratsimp(trigreduce(trigsimp(m1 * cross(x1-x0, y1-y0, x1'-x0', y1'-y0')
         + mk * cross(xk-x0, yk-y0, xk'-x0', yk'-y0')
         + mw * cross(xw-x0, yw-y0, xw'-x0', yw'-y0')
-        + mt * cross(xt-x0, yt-y0, xt'-x0', yt'-y0'))$
+        + mt * cross(xt-x0, yt-y0, xt'-x0', yt'-y0'))))$
 
-eq_dthr:rhs(solve(symbolilze(amoment)=0, dthr)[1]);
+eq_dthr:rhs(solve(symbolilze(amoment)=Ma, dthr)[1]);
+/*
+*/
 /*
 f90(ratsimp(symbolilze(amoment)=0))$
 f90(ratsimp(symbolilze(rc')=drc))$
@@ -140,9 +142,14 @@ f90(ratsimp(symbolilze(thc')=dthc))$
 */
 
 /* CASE0: inverse kinematics(air) */
+/*
 dX : [dth0, dthk, dthw]$
-J:jacobian(ratsimp(symbolilze([eq_dthr, rc', thc'])),dX)$
-showmatf90(J)$
+rhs:ratsimp(symbolilze([eq_dthr, rc', thc']))$
+A:jacobian(rhs,dX)$
+showmatf90(A)$
+b:(expand(rhs - A . dX))$
+showmatf90(b);
+*/
 /*
 disp(ratsimp(trigsimp(expand(determinant(J)))));
 */
