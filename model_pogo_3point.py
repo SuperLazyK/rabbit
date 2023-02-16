@@ -49,7 +49,7 @@ ref_min_th0 = np.deg2rad(-30)
 ref_max_th0 = np.deg2rad(20)
 ref_min_thk = np.deg2rad(1)
 ref_max_thk = np.deg2rad(70)
-ref_min_thw = np.deg2rad(-50)
+ref_min_thw = np.deg2rad(-70)
 ref_max_thw = np.deg2rad(0)
 REF_MIN = np.array([ref_min_th0, ref_min_thk, ref_min_thw])
 REF_MAX = np.array([ref_max_th0, ref_max_thk, ref_max_thw])
@@ -574,17 +574,36 @@ def step(t, s, u, dt):
     ret[IDX_thr] = normalize_angle(ret[IDX_thr])
     return True, 1 if ground(ret) else 0, t+dt, ret
 
-def invkinematics(s, dr, dth):
+def invkinematics3(s, input):
     thk  = s[IDX_thk]
     thw  = s[IDX_thw]
-    A[0][0] = -(l2*m1*sin(thw+thk)+(l1*mw+l1*m1)*sin(thk))/(mw+mk+m1)
-    A[0][1] = -(l2*m1*sin(thw+thk))/(mw+mk+m1)
-    A[1][0] = (l2*m1*cos(thw+thk)+(l1*mw+l1*m1)*cos(thk))/(mw+mk+m1)
-    A[1][1] = (l2*m1*cos(thw+thk))/(mw+mk+m1)
+    th0  = s[IDX_th0]
+    A = np.zeros((3,3))
+    if np.linalg.matrix_rank(A) < 3:
+        print("inv", np.linalg.det(A))
+        print("inv", A)
+        raise Exception("rank")
+    output = np.linalg.solve(A, input).reshape(3)
+    #print("CEHCK IN",  input)
+    #print("CEHCK OUT",  output)
+    return output
+
+def invkinematics2(s, dth, dr):
+    thk  = s[IDX_thk]
+    thw  = s[IDX_thw]
+    th0  = s[IDX_th0]
+    A = np.zeros((2,2))
+    A[0][0] = -(l2*m1*sin(thw+thk+th0)+(l1*mw+l1*m1)*sin(thk+th0))/(mw+mt+mk+m1+m0)
+    A[0][1] = -(l2*m1*sin(thw+thk+th0))/(mw+mt+mk+m1+m0)
+    A[1][0] = (l2*m1*cos(thw+thk+th0)+(l1*mw+l1*m1)*cos(thk+th0))/(mw+mt+mk+m1+m0)
+    A[1][1] = (l2*m1*cos(thw+thk+th0))/(mw+mt+mk+m1+m0)
     if np.linalg.matrix_rank(A) < 2:
         print("inv", np.linalg.det(A))
         print("inv", A)
         raise Exception("rank")
-    dth = np.linalg.solve(A, np.array([dr, dth])).reshape(6)
-    return dth
+    input = np.array([dr, dth])
+    output = np.linalg.solve(A, input).reshape(2)
+    print("CEHCK IN",  input)
+    print("CEHCK OUT",  output)
+    return output
 

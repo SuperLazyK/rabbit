@@ -119,6 +119,8 @@ z'': diff(z', t)$
 /* human upper body center */
 xhc: (m1 * x1 + mk * xk + mw * xw) / (m1 + mk + mw) $
 yhc: (m1 * y1 + mk * yk + mw * yw) / (m1 + mk + mw) $
+xhc:xc$
+yhc:yc$
 hc:[xhc - x0, yhc - y0]$
 hc': diff(hc, t)$
 vec_thr:[-sin(thr), cos(thr)]$
@@ -131,12 +133,6 @@ thc': ratsimp(trigreduce(diff(thc, t)))$
 f90(symbolilze(rc'));
 f90(symbolilze(thc'));
 
-f90(subst([th0=0, dth0=0],symbolilze(rc')));
-f90(subst([th0=0, dth0=0],symbolilze(thc')));
-dX : [dthk, dthw]$
-rhs:ratsimp(subst([th0=0, dth0=0],symbolilze([rc', thc'])))$
-A:jacobian(rhs,dX)$
-showmatf90(A)$
 /*
 r1:(x1-x0)*vec_thr[1] + (y1-y0)*vec_thr[2]$
 r1': ratsimp(trigreduce(diff(r1, t)))$
@@ -146,22 +142,26 @@ th1': ratsimp(trigreduce(diff(th1, t)))$
 f90(symbolilze(r1'));
 f90(symbolilze(th1'));
 */
-/*
 amoment:  ratsimp(trigreduce(trigsimp(m1 * cross(x1-x0, y1-y0, x1'-x0', y1'-y0')
         + mk * cross(xk-x0, yk-y0, xk'-x0', yk'-y0')
         + mw * cross(xw-x0, yw-y0, xw'-x0', yw'-y0')
         + mt * cross(xt-x0, yt-y0, xt'-x0', yt'-y0'))))$
 eq_dthr:rhs(solve(symbolilze(amoment)=Ma, dthr)[1]);
-*/
 /*
 */
-/*
-f90(ratsimp(symbolilze(amoment)=0))$
 f90(ratsimp(symbolilze(rc')=drc))$
 f90(ratsimp(symbolilze(thc')=dthc))$
-*/
+f90(ratsimp(symbolilze(amoment)=0))$
 
-/* CASE0: inverse kinematics(air) */
+/* inverse kinematics(air) */
+dX : [dthk, dthw]$
+rhs:ratsimp(symbolilze([rc', thc']))$
+A:jacobian(rhs,dX)$
+showmatf90(A)$
+b:(expand(rhs - A . dX))$
+showmatf90(b);
+showmatf90(subst([dth0=0], b));
+/* inverse kinematics(air) */
 /*
 dX : [dth0, dthk, dthw]$
 rhs:ratsimp(symbolilze([eq_dthr, rc', thc']))$

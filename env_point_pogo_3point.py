@@ -358,14 +358,29 @@ class RabbitEnv():
 # main
 #----------------------------
 
-def exec_cmd(env, v):
+def exec_cmd(env, v, frame):
     #ctr_mode = 'torq'
-    ctr_mode = 'vel'
+    #ctr_mode = 'vel'
+    ctr_mode = 'inv3'
     if ctr_mode == 'vel':
         k_th0 = SPEED/6*np.pi/360
         k_thk = SPEED/6*np.pi/360
         k_thw = SPEED/6*np.pi/360
         _, _, done, _ = env.step_vel_control(np.array([k_th0, k_thk, k_thw]) * v)
+    elif ctr_mode == 'inv2':
+        k_th0 = SPEED/6*np.pi/360
+        k_r = SPEED/2000
+        k_th = SPEED/6*np.pi/360
+        _, _, s, _, _, _ = env.history[frame]
+        vj = mp.invkinematics2(s, k_th*v[0], k_r*v[1])
+        _, _, done, _ = env.step_vel_control(np.array([k_th0*v[2], vj[0], vj[1]]))
+    elif ctr_mode == 'inv3':
+        k_th0 = SPEED/6*np.pi/360
+        k_r = SPEED/2000
+        k_th = SPEED/6*np.pi/360
+        _, _, s, _, _, _ = env.history[frame]
+        vj = mp.invkinematics3(s, [k_th0, k_r, k_th] * v)
+        _, _, done, _ = env.step_vel_control(vj)
     else:
         k_th0 = 100000
         k_thk = 100000
@@ -532,7 +547,7 @@ def main():
                 last_frame = frame
 
         elif start and not done:
-            done = exec_cmd(env, v)
+            done = exec_cmd(env, v, frame)
             frame = env.num_of_frames() - 1
             env.render(frame=frame)
             env.info()
