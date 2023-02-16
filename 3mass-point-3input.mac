@@ -145,10 +145,24 @@ th1': ratsimp(trigreduce(diff(th1, t)))$
 f90(symbolilze(r1'));
 f90(symbolilze(th1'));
 */
+f90(amoment)$
+amoment:  ratsimp(trigreduce(trigsimp(m1 * cross(x1-xc, y1-yc, x1'-xc', y1'-yc')
+        + mk * cross(xk-xc, yk-yc, xk'-xc', yk'-yc')
+        + mw * cross(xw-xc, yw-yc, xw'-xc', yw'-yc')
+        + m0 * cross(x0-xc, y0-yc, x0'-xc', y0'-yc')
+        + mt * cross(xt-xc, yt-yc, xt'-xc', yt'-yc'))))$
+/*
 amoment:  ratsimp(trigreduce(trigsimp(m1 * cross(x1-xr, y1-yr, x1'-xr', y1'-yr')
         + mk * cross(xk-xr, yk-yr, xk'-xr', yk'-yr')
         + mw * cross(xw-xr, yw-yr, xw'-xr', yw'-yr')
-        + mt * cross(xt-xr, yt-yr, xt'-xr', yt'-yr'))))$
+        + mt * cross(xt-xr, yt-yr, xt'-xr', yt'-yr')
+        + m0 * cross(x0-xr, y0-yr, x0'-xr', y0'-yr')
+        )))$
+amoment:  ratsimp(trigreduce(trigsimp(m1 * cross(x1-x0, y1-y0, x1'-x0', y1'-y0')
+        + mk * cross(xk-x0, yk-y0, xk'-x0', yk'-y0')
+        + mw * cross(xw-x0, yw-y0, xw'-x0', yw'-y0')
+        + mt * cross(xt-x0, yt-y0, xt'-x0', yt'-y0'))))$
+        */
 eq_dthr:rhs(solve(symbolilze(amoment)=Ma, dthr)[1]);
 /*
 */
