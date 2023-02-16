@@ -78,7 +78,7 @@ inf = float('inf')
 #Kp = np.array([4000, 13000])
 #Kp = 20*np.array([400, 800])
 Kp = 10*np.array([400, 800, 800])
-Kp = np.array([400, 400, 800])
+#Kp = np.array([400, 400, 800])
 #Kd = Kp * (0.01)
 Kd = Kp * (0.1)
 
