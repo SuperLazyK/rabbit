@@ -48,8 +48,8 @@ c = 0
 ref_min_th0 = np.deg2rad(-30)
 ref_max_th0 = np.deg2rad(20)
 ref_min_thk = np.deg2rad(1)
-ref_max_thk = np.deg2rad(70)
-ref_min_thw = np.deg2rad(-70)
+ref_max_thk = np.deg2rad(80)
+ref_min_thw = np.deg2rad(-80)
 ref_max_thw = np.deg2rad(0)
 REF_MIN = np.array([ref_min_th0, ref_min_thk, ref_min_thw])
 REF_MAX = np.array([ref_max_th0, ref_max_thk, ref_max_thw])
@@ -575,9 +575,10 @@ def step(t, s, u, dt):
     return True, 1 if ground(ret) else 0, t+dt, ret
 
 def invkinematics3(s, input):
+    # assert input[0] = 0
+    th0  = s[IDX_th0]
     thk  = s[IDX_thk]
     thw  = s[IDX_thw]
-    th0  = s[IDX_th0]
     z = s[IDX_z]
     A = np.zeros((3,3))
     A[0][0] = -(l2*lt*m1*mt*cos(thw+thk+th0)+((-2*l0*l2*m1*mt)-2*l0*l2*m0*m1)*cos(thw+thk)+((-2*l1*l2*m1*mt)-2*l1*l2*m1*mk-2*l1*l2*m0*m1)*cos(thw)+(l1*lt*mt*mw+l1*lt*m1*mt)*cos(thk+th0)+(((-2*l0*l1*mt)-2*l0*l1*m0)*mw-2*l0*l1*m1*mt-2*l0*l1*m0*m1)*cos(thk)+(l0*lt*mt*mw+(l0*lt*mk+l0*lt*m1)*mt)*cos(th0)+(((-l1**2)-l0**2)*mt-l1**2*mk-l2**2*m1+((-l1**2)-l0**2)*m0)*mw+(((-l2**2)-l1**2-l0**2)*m1-l0**2*mk)*mt+(((-l2**2)-l1**2)*m1-l0**2*m0)*mk+((-l2**2)-l1**2-l0**2)*m0*m1)/(2*l2*lt*m1*mt*cos(thw+thk+th0)+((-2*l0*l2*m1*mt)-2*l0*l2*m0*m1)*cos(thw+thk)+((-2*l1*l2*m1*mt)-2*l1*l2*m1*mk-2*l1*l2*m0*m1)*cos(thw)+(2*l1*lt*mt*mw+2*l1*lt*m1*mt)*cos(thk+th0)+(((-2*l0*l1*mt)-2*l0*l1*m0)*mw-2*l0*l1*m1*mt-2*l0*l1*m0*m1)*cos(thk)+(2*l0*lt*mt*mw+(2*l0*lt*mk+2*l0*lt*m1)*mt)*cos(th0)+(((-lt**2)-l1**2-l0**2)*mt-l1**2*mk-l2**2*m1+((-l1**2)-l0**2)*m0)*mw+(((-lt**2)-l0**2)*mk+((-lt**2)-l2**2-l1**2-l0**2)*m1-lt**2*m0)*mt+(((-l2**2)-l1**2)*m1-l0**2*m0)*mk+((-l2**2)-l1**2-l0**2)*m0*m1)

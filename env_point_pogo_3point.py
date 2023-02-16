@@ -367,20 +367,13 @@ def exec_cmd(env, v, frame):
         k_thk = SPEED/6*np.pi/360
         k_thw = SPEED/6*np.pi/360
         _, _, done, _ = env.step_vel_control(np.array([k_th0, k_thk, k_thw]) * v)
-    elif ctr_mode == 'inv2':
-        k_th0 = SPEED/6*np.pi/360
-        k_r = SPEED/2000
-        k_th = SPEED/6*np.pi/360
-        _, _, s, _, _, _ = env.history[frame]
-        vj = mp.invkinematics2(s, k_th*v[0], k_r*v[1])
-        _, _, done, _ = env.step_vel_control(np.array([k_th0*v[2], vj[0], vj[1]]))
     elif ctr_mode == 'inv3':
-        k_thr = SPEED/60*np.pi/360
+        k_th0 = SPEED/6*np.pi/360
         k_r = SPEED/2000
         k_th = SPEED/60*np.pi/360
         _, _, s, _, _, _ = env.history[frame]
-        vj = mp.invkinematics3(s, [k_thr, -k_r, k_th] * v)
-        _, _, done, _ = env.step_vel_control(vj)
+        vj = mp.invkinematics3(s, np.array([0, -k_r, k_th]) * np.array([0, v[1], v[0]]))
+        _, _, done, _ = env.step_vel_control(vj + np.array([k_th0*v[2], 0, 0]))
     else:
         k_th0 = 100000
         k_thk = 100000
