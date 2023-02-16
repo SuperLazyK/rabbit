@@ -360,15 +360,15 @@ class RabbitEnv():
 
 def exec_cmd(env, v, frame):
     #ctr_mode = 'torq'
-    #ctr_mode = 'vel'
-    ctr_mode = 'inv3'
+    ctr_mode = 'vel'
+    #ctr_mode = 'inv3'
     if ctr_mode == 'vel':
         k_th0 = SPEED/6*np.pi/360
         k_thk = SPEED/6*np.pi/360
         k_thw = SPEED/6*np.pi/360
-        _, _, done, _ = env.step_vel_control(np.array([k_th0, k_thk, k_thw]) * v)
+        _, _, done, _ = env.step_vel_control(np.array([k_th0, k_thk, k_thw]) * np.array([v[2], v[1], -v[0]]))
     elif ctr_mode == 'inv3':
-        k_th0 = SPEED/6*np.pi/360
+        k_th0 = 10*SPEED/6*np.pi/360
         k_r = SPEED/2000
         k_th = SPEED/60*np.pi/360
         _, _, s, _, _, _ = env.history[frame]
@@ -513,6 +513,11 @@ def main():
                     v = np.array([0, 0, 1])
                 elif keyname == 'p':
                     v = np.array([0, 0, -1])
+                elif keyname == 'g':
+                    if mp.g == 0:
+                        mp.g=9.8
+                    else:
+                        mp.g=0
             elif event.type == pl.KEYUP:
                 v = mp.DEFAULT_U
 
