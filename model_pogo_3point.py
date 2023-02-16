@@ -579,6 +579,16 @@ def invkinematics3(s, input):
     thw  = s[IDX_thw]
     th0  = s[IDX_th0]
     A = np.zeros((3,3))
+    A[0][0] = -(2*l0*l2*m1*cos(thw+thk)+2*l1*l2*m1*cos(thw)+(2*l0*l1*mw+2*l0*l1*m1)*cos(thk)+(l1**2+l0**2)*mw+l0**2*mk+(l2**2+l1**2+l0**2)*m1)/(2*l0*l2*m1*cos(thw+thk)+2*l1*l2*m1*cos(thw)+(2*l0*l1*mw+2*l0*l1*m1)*cos(thk)+(l1**2+l0**2)*mw+lt**2*mt+l0**2*mk+(l2**2+l1**2+l0**2)*m1)
+    A[0][1] = -(l0*l2*m1*cos(thw+thk)+2*l1*l2*m1*cos(thw)+(l0*l1*mw+l0*l1*m1)*cos(thk)+l1**2*mw+(l2**2+l1**2)*m1)/(2*l0*l2*m1*cos(thw+thk)+2*l1*l2*m1*cos(thw)+(2*l0*l1*mw+2*l0*l1*m1)*cos(thk)+(l1**2+l0**2)*mw+lt**2*mt+l0**2*mk+(l2**2+l1**2+l0**2)*m1)
+    A[0][2] = -(l0*l2*m1*cos(thw+thk)+l1*l2*m1*cos(thw)+l2**2*m1)/(2*l0*l2*m1*cos(thw+thk)+2*l1*l2*m1*cos(thw)+(2*l0*l1*mw+2*l0*l1*m1)*cos(thk)+(l1**2+l0**2)*mw+lt**2*mt+l0**2*mk+(l2**2+l1**2+l0**2)*m1)
+    A[1][0] = -(l2*m1*sin(thw+thk+th0)+(l1*mw+l1*m1)*sin(thk+th0)+(l0*mw+l0*mk+l0*m1)*sin(th0))/(mw+mt+mk+m1+m0)
+    A[1][1] = -(l2*m1*sin(thw+thk+th0)+(l1*mw+l1*m1)*sin(thk+th0))/(mw+mt+mk+m1+m0)
+    A[1][2] = -(l2*m1*sin(thw+thk+th0))/(mw+mt+mk+m1+m0)
+    A[2][0] = (l2*m1*cos(thw+thk+th0)+(l1*mw+l1*m1)*cos(thk+th0)+(l0*mw+l0*mk+l0*m1)*cos(th0))/(mw+mt+mk+m1+m0)
+    A[2][1] = (l2*m1*cos(thw+thk+th0)+(l1*mw+l1*m1)*cos(thk+th0))/(mw+mt+mk+m1+m0)
+    A[2][2] = (l2*m1*cos(thw+thk+th0))/(mw+mt+mk+m1+m0)
+
     if np.linalg.matrix_rank(A) < 3:
         print("inv", np.linalg.det(A))
         print("inv", A)

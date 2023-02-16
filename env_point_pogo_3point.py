@@ -22,8 +22,8 @@ from scipy import interpolate
 
 pygame.init()
 # input U
-DELTA = 0.002
-#DELTA = 0.001
+#DELTA = 0.002
+DELTA = 0.001
 FRAME_RATE=30
 #FRAME_RATE=1000
 #DELTA = 0.002
@@ -375,11 +375,11 @@ def exec_cmd(env, v, frame):
         vj = mp.invkinematics2(s, k_th*v[0], k_r*v[1])
         _, _, done, _ = env.step_vel_control(np.array([k_th0*v[2], vj[0], vj[1]]))
     elif ctr_mode == 'inv3':
-        k_th0 = SPEED/6*np.pi/360
+        k_thr = SPEED/60*np.pi/360
         k_r = SPEED/2000
-        k_th = SPEED/6*np.pi/360
+        k_th = SPEED/60*np.pi/360
         _, _, s, _, _, _ = env.history[frame]
-        vj = mp.invkinematics3(s, [k_th0, k_r, k_th] * v)
+        vj = mp.invkinematics3(s, [k_thr, -k_r, k_th] * v)
         _, _, done, _ = env.step_vel_control(vj)
     else:
         k_th0 = 100000
