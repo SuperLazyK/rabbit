@@ -330,10 +330,11 @@ class RabbitEnv():
             t = tsi[i]
             d = {}
             for field in CSV_FIELDS[1:]:
+                d[field] = data[field][i]
                 if i == 0:
                     d['d'+field] = 0
                 else:
-                    d['d'+field] = (data[field]  [i]  - data[field]  [i-1]) / DELTA
+                    d['d'+field] = (data[field][i]  - data[field]  [i-1]) / DELTA
             for k in d:
                 if 'th' in k:
                     d[k] = radians(d[k])
