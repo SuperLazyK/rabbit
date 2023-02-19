@@ -11,7 +11,7 @@ import time
 import control as ct
 import sys
 #import model_pogo_rot_limit as mp
-import model_pogo_3point as mp
+import model_pogo_simple as mp
 import csv
 import datetime
 import pickle
@@ -35,7 +35,7 @@ SPEED=10
 NORMAL_MODE=0
 JUMP_MODE=1
 FLIP_MODE=2
-CSV_FIELDS=['t', 'prx', 'pry', 'thr', 'z', 'th0', 'thk', 'thw']
+CSV_FIELDS=['t', 'prx', 'pry', 'thr', 'z', 'th0', 'r']
 
 #----------------------------
 # Rendering
@@ -61,10 +61,10 @@ def dump_history_csv(history, filename='state.csv'):
         dic['t'] = t
         dic['ref_th0'] = ref[0]
         dic['ref_thk'] = ref[1]
-        dic['ref_thw'] = ref[2]
-        dic['u_torq0%'] = u[0]/mp.max_u()[0]
-        dic['u_torqk%'] = u[1]/mp.max_u()[1]
-        dic['u_torqw%'] = u[2]/mp.max_u()[2]
+        dic['ref_r'] = ref[2]
+        dic['u_torqr%'] = u[0]/mp.max_u()[0]
+        dic['u_torq0%'] = u[1]/mp.max_u()[1]
+        dic['u_fr%'] = u[2]/mp.max_u()[2]
         dic = mp.calc_joint_property(s, dic)
         data.append(dic)
 
@@ -95,7 +95,7 @@ def dump_plot(history, filename='plot.csv'):
 class RabbitViewer():
     def __init__(self):
         self.screen = pygame.display.set_mode(SCREEN_SIZE)
-        pygame.display.set_caption("pogo-arm")
+        pygame.display.set_caption("pogo-simple")
         self.clock = pygame.time.Clock()
         self.font = pygame.font.SysFont('Calibri', 25, True, False)
 
@@ -123,31 +123,25 @@ class RabbitViewer():
 
         self.screen.fill(WHITE)
 
-        for i in range(1, len(ps)-2):
-            pygame.draw.line(self.screen, BLACK, ps[i], ps[i+1],  width=int(100 * RSCALE))
-        pygame.draw.line(self.screen, BLACK, ps[-2], ps[-1],  width=int(100 * RSCALE))
-        pygame.draw.line(self.screen, GREEN, ps[1], ps[-1],  width=int(100 * RSCALE))
+        pygame.draw.line(self.screen, BLACK, ps[1], ps[2],  width=int(100 * RSCALE))
         pygame.draw.line(self.screen, GRAY, ps[0], ps[1],  width=int(100 * RSCALE))
+        pygame.draw.line(self.screen, GREEN, ps[1], ps[-1],  width=int(100 * RSCALE))
 
-        for i in range(len(ps)):
+        for i in range(1, len(ps)):
             pygame.draw.circle(self.screen, GRAY, ps[i], 150/5 * np.sqrt(RSCALE))
-        #pygame.draw.circle(self.screen, RED, ps[0], 150/5 * np.sqrt(RSCALE))
-        pygame.draw.circle(self.screen, BLUE, ps[4], 150/5 * np.sqrt(RSCALE))
-
+        pygame.draw.circle(self.screen, BLUE, ps[2], 150/5 * np.sqrt(RSCALE))
         pygame.draw.circle(self.screen, RED, cog, 150/5 * np.sqrt(RSCALE))
-        #pygame.draw.circle(self.screen, YELLOW, head, 150/5 * np.sqrt(RSCALE))
         pygame.draw.line(self.screen, BLACK, [0,SCREEN_SIZE[1]/2 + OFFSET_VERT], [SCREEN_SIZE[0], SCREEN_SIZE[1]/2 + OFFSET_VERT],  width=int(100 * RSCALE))
-        #pygame.draw.line(self.screen, BLACK, ps[-2], head,  width=int(100 * RSCALE))
         tmx, tmy, am = mp.moment(state)
         text = self.font.render(f"mode={mode:} t={t:.03f} E={energy:.01f}", True, BLACK)
-        text1 = self.font.render(f"ref={degrees(ref[0]):.01f} {degrees(ref[1]):.02f} {degrees(ref[2]):.02f}", True, BLACK)
+        #text1 = self.font.render(f"ref={degrees(ref[0]):.01f} {degrees(ref[1]):.02f} {degrees(ref[2]):.02f}", True, BLACK)
         info = mp.calc_joint_property(state)
-        text2 = self.font.render(f"obs={degrees(info['th0']):.01f} {degrees(info['thk']):.02f} {degrees(info['thw']):.02f}", True, BLACK)
-        text3 = self.font.render(f"moment={tmx:.01f} {tmy:.02f} {am:.02f}", True, BLACK)
+        #text2 = self.font.render(f"obs={degrees(info['th0']):.01f} {degrees(info['thk']):.02f} {degrees(info['thw']):.02f}", True, BLACK)
+        #text3 = self.font.render(f"moment={tmx:.01f} {tmy:.02f} {am:.02f}", True, BLACK)
         self.screen.blit(text, [300, 50])
-        self.screen.blit(text1, [300, 100])
-        self.screen.blit(text2, [300, 150])
-        self.screen.blit(text3, [300, 200])
+        #self.screen.blit(text1, [300, 100])
+        #self.screen.blit(text2, [300, 150])
+        #self.screen.blit(text3, [300, 200])
         pygame.display.flip()
         self.clock.tick(60)
 
@@ -295,7 +289,7 @@ class RabbitEnv():
         print(f"--")
         print(f"t:{t:.3f} E: {energy:.2f} mode: {mode:} reward: {reward:}")
         print(f"INPUT: u: {100*(u/mp.max_u())} [%]")
-        print(f"INPUT: ref: th0 {degrees(ref[0]):.2f}  thk {degrees(ref[1]):.2f}")
+        #print(f"INPUT: ref: th0 {degrees(ref[0]):.2f}  thk {degrees(ref[1]):.2f}")
         print(f"OUTPUT:")
         mp.print_state(s)
         print(f"--------------")
@@ -339,11 +333,11 @@ class RabbitEnv():
                     np.array([data['prx'][i], data['pry'][i]]),
                     np.deg2rad(data['thr'][i]),
                     np.deg2rad(data['th0'][i]),
-                    np.deg2rad(data['a'][i]),
+                    np.deg2rad(data['r'][i]),
                     np.array([vrx, vry]),
                     np.deg2rad(dthr),
                     np.deg2rad(dth0),
-                    np.deg2rad(da),
+                    np.deg2rad(dr),
                     data['z'][i],
                     dz,
                     )
@@ -361,19 +355,11 @@ class RabbitEnv():
 def exec_cmd(env, v, frame):
     #ctr_mode = 'torq'
     ctr_mode = 'vel'
-    #ctr_mode = 'inv3'
     if ctr_mode == 'vel':
+        k_thr = SPEED/6*np.pi/360
         k_th0 = SPEED/6*np.pi/360
-        k_thk = SPEED/6*np.pi/360
-        k_thw = SPEED/6*np.pi/360
+        k_r   = SPEED/6*np.pi/360
         _, _, done, _ = env.step_vel_control(np.array([k_th0, k_thk, k_thw]) * np.array([v[2], v[1], -v[0]]))
-    elif ctr_mode == 'inv3':
-        k_th0 = 10*SPEED/6*np.pi/360
-        k_r = SPEED/2000
-        k_th = SPEED/60*np.pi/360
-        _, _, s, _, _, _ = env.history[frame]
-        vj = mp.invkinematics3(s, np.array([0, -k_r, k_th]) * np.array([0, v[1], v[0]]))
-        _, _, done, _ = env.step_vel_control(vj + np.array([k_th0*v[2], 0, 0]))
     else:
         k_th0 = 100000
         k_thk = 100000

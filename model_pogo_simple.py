@@ -213,9 +213,6 @@ def check_invariant(s):
             reason = f"GAME OVER @ range error r={s[IDX_thw]:}"
             return False, reason
 
-    vec_0t = ps[IDX_pt] - ps[IDX_p0]
-    vec_0w = ps[IDX_pw] - ps[IDX_p0]
-
     if ground(s) and abs(s[IDX_thr]) > np.deg2rad(45):
         reason = f"GAME OVER @ thr is too big on ground"
         return False, reason
