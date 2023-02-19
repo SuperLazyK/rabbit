@@ -324,7 +324,22 @@ class RabbitEnv():
             for jprop in jprops:
                 ts.append(jprop['t'])
                 xs.append(jprop[field])
-            data[field] = interpolate.interp1d(ts, xs, kind="cubic")(tsi)
+            data[field] = interpolate.interp1d(ts, xs, kind="quadratic")(tsi)
+
+        if True: # thr = 0
+            ts = [jprops[0]['t']-1]
+            xs = [jprops[0]['z'] + jprops[0]['pry']]
+            for jprop in jprops:
+                ts.append(jprop['t'])
+                xs.append(mp.z0 + jprop['z'] +jprop['pry'] )
+            y0 = interpolate.interp1d(ts, xs, kind="quadratic")(tsi)
+            for i in range(tsi.shape[0]):
+                if y0[i] > mp.z0:
+                    data['z'][i] = 0
+                    data['pry'][i] = y0[i] - mp.z0
+                else:
+                    data['z'][i] = y0[i] - mp.z0
+                    data['pry'][i] = 0
 
         for i in range(len(tsi)):
             t = tsi[i]
@@ -342,7 +357,7 @@ class RabbitEnv():
             self.mode = NORMAL_MODE
             mode ='normal'
             ref = mp.init_ref(s)
-            reward = self.calc_reward(s, mode, t, False)
+            reward = 0
             self.history.append((self.mode, t, s, ref, mp.DEFAULT_U, reward))
 
 #----------------------------
