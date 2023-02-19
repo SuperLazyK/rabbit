@@ -184,7 +184,7 @@ class RabbitEnv():
         if len(self.history ) > 1:
             if int(os.environ.get('AUTOSAVE', "0")):
                 self.autosave("normal")
-        s = mp.reset_state()
+        s = mp.reset_state({'pry': 1.2})
         done, msg = self.game_over(s)
         assert not done, "???before-start???" + msg
         self.mode = NORMAL_MODE
@@ -459,8 +459,6 @@ def main():
 
                 elif keyname == 'i':
                     env.info(frame)
-                    plot_data.append(env.history[frame])
-                    dump_plot(plot_data)
 
                 elif keyname == 'u':
                     slow = slow ^ True
@@ -540,6 +538,8 @@ def main():
             frame = env.num_of_frames() - 1
             env.render(frame=frame)
             env.info()
+            plot_data.append(env.history[frame])
+            dump_plot(plot_data)
             if stepOne:
                 start = False
                 stepOne = False
