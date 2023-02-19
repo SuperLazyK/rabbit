@@ -113,13 +113,14 @@ Kt_trs: 1/2 * mt * sqsum(xt', yt')$
 S:1/2*k*(z)*(z)$
 L: K0_trs +  K1_trs + Kt_trs - U0 - U1 - Ut - S$
 E: K0_trs +  K1_trs + Kt_trs + U0 + U1 + Ut + S$
+/*
 dE:diff(E,t)$
 dEa:trigappall(dE)$
 dEa2:symbolilze(dEa)$
 display(dEa2)$
+*/
 /* CASE1: air  fx0=fy0=0*/
 /* A ddX + b = u */
-/*
 X : [xr, yr, thr, th0, r]$
 dX : [xr', yr', thr', th0', r']$
 ddX : symbolilze([xr'', yr'', thr'', th0'', r''])$
@@ -129,9 +130,8 @@ A:(trigsimp(expand(trigexpand(jacobian(args(rhs)[1], ddX)))))$
 b:(expand(transpose(rhs) - (jacobian(args(rhs)[1], ddX)).transpose(matrix(ddX))))$
 showmatf90(A)$
 showmatf90(b)$
-*/
-/*
 disp(ratsimp(trigsimp(expand(determinant(A)))));
+/*
 showmatf90(trigappall(A))$
 showmatf90(trigappall(b))$
 */

@@ -436,11 +436,11 @@ def airAb(s, u):
 
 def f_ground(s, u):
     A, b, extf = groundAb(s, u)
-    if np.linalg.matrix_rank(A) < 5:
+    if np.linalg.matrix_rank(A) < 4:
         print("ground", np.linalg.det(A))
         print("ground", A)
         raise Exception("rank")
-    y = np.linalg.solve(A, extf-b).reshape(5)
+    y = np.linalg.solve(A, extf-b).reshape(4)
     f = np.zeros(IDX_MAX)
     f[IDX_xr]   = 0
     f[IDX_yr]   = 0
@@ -452,11 +452,11 @@ def f_ground(s, u):
 
 def f_air(s, u):
     A, b, extf = airAb(s, u)
-    if np.linalg.matrix_rank(A) < 6:
+    if np.linalg.matrix_rank(A) < 5:
         print("air", np.linalg.det(A))
         print("air", A)
         raise Exception("rank")
-    y = np.linalg.solve(A, extf-b).reshape(6)
+    y = np.linalg.solve(A, extf-b).reshape(5)
     f = np.zeros(IDX_MAX)
     f[IDX_xr]   = y[0]
     f[IDX_yr]   = y[1]

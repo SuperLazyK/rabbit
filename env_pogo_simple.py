@@ -359,20 +359,15 @@ def exec_cmd(env, v, frame):
         k_thr = SPEED/6*np.pi/360
         k_th0 = SPEED/6*np.pi/360
         k_r   = SPEED/6*np.pi/360
-        _, _, done, _ = env.step_vel_control(np.array([k_th0, k_thk, k_thw]) * np.array([v[2], v[1], -v[0]]))
+        _, _, done, _ = env.step_vel_control(np.array([k_thr, k_th0, k_r]) * np.array([v[2], -v[0], -v[1]]))
     else:
-        k_th0 = 100000
-        k_thk = 100000
-        k_thw = 100000
-        _, _, done, _ = env.step_plant(np.array([k_th0, k_thk, k_thw]) * v)
+        _, _, done, _ = env.step_plant(10000 * v) # bangbang
     return done
 
 def fetch_episodes(dirname):
     files = glob.glob(dirname + "/*.pkl")
     files.sort(key=os.path.getmtime)
     return files
-
-
 
 def main():
 
