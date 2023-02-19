@@ -171,6 +171,8 @@ class RabbitEnv():
         self.max_action = mp.REF_MAX
         self.min_obs = mp.OBS_MIN
         self.max_obs = mp.OBS_MAX
+        self.reference = self.load_plot('main_pose.csv')
+        print(self.reference)
 
     def autosave(self, dirname='autodump'):
         print("dump!!!")
@@ -184,7 +186,13 @@ class RabbitEnv():
         if len(self.history ) > 1:
             if int(os.environ.get('AUTOSAVE', "0")):
                 self.autosave("normal")
-        s = mp.reset_state({'pry': 1.2})
+        if random is not None:
+            i = random.randint(len(self.reference))
+            print(i, len(self.reference))
+            s = self.reference[i][2]
+            print(s)
+        else:
+            s = mp.reset_state({'pry': 1.2})
         done, msg = self.game_over(s)
         assert not done, "???before-start???" + msg
         self.mode = NORMAL_MODE
@@ -314,7 +322,7 @@ class RabbitEnv():
             reader = csv.DictReader(f)
             jprops = [{field:float(row[field]) for field in row} for row in reader]
 
-        self.history = []
+        history = []
         tsi = np.arange(jprops[0]['t'], jprops[-1]['t'], DELTA)
         data = {}
         for field in CSV_FIELDS[1:]:
@@ -358,7 +366,8 @@ class RabbitEnv():
             mode ='normal'
             ref = mp.init_ref(s)
             reward = 0
-            self.history.append((self.mode, t, s, ref, mp.DEFAULT_U, reward))
+            history.append((self.mode, t, s, ref, mp.DEFAULT_U, reward))
+        return history
 
 #----------------------------
 # main
@@ -446,7 +455,7 @@ def main():
                     replay = True
                     done = True
                 elif keyname == '0':
-                    env.load_plot('main_pose.csv')
+                    env.history = env.load_plot('main_pose.csv')
                     frame = 0
                     replay = True
                     done = True
