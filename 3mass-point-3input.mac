@@ -209,9 +209,11 @@ Kw_trs: 1/2 * mw * sqsum(xw', yw')$
 Ut: yt * mt * g$
 Kt_trs: 1/2 * mt * sqsum(xt', yt')$
 
-L: K0_trs + Kk_trs + Kw_trs + K1_trs + Kt_trs - U0 - U1 -Uk - Uw - Ut - 1/2*k*(z)*(z)$
-
+S:1/2*k*(z)*(z)$
+L: K0_trs + Kk_trs + Kw_trs + K1_trs + Kt_trs - U0 - U1 - Uk - Uw - Ut - S$
+E: K0_trs + Kk_trs + Kw_trs + K1_trs + Kt_trs + U0 + U1 + Uk + Uw + Ut + S$
 /* CASE1: air  fx0=fy0=0*/
+
 /*
 X : [xr, yr, thr, th0, thk, thw]$
 dX : [xr', yr', thr', th0', thk', thw']$
@@ -235,7 +237,6 @@ disp(ratsimp(trigsimp(expand(determinant(A)))));
 
 
 /* CASE2: ground*/
-/*
 X : [z, thr, th0, thk, thw]$
 dX : [z', thr', th0', thk', thw']$
 ddX : symbolilze([z'', thr'', th0'', thk'', thw''])$
@@ -244,7 +245,7 @@ A:(trigsimp(expand(trigexpand(jacobian(args(rhs)[1], ddX)))))$
 b:(expand(transpose(rhs) - (jacobian(args(rhs)[1], ddX)).transpose(matrix(ddX))))$
 showmatf90(A)$
 showmatf90(b)$
-*/
+dE:ground(symbolilze(diff(E, t)))$
 
 /* CASE3: collision */
 /* 
