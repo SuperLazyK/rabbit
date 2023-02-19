@@ -4,7 +4,7 @@ import pygame_menu
 import numpy as np
 import glob
 from numpy import sin, cos
-from math import degrees
+from math import degrees, radians
 from os import path
 import os
 import time
@@ -112,7 +112,6 @@ class RabbitViewer():
         return self.flip((p - (np.array(SCREEN_SIZE)/2 +  np.array([0, OFFSET_VERT]))) * RSCALE)
 
     def render(self, state, mode, t, ref, u, r):
-
         energy = mp.energy(state)
 
         ps = list(mp.node_pos(state))
@@ -335,24 +334,15 @@ class RabbitEnv():
                     d['d'+field] = 0
                 else:
                     d['d'+field] = (data[field]  [i]  - data[field]  [i-1]) / DELTA
-            s = mp.reset_state(
-                    np.array([data['prx'][i], data['pry'][i]]),
-                    np.deg2rad(data['thr'][i]),
-                    np.deg2rad(data['th0'][i]),
-                    np.deg2rad(data['a'][i]),
-                    np.array([vrx, vry]),
-                    np.deg2rad(dthr),
-                    np.deg2rad(dth0),
-                    np.deg2rad(da),
-                    data['z'][i],
-                    dz,
-                    )
+            for k in d:
+                if 'th' in k:
+                    d[k] = radians(d[k])
+            s = mp.reset_state(d)
             self.mode = NORMAL_MODE
-            u = (0, 0)
             mode ='normal'
             ref = mp.init_ref(s)
             reward = self.calc_reward(s, mode, t, False)
-            self.history.append((self.mode, t, s, ref, u, reward))
+            self.history.append((self.mode, t, s, ref, mp.DEFAULT_U, reward))
 
 #----------------------------
 # main
