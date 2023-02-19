@@ -133,6 +133,7 @@ showmatf90(trigappall(b))$
 */
 
 /* CASE2: ground*/
+/*
 X : [z, thr, th0, r]$
 dX : [z', thr', th0', r']$
 ddX : symbolilze([z'', thr'', th0'', r''])$
@@ -145,3 +146,21 @@ showmatf90(b)$
 disp(ratsimp(trigsimp(expand(determinant(A)))));
 showmatf90(trigappall(A))$
 showmatf90(trigappall(b))$
+*/
+
+/* CASE3: collision */
+/* 
+[A11, A12] dx   = df
+[A21, A22] dth    0
+<=>
+dth = - A22 ^-1 A21 dx
+*/
+X : [xr, yr, z, thr, th0, r]$
+dX : [xr', yr', z', thr', th0', r']$
+ddX : symbolilze([xr'', yr'', z'', thr'', th0'', r''])$
+rhs : symbolilze(expand(diff(jacobian([L],dX), t) - jacobian([L], X)))$
+A:(trigsimp(expand(trigexpand(subst([z=0], jacobian(args(rhs)[1], ddX))))))$
+A21:submatrix(1,2,A,3,4,5,6)$
+A22:submatrix(1,2,A,1,2)$
+showmatf90(A21)$
+showmatf90(A22)$
