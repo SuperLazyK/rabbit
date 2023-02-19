@@ -29,8 +29,8 @@ IDX_p0=1
 IDX_p1=2
 IDX_pt=3
 
-g  = 0
-#g  = 9.8
+#g  = 0
+g  = 9.8
 k  = 15000 # mgh = 1/2 k x**2 -> T=2*pi sqrt(m/k)
 c = 0
 #c = 10
@@ -59,13 +59,14 @@ MAX_SPEED=100
 #MAX_TORQUE0=8000 # arm
 MAX_TORQUER=(lt+z0)*800
 MAX_TORQUE0=700 # knee(400) + west(300)
-MAX_FORCER=1300 # [N]
+#MAX_FORCER=1300 # [N]
+MAX_FORCER=13000 # [N]
 MAX_FORCE = np.array([MAX_TORQUER, MAX_TORQUE0, MAX_FORCER])
 
 inf = float('inf')
 #Kp = np.array([4000, 13000])
 #Kp = 20*np.array([400, 800])
-Kp = 10*np.array([400, 800, 800])
+Kp = 10*np.array([400, 800, 8000])
 #Kp = np.array([400, 400, 800])
 #Kd = Kp * (0.01)
 Kd = Kp * (0.1)
@@ -210,7 +211,7 @@ def check_invariant(s):
             reason = f"GAME OVER @ range error th0={np.rad2deg(s[IDX_th0]):}"
             return False, reason
     if s[IDX_r] < limit_min_r or s[IDX_r] > limit_max_r:
-            reason = f"GAME OVER @ range error r={s[IDX_thw]:}"
+            reason = f"GAME OVER @ range error r={s[IDX_r]:}"
             return False, reason
 
     if ground(s) and abs(s[IDX_thr]) > np.deg2rad(45):
@@ -289,35 +290,35 @@ def impulse_collision(s):
     z    = s[IDX_z]
     thr  = s[IDX_thr]
     th0  = s[IDX_th0]
-    thr  = s[IDX_r]
+    r  = s[IDX_r]
 
     A21 = np.zeros((4,2))
-    A[0][0] = ((-mt)-m1-m0)*sin(thr)
-    A[0][1] = (mt+m1+m0)*cos(thr)
-    A[1][0] = ((-mt)-m1-m0)*cos(thr)*z0+m1*r*sin(th0)*sin(thr)+((-m1*r*cos(th0))-lt*mt)*cos(thr)
-    A[1][1] = ((-mt)-m1-m0)*sin(thr)*z0+((-m1*r*cos(th0))-lt*mt)*sin(thr)-m1*r*sin(th0)*cos(thr)
-    A[2][0] = m1*r*sin(th0)*sin(thr)-m1*r*cos(th0)*cos(thr)
-    A[2][1] = (-m1*r*cos(th0)*sin(thr))-m1*r*sin(th0)*cos(thr)
-    A[3][0] = (-m1*cos(th0)*sin(thr))-m1*sin(th0)*cos(thr)
-    A[3][1] = m1*cos(th0)*cos(thr)-m1*sin(th0)*sin(thr)
+    A21[0][0] = ((-mt)-m1-m0)*sin(thr)
+    A21[0][1] = (mt+m1+m0)*cos(thr)
+    A21[1][0] = ((-mt)-m1-m0)*cos(thr)*z0+m1*r*sin(th0)*sin(thr)+((-m1*r*cos(th0))-lt*mt)*cos(thr)
+    A21[1][1] = ((-mt)-m1-m0)*sin(thr)*z0+((-m1*r*cos(th0))-lt*mt)*sin(thr)-m1*r*sin(th0)*cos(thr)
+    A21[2][0] = m1*r*sin(th0)*sin(thr)-m1*r*cos(th0)*cos(thr)
+    A21[2][1] = (-m1*r*cos(th0)*sin(thr))-m1*r*sin(th0)*cos(thr)
+    A21[3][0] = (-m1*cos(th0)*sin(thr))-m1*sin(th0)*cos(thr)
+    A21[3][1] = m1*cos(th0)*cos(thr)-m1*sin(th0)*sin(thr)
 
     A22 = np.zeros((4,4))
-    A[0][0] = mt+m1+m0
-    A[0][1] = -m1*r*sin(th0)
-    A[0][2] = -m1*r*sin(th0)
-    A[0][3] = m1*cos(th0)
-    A[1][0] = -m1*r*sin(th0)
-    A[1][1] = (mt+m1+m0)*z0**2+(2*m1*r*cos(th0)+2*lt*mt)*z0+m1*r**2+lt**2*mt
-    A[1][2] = m1*r*cos(th0)*z0+m1*r**2
-    A[1][3] = m1*sin(th0)*z0
-    A[2][0] = -m1*r*sin(th0)
-    A[2][1] = m1*r*cos(th0)*z0+m1*r**2
-    A[2][2] = m1*r**2
-    A[2][3] = 0
-    A[3][0] = m1*cos(th0)
-    A[3][1] = m1*sin(th0)*z0
-    A[3][2] = 0
-    A[3][3] = m1
+    A22[0][0] = mt+m1+m0
+    A22[0][1] = -m1*r*sin(th0)
+    A22[0][2] = -m1*r*sin(th0)
+    A22[0][3] = m1*cos(th0)
+    A22[1][0] = -m1*r*sin(th0)
+    A22[1][1] = (mt+m1+m0)*z0**2+(2*m1*r*cos(th0)+2*lt*mt)*z0+m1*r**2+lt**2*mt
+    A22[1][2] = m1*r*cos(th0)*z0+m1*r**2
+    A22[1][3] = m1*sin(th0)*z0
+    A22[2][0] = -m1*r*sin(th0)
+    A22[2][1] = m1*r*cos(th0)*z0+m1*r**2
+    A22[2][2] = m1*r**2
+    A22[2][3] = 0
+    A22[3][0] = m1*cos(th0)
+    A22[3][1] = m1*sin(th0)*z0
+    A22[3][2] = 0
+    A22[3][3] = m1
 
     if np.linalg.matrix_rank(A22) < 4:
         print("collision", A22)
