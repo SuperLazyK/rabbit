@@ -22,8 +22,8 @@ from scipy import interpolate
 
 pygame.init()
 # input U
-#DELTA = 0.002
-DELTA = 0.001
+DELTA = 0.002
+#DELTA = 0.001
 FRAME_RATE=30
 #FRAME_RATE=1000
 #DELTA = 0.002
@@ -336,17 +336,24 @@ class RabbitEnv():
 
         if True: # thr = 0
             ts = [jprops[0]['t']-1]
-            xs = [jprops[0]['z'] + jprops[0]['pry']]
+            xs = [jprops[0]['prx'] - (mp.z0 + jprops[0]['z']) * sin(jprops[0]['thr'])]
+            ys = [jprops[0]['pry'] + (mp.z0 + jprops[0]['z']) * cos(jprops[0]['thr'])]
             for jprop in jprops:
                 ts.append(jprop['t'])
-                xs.append(mp.z0 + jprop['z'] +jprop['pry'] )
-            y0 = interpolate.interp1d(ts, xs, kind="quadratic")(tsi)
+                xs.append(jprop['prx'] - (mp.z0 + jprop['z']) * sin(jprop['thr']))
+                ys.append(jprop['pry'] + (mp.z0 + jprop['z']) * cos(jprop['thr']))
+            x0 = interpolate.interp1d(ts, xs, kind="quadratic")(tsi)
+            y0 = interpolate.interp1d(ts, ys, kind="quadratic")(tsi)
             for i in range(tsi.shape[0]):
-                if y0[i] > mp.z0:
+                thr = data['thr'][i]
+                r = y0[i] / cos(thr)
+                if r >= mp.z0:
                     data['z'][i] = 0
-                    data['pry'][i] = y0[i] - mp.z0
+                    data['prx'][i] = x0[i] + mp.z0 * sin(thr)
+                    data['pry'][i] = y0[i] - mp.z0 * cos(thr)
                 else:
-                    data['z'][i] = y0[i] - mp.z0
+                    data['z'][i] = r - mp.z0
+                    data['prx'][i] = x0[i] + r * sin(thr)
                     data['pry'][i] = 0
 
         for i in range(len(tsi)):
