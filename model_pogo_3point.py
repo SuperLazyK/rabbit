@@ -14,6 +14,8 @@ def debug_print(x):
 def normalize_angle(x):
     return (x + np. pi) % (2 * np.pi) - np.pi
 
+compensation = True
+
 # Pogo-rotation-knee-phy
 max_z = 0.55
 z0 = 0.55
@@ -36,8 +38,8 @@ l0 = 0.4
 l1 = 0.5
 l2 = 0.35
 #l = 1.2
-#g  = 0
-g  = 9.8
+g  = 0
+#g  = 9.8
 #g  = -9.8
 k  = 15000 # mgh = 1/2 k x**2 -> T=2*pi sqrt(m/k)
 c = 0
@@ -81,6 +83,8 @@ Kp = 10*np.array([400, 800, 800])
 #Kp = np.array([400, 400, 800])
 #Kd = Kp * (0.01)
 Kd = Kp * (0.1)
+Kpc = 100
+Kdc = Kpc * 4
 
 #-----------------
 # State
@@ -309,8 +313,23 @@ def pdcontrol(s, ref):
     debug_print(f"PD-ref: {np.rad2deg(ref[0])} {np.rad2deg(ref[1])} {np.rad2deg(ref[2])} ")
     debug_print(f"PD-obs: {np.rad2deg(ob[0])}  {np.rad2deg(ob[1])}  {np.rad2deg(ob[2])} ")
     debug_print(f"PD-vel: {dob}")
-    ret = err * Kp - Kd * dob
+
+    pos_pid = err * Kp - Kd * dob
+
+    if not compensation:
+        return pos_pid
+
+    acc = err * Kpc - Kdc * dob
+
+    if ground(s):
+        A, b, extf = groundAb(s, u)
+        ret = A[2:,:] * acc + b[2:]
+    else:
+        A, b, extf = airAb(s, u)
+        ret = A[3:,:] * acc + b[3:]
+
     return ret
+
 
 
 def ground(s):
@@ -398,7 +417,12 @@ def land(s):
     ret[IDX_MAX:] = d
     return ret
 
+cachedAbf = None
+cachedS = None
+
 def groundAb(s, u):
+    if cachedS == s and cachedAbf is not None:
+        return cachedAbf
     z    = s[IDX_z]
     thr  = s[IDX_thr]
     th0  = s[IDX_th0]
@@ -449,10 +473,15 @@ def groundAb(s, u):
     b[2] = dthr**2*l2*m1*cos(thr)*sin(thw+thr+thk+th0)*z0-dthr**2*l2*m1*sin(thr)*cos(thw+thr+thk+th0)*z0+dthr**2*l1*mw*cos(thr)*sin(thr+thk+th0)*z0+dthr**2*l1*m1*cos(thr)*sin(thr+thk+th0)*z0-dthr**2*l1*mw*sin(thr)*cos(thr+thk+th0)*z0-dthr**2*l1*m1*sin(thr)*cos(thr+thk+th0)*z0+dthr**2*l0*mw*cos(thr)*sin(thr+th0)*z0+dthr**2*l0*mk*cos(thr)*sin(thr+th0)*z0+dthr**2*l0*m1*cos(thr)*sin(thr+th0)*z0-dthr**2*l0*mw*sin(thr)*cos(thr+th0)*z0-dthr**2*l0*mk*sin(thr)*cos(thr+th0)*z0-dthr**2*l0*m1*sin(thr)*cos(thr+th0)*z0+dthr**2*l2*m1*cos(thr)*sin(thw+thr+thk+th0)*z-dthr**2*l2*m1*sin(thr)*cos(thw+thr+thk+th0)*z+dthr**2*l1*mw*cos(thr)*sin(thr+thk+th0)*z+dthr**2*l1*m1*cos(thr)*sin(thr+thk+th0)*z-dthr**2*l1*mw*sin(thr)*cos(thr+thk+th0)*z-dthr**2*l1*m1*sin(thr)*cos(thr+thk+th0)*z+dthr**2*l0*mw*cos(thr)*sin(thr+th0)*z+dthr**2*l0*mk*cos(thr)*sin(thr+th0)*z+dthr**2*l0*m1*cos(thr)*sin(thr+th0)*z-dthr**2*l0*mw*sin(thr)*cos(thr+th0)*z-dthr**2*l0*mk*sin(thr)*cos(thr+th0)*z-dthr**2*l0*m1*sin(thr)*cos(thr+th0)*z-dthw**2*l1*l2*m1*cos(thr+thk+th0)*sin(thw+thr+thk+th0)-2*dthr*dthw*l1*l2*m1*cos(thr+thk+th0)*sin(thw+thr+thk+th0)-2*dthk*dthw*l1*l2*m1*cos(thr+thk+th0)*sin(thw+thr+thk+th0)-2*dth0*dthw*l1*l2*m1*cos(thr+thk+th0)*sin(thw+thr+thk+th0)-dthw**2*l0*l2*m1*cos(thr+th0)*sin(thw+thr+thk+th0)-2*dthr*dthw*l0*l2*m1*cos(thr+th0)*sin(thw+thr+thk+th0)-2*dthk*dthw*l0*l2*m1*cos(thr+th0)*sin(thw+thr+thk+th0)-2*dth0*dthw*l0*l2*m1*cos(thr+th0)*sin(thw+thr+thk+th0)-2*dthk*dthr*l0*l2*m1*cos(thr+th0)*sin(thw+thr+thk+th0)-dthk**2*l0*l2*m1*cos(thr+th0)*sin(thw+thr+thk+th0)-2*dth0*dthk*l0*l2*m1*cos(thr+th0)*sin(thw+thr+thk+th0)+2*dthr*dz*l2*m1*sin(thr)*sin(thw+thr+thk+th0)-g*l2*m1*sin(thw+thr+thk+th0)+dthw**2*l1*l2*m1*sin(thr+thk+th0)*cos(thw+thr+thk+th0)+2*dthr*dthw*l1*l2*m1*sin(thr+thk+th0)*cos(thw+thr+thk+th0)+2*dthk*dthw*l1*l2*m1*sin(thr+thk+th0)*cos(thw+thr+thk+th0)+2*dth0*dthw*l1*l2*m1*sin(thr+thk+th0)*cos(thw+thr+thk+th0)+dthw**2*l0*l2*m1*sin(thr+th0)*cos(thw+thr+thk+th0)+2*dthr*dthw*l0*l2*m1*sin(thr+th0)*cos(thw+thr+thk+th0)+2*dthk*dthw*l0*l2*m1*sin(thr+th0)*cos(thw+thr+thk+th0)+2*dth0*dthw*l0*l2*m1*sin(thr+th0)*cos(thw+thr+thk+th0)+2*dthk*dthr*l0*l2*m1*sin(thr+th0)*cos(thw+thr+thk+th0)+dthk**2*l0*l2*m1*sin(thr+th0)*cos(thw+thr+thk+th0)+2*dth0*dthk*l0*l2*m1*sin(thr+th0)*cos(thw+thr+thk+th0)+2*dthr*dz*l2*m1*cos(thr)*cos(thw+thr+thk+th0)-2*dthk*dthr*l0*l1*mw*cos(thr+th0)*sin(thr+thk+th0)-dthk**2*l0*l1*mw*cos(thr+th0)*sin(thr+thk+th0)-2*dth0*dthk*l0*l1*mw*cos(thr+th0)*sin(thr+thk+th0)-2*dthk*dthr*l0*l1*m1*cos(thr+th0)*sin(thr+thk+th0)-dthk**2*l0*l1*m1*cos(thr+th0)*sin(thr+thk+th0)-2*dth0*dthk*l0*l1*m1*cos(thr+th0)*sin(thr+thk+th0)+2*dthr*dz*l1*mw*sin(thr)*sin(thr+thk+th0)+2*dthr*dz*l1*m1*sin(thr)*sin(thr+thk+th0)-g*l1*mw*sin(thr+thk+th0)-g*l1*m1*sin(thr+thk+th0)+2*dthk*dthr*l0*l1*mw*sin(thr+th0)*cos(thr+thk+th0)+dthk**2*l0*l1*mw*sin(thr+th0)*cos(thr+thk+th0)+2*dth0*dthk*l0*l1*mw*sin(thr+th0)*cos(thr+thk+th0)+2*dthk*dthr*l0*l1*m1*sin(thr+th0)*cos(thr+thk+th0)+dthk**2*l0*l1*m1*sin(thr+th0)*cos(thr+thk+th0)+2*dth0*dthk*l0*l1*m1*sin(thr+th0)*cos(thr+thk+th0)+2*dthr*dz*l1*mw*cos(thr)*cos(thr+thk+th0)+2*dthr*dz*l1*m1*cos(thr)*cos(thr+thk+th0)+2*dthr*dz*l0*mw*sin(thr)*sin(thr+th0)+2*dthr*dz*l0*mk*sin(thr)*sin(thr+th0)+2*dthr*dz*l0*m1*sin(thr)*sin(thr+th0)-g*l0*mw*sin(thr+th0)-g*l0*mk*sin(thr+th0)-g*l0*m1*sin(thr+th0)+2*dthr*dz*l0*mw*cos(thr)*cos(thr+th0)+2*dthr*dz*l0*mk*cos(thr)*cos(thr+th0)+2*dthr*dz*l0*m1*cos(thr)*cos(thr+th0)
     b[3] = dthr**2*l2*m1*cos(thr)*sin(thw+thr+thk+th0)*z0-dthr**2*l2*m1*sin(thr)*cos(thw+thr+thk+th0)*z0+dthr**2*l1*mw*cos(thr)*sin(thr+thk+th0)*z0+dthr**2*l1*m1*cos(thr)*sin(thr+thk+th0)*z0-dthr**2*l1*mw*sin(thr)*cos(thr+thk+th0)*z0-dthr**2*l1*m1*sin(thr)*cos(thr+thk+th0)*z0+dthr**2*l2*m1*cos(thr)*sin(thw+thr+thk+th0)*z-dthr**2*l2*m1*sin(thr)*cos(thw+thr+thk+th0)*z+dthr**2*l1*mw*cos(thr)*sin(thr+thk+th0)*z+dthr**2*l1*m1*cos(thr)*sin(thr+thk+th0)*z-dthr**2*l1*mw*sin(thr)*cos(thr+thk+th0)*z-dthr**2*l1*m1*sin(thr)*cos(thr+thk+th0)*z-dthw**2*l1*l2*m1*cos(thr+thk+th0)*sin(thw+thr+thk+th0)-2*dthr*dthw*l1*l2*m1*cos(thr+thk+th0)*sin(thw+thr+thk+th0)-2*dthk*dthw*l1*l2*m1*cos(thr+thk+th0)*sin(thw+thr+thk+th0)-2*dth0*dthw*l1*l2*m1*cos(thr+thk+th0)*sin(thw+thr+thk+th0)+dthr**2*l0*l2*m1*cos(thr+th0)*sin(thw+thr+thk+th0)+2*dth0*dthr*l0*l2*m1*cos(thr+th0)*sin(thw+thr+thk+th0)+dth0**2*l0*l2*m1*cos(thr+th0)*sin(thw+thr+thk+th0)+2*dthr*dz*l2*m1*sin(thr)*sin(thw+thr+thk+th0)-g*l2*m1*sin(thw+thr+thk+th0)+dthw**2*l1*l2*m1*sin(thr+thk+th0)*cos(thw+thr+thk+th0)+2*dthr*dthw*l1*l2*m1*sin(thr+thk+th0)*cos(thw+thr+thk+th0)+2*dthk*dthw*l1*l2*m1*sin(thr+thk+th0)*cos(thw+thr+thk+th0)+2*dth0*dthw*l1*l2*m1*sin(thr+thk+th0)*cos(thw+thr+thk+th0)-dthr**2*l0*l2*m1*sin(thr+th0)*cos(thw+thr+thk+th0)-2*dth0*dthr*l0*l2*m1*sin(thr+th0)*cos(thw+thr+thk+th0)-dth0**2*l0*l2*m1*sin(thr+th0)*cos(thw+thr+thk+th0)+2*dthr*dz*l2*m1*cos(thr)*cos(thw+thr+thk+th0)+dthr**2*l0*l1*mw*cos(thr+th0)*sin(thr+thk+th0)+2*dth0*dthr*l0*l1*mw*cos(thr+th0)*sin(thr+thk+th0)+dth0**2*l0*l1*mw*cos(thr+th0)*sin(thr+thk+th0)+dthr**2*l0*l1*m1*cos(thr+th0)*sin(thr+thk+th0)+2*dth0*dthr*l0*l1*m1*cos(thr+th0)*sin(thr+thk+th0)+dth0**2*l0*l1*m1*cos(thr+th0)*sin(thr+thk+th0)+2*dthr*dz*l1*mw*sin(thr)*sin(thr+thk+th0)+2*dthr*dz*l1*m1*sin(thr)*sin(thr+thk+th0)-g*l1*mw*sin(thr+thk+th0)-g*l1*m1*sin(thr+thk+th0)-dthr**2*l0*l1*mw*sin(thr+th0)*cos(thr+thk+th0)-2*dth0*dthr*l0*l1*mw*sin(thr+th0)*cos(thr+thk+th0)-dth0**2*l0*l1*mw*sin(thr+th0)*cos(thr+thk+th0)-dthr**2*l0*l1*m1*sin(thr+th0)*cos(thr+thk+th0)-2*dth0*dthr*l0*l1*m1*sin(thr+th0)*cos(thr+thk+th0)-dth0**2*l0*l1*m1*sin(thr+th0)*cos(thr+thk+th0)+2*dthr*dz*l1*mw*cos(thr)*cos(thr+thk+th0)+2*dthr*dz*l1*m1*cos(thr)*cos(thr+thk+th0)
     b[4] = dthr**2*l2*m1*cos(thr)*sin(thw+thr+thk+th0)*z0-dthr**2*l2*m1*sin(thr)*cos(thw+thr+thk+th0)*z0+dthr**2*l2*m1*cos(thr)*sin(thw+thr+thk+th0)*z-dthr**2*l2*m1*sin(thr)*cos(thw+thr+thk+th0)*z+dthr**2*l1*l2*m1*cos(thr+thk+th0)*sin(thw+thr+thk+th0)+2*dthk*dthr*l1*l2*m1*cos(thr+thk+th0)*sin(thw+thr+thk+th0)+2*dth0*dthr*l1*l2*m1*cos(thr+thk+th0)*sin(thw+thr+thk+th0)+dthk**2*l1*l2*m1*cos(thr+thk+th0)*sin(thw+thr+thk+th0)+2*dth0*dthk*l1*l2*m1*cos(thr+thk+th0)*sin(thw+thr+thk+th0)+dth0**2*l1*l2*m1*cos(thr+thk+th0)*sin(thw+thr+thk+th0)+dthr**2*l0*l2*m1*cos(thr+th0)*sin(thw+thr+thk+th0)+2*dth0*dthr*l0*l2*m1*cos(thr+th0)*sin(thw+thr+thk+th0)+dth0**2*l0*l2*m1*cos(thr+th0)*sin(thw+thr+thk+th0)+2*dthr*dz*l2*m1*sin(thr)*sin(thw+thr+thk+th0)-g*l2*m1*sin(thw+thr+thk+th0)-dthr**2*l1*l2*m1*sin(thr+thk+th0)*cos(thw+thr+thk+th0)-2*dthk*dthr*l1*l2*m1*sin(thr+thk+th0)*cos(thw+thr+thk+th0)-2*dth0*dthr*l1*l2*m1*sin(thr+thk+th0)*cos(thw+thr+thk+th0)-dthk**2*l1*l2*m1*sin(thr+thk+th0)*cos(thw+thr+thk+th0)-2*dth0*dthk*l1*l2*m1*sin(thr+thk+th0)*cos(thw+thr+thk+th0)-dth0**2*l1*l2*m1*sin(thr+thk+th0)*cos(thw+thr+thk+th0)-dthr**2*l0*l2*m1*sin(thr+th0)*cos(thw+thr+thk+th0)-2*dth0*dthr*l0*l2*m1*sin(thr+th0)*cos(thw+thr+thk+th0)-dth0**2*l0*l2*m1*sin(thr+th0)*cos(thw+thr+thk+th0)+2*dthr*dz*l2*m1*cos(thr)*cos(thw+thr+thk+th0)
+
+    cachedS = s
+    cachedAbf = (A, b, extf)
     return A, b, extf
 
 
 def airAb(s, u):
+    if cachedS == s and cachedAbf is not None:
+        return cachedAbf
     xr   = s[IDX_xr]
     yr   = s[IDX_yr]
     thr  = s[IDX_thr]
@@ -514,6 +543,8 @@ def airAb(s, u):
     b[4] = dthr**2*l2*m1*cos(thr)*sin(thw+thr+thk+th0)*z0-dthr**2*l2*m1*sin(thr)*cos(thw+thr+thk+th0)*z0+dthr**2*l1*mw*cos(thr)*sin(thr+thk+th0)*z0+dthr**2*l1*m1*cos(thr)*sin(thr+thk+th0)*z0-dthr**2*l1*mw*sin(thr)*cos(thr+thk+th0)*z0-dthr**2*l1*m1*sin(thr)*cos(thr+thk+th0)*z0-dthw**2*l1*l2*m1*cos(thr+thk+th0)*sin(thw+thr+thk+th0)-2*dthr*dthw*l1*l2*m1*cos(thr+thk+th0)*sin(thw+thr+thk+th0)-2*dthk*dthw*l1*l2*m1*cos(thr+thk+th0)*sin(thw+thr+thk+th0)-2*dth0*dthw*l1*l2*m1*cos(thr+thk+th0)*sin(thw+thr+thk+th0)+dthr**2*l0*l2*m1*cos(thr+th0)*sin(thw+thr+thk+th0)+2*dth0*dthr*l0*l2*m1*cos(thr+th0)*sin(thw+thr+thk+th0)+dth0**2*l0*l2*m1*cos(thr+th0)*sin(thw+thr+thk+th0)-g*l2*m1*sin(thw+thr+thk+th0)+dthw**2*l1*l2*m1*sin(thr+thk+th0)*cos(thw+thr+thk+th0)+2*dthr*dthw*l1*l2*m1*sin(thr+thk+th0)*cos(thw+thr+thk+th0)+2*dthk*dthw*l1*l2*m1*sin(thr+thk+th0)*cos(thw+thr+thk+th0)+2*dth0*dthw*l1*l2*m1*sin(thr+thk+th0)*cos(thw+thr+thk+th0)-dthr**2*l0*l2*m1*sin(thr+th0)*cos(thw+thr+thk+th0)-2*dth0*dthr*l0*l2*m1*sin(thr+th0)*cos(thw+thr+thk+th0)-dth0**2*l0*l2*m1*sin(thr+th0)*cos(thw+thr+thk+th0)+dthr**2*l0*l1*mw*cos(thr+th0)*sin(thr+thk+th0)+2*dth0*dthr*l0*l1*mw*cos(thr+th0)*sin(thr+thk+th0)+dth0**2*l0*l1*mw*cos(thr+th0)*sin(thr+thk+th0)+dthr**2*l0*l1*m1*cos(thr+th0)*sin(thr+thk+th0)+2*dth0*dthr*l0*l1*m1*cos(thr+th0)*sin(thr+thk+th0)+dth0**2*l0*l1*m1*cos(thr+th0)*sin(thr+thk+th0)-g*l1*mw*sin(thr+thk+th0)-g*l1*m1*sin(thr+thk+th0)-dthr**2*l0*l1*mw*sin(thr+th0)*cos(thr+thk+th0)-2*dth0*dthr*l0*l1*mw*sin(thr+th0)*cos(thr+thk+th0)-dth0**2*l0*l1*mw*sin(thr+th0)*cos(thr+thk+th0)-dthr**2*l0*l1*m1*sin(thr+th0)*cos(thr+thk+th0)-2*dth0*dthr*l0*l1*m1*sin(thr+th0)*cos(thr+thk+th0)-dth0**2*l0*l1*m1*sin(thr+th0)*cos(thr+thk+th0)
     b[5] = dthr**2*l2*m1*cos(thr)*sin(thw+thr+thk+th0)*z0-dthr**2*l2*m1*sin(thr)*cos(thw+thr+thk+th0)*z0+dthr**2*l1*l2*m1*cos(thr+thk+th0)*sin(thw+thr+thk+th0)+2*dthk*dthr*l1*l2*m1*cos(thr+thk+th0)*sin(thw+thr+thk+th0)+2*dth0*dthr*l1*l2*m1*cos(thr+thk+th0)*sin(thw+thr+thk+th0)+dthk**2*l1*l2*m1*cos(thr+thk+th0)*sin(thw+thr+thk+th0)+2*dth0*dthk*l1*l2*m1*cos(thr+thk+th0)*sin(thw+thr+thk+th0)+dth0**2*l1*l2*m1*cos(thr+thk+th0)*sin(thw+thr+thk+th0)+dthr**2*l0*l2*m1*cos(thr+th0)*sin(thw+thr+thk+th0)+2*dth0*dthr*l0*l2*m1*cos(thr+th0)*sin(thw+thr+thk+th0)+dth0**2*l0*l2*m1*cos(thr+th0)*sin(thw+thr+thk+th0)-g*l2*m1*sin(thw+thr+thk+th0)-dthr**2*l1*l2*m1*sin(thr+thk+th0)*cos(thw+thr+thk+th0)-2*dthk*dthr*l1*l2*m1*sin(thr+thk+th0)*cos(thw+thr+thk+th0)-2*dth0*dthr*l1*l2*m1*sin(thr+thk+th0)*cos(thw+thr+thk+th0)-dthk**2*l1*l2*m1*sin(thr+thk+th0)*cos(thw+thr+thk+th0)-2*dth0*dthk*l1*l2*m1*sin(thr+thk+th0)*cos(thw+thr+thk+th0)-dth0**2*l1*l2*m1*sin(thr+thk+th0)*cos(thw+thr+thk+th0)-dthr**2*l0*l2*m1*sin(thr+th0)*cos(thw+thr+thk+th0)-2*dth0*dthr*l0*l2*m1*sin(thr+th0)*cos(thw+thr+thk+th0)-dth0**2*l0*l2*m1*sin(thr+th0)*cos(thw+thr+thk+th0)
 
+    cachedS = s
+    cachedAbf = (A, b, extf)
     return A, b, extf
 
 def f_ground(s, u):
@@ -598,25 +629,6 @@ def invkinematics3(s, input):
     output = np.linalg.solve(A, input).reshape(3)
     #print("CEHCK IN",  input)
     #print("CEHCK OUT",  output)
-    return output
-
-def invkinematics2(s, dth, dr):
-    thk  = s[IDX_thk]
-    thw  = s[IDX_thw]
-    th0  = s[IDX_th0]
-    A = np.zeros((2,2))
-    A[0][0] = -(l2*m1*sin(thw+thk+th0)+(l1*mw+l1*m1)*sin(thk+th0))/(mw+mt+mk+m1+m0)
-    A[0][1] = -(l2*m1*sin(thw+thk+th0))/(mw+mt+mk+m1+m0)
-    A[1][0] = (l2*m1*cos(thw+thk+th0)+(l1*mw+l1*m1)*cos(thk+th0))/(mw+mt+mk+m1+m0)
-    A[1][1] = (l2*m1*cos(thw+thk+th0))/(mw+mt+mk+m1+m0)
-    if np.linalg.matrix_rank(A) < 2:
-        print("inv", np.linalg.det(A))
-        print("inv", A)
-        raise Exception("rank")
-    input = np.array([dr, dth])
-    output = np.linalg.solve(A, input).reshape(2)
-    print("CEHCK IN",  input)
-    print("CEHCK OUT",  output)
     return output
 
 
