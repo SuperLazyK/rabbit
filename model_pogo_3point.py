@@ -158,6 +158,15 @@ def torq_limit(s, u):
 def ref_clip(ref):
     return np.clip(ref, REF_MIN, REF_MAX)
 
+def ref_clip_scale(ref, d):
+    l = np.linalg.norm(d)
+    if l == 0:
+        return ref
+    clipped_ref = ref_clip(ref+d)
+    k = np.amin(np.abs(clipped_ref - ref))
+    vec = d/(l+0.01)
+    return ref_clip(ref + k * vec)
+
 def node_pos(s):
     pr = np.array([s[IDX_xr], s[IDX_yr]])
     thr = s[IDX_thr]

@@ -281,7 +281,7 @@ class RabbitEnv():
 
     def step_vel_control(self, v_ref):
         _, t, s, ref, _, _ = self.history[-1]
-        pos_ref = mp.ref_clip(ref + v_ref)
+        pos_ref = mp.ref_clip_scale(ref, v_ref)
         return self.step_pos_control(pos_ref)
 
     def render(self, frame=-1):
