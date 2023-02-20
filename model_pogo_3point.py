@@ -619,3 +619,25 @@ def invkinematics2(s, dth, dr):
     print("CEHCK OUT",  output)
     return output
 
+
+def adjust_cog(pc, s):
+    thr = s[IDX_thr]
+    th0 = s[IDX_th0]
+    thk = s[IDX_thk]
+    thw = s[IDX_thw]
+    x0 = pc[0]-(-(l2*m1*sin(thw+thr+thk+th0)+(l1*mw+l1*m1)*sin(thr+thk+th0)+(l0*mw+l0*mk+l0*m1)*sin(thr+th0)+lt*mt*sin(thr))/(mw+mt+mk+m1+m0))
+    y0 = pc[1]-((l2*m1*cos(thw+thr+thk+th0)+(l1*mw+l1*m1)*cos(thr+thk+th0)+(l0*mw+l0*mk+l0*m1)*cos(thr+th0)+lt*mt*cos(thr))/(mw+mt+mk+m1+m0))
+    if cos(thr)  < 0.001:
+        r = inf
+    else:
+        r = y0 / cos(thr)
+    if r >= z0:
+        z = 0
+        prx = x0 + z0 * sin(thr)
+        pry = y0 - z0 * cos(thr)
+    else:
+        z = r - z0
+        prx = x0 + r * sin(thr)
+        pry = 0
+
+    return z, prx, pry

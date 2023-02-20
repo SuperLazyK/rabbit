@@ -337,9 +337,8 @@ class RabbitEnv():
     def load_plot(self, filename):
         with open(filename) as f:
             reader = csv.DictReader(f)
-            jprops = [{field:float(row[field]) for field in row} for row in reader]
+            jprops = [{field:radians(float(row[field])) if 'th' in field else float(row[field]) for field in row} for row in reader]
 
-        history = []
         tsi = np.arange(jprops[0]['t'], jprops[-1]['t'], DELTA)
         data = {}
         for field in CSV_FIELDS[1:]:
@@ -353,26 +352,26 @@ class RabbitEnv():
 
         if True: # thr = 0
             ts = [jprops[0]['t']-1]
-            xs = [jprops[0]['prx'] - (mp.z0 + jprops[0]['z']) * sin(jprops[0]['thr'])]
-            ys = [jprops[0]['pry'] + (mp.z0 + jprops[0]['z']) * cos(jprops[0]['thr'])]
-            for jprop in jprops:
+            cog = mp.cog(mp.reset_state((jprops[0])))
+            cogxs = [cog[0]]
+            cogys = [cog[1]]
+            for jprop in jprops: # num of plots
                 ts.append(jprop['t'])
-                xs.append(jprop['prx'] - (mp.z0 + jprop['z']) * sin(jprop['thr']))
-                ys.append(jprop['pry'] + (mp.z0 + jprop['z']) * cos(jprop['thr']))
-            x0 = interpolate.interp1d(ts, xs, kind="quadratic")(tsi)
-            y0 = interpolate.interp1d(ts, ys, kind="quadratic")(tsi)
-            for i in range(tsi.shape[0]):
-                thr = data['thr'][i]
-                r = y0[i] / cos(thr)
-                if r >= mp.z0:
-                    data['z'][i] = 0
-                    data['prx'][i] = x0[i] + mp.z0 * sin(thr)
-                    data['pry'][i] = y0[i] - mp.z0 * cos(thr)
-                else:
-                    data['z'][i] = r - mp.z0
-                    data['prx'][i] = x0[i] + r * sin(thr)
-                    data['pry'][i] = 0
+                cog = mp.cog(mp.reset_state((jprop)))
+                cogxs.append(cog[0])
+                cogys.append(cog[1])
+            cogx0 = interpolate.interp1d(ts, cogxs, kind="quadratic")(tsi)
+            cogy0 = interpolate.interp1d(ts, cogys, kind="quadratic")(tsi)
+            for i in range(tsi.shape[0]): # num of timestep
+                d = {k:data[k][i] for k in data}
+                s = mp.reset_state(d)
+                z, prx, pry = mp.adjust_cog(np.array([cogx0[i], cogy0[i]]), s)
+                data['z'][i] = z
+                data['prx'][i] = prx
+                data['pry'][i] = pry
+                data['thr'][i] = mp.normalize_angle(data['thr'][i])
 
+        history = []
         for i in range(len(tsi)):
             t = tsi[i]
             d = {}
@@ -382,15 +381,13 @@ class RabbitEnv():
                     d['d'+field] = 0
                 else:
                     d['d'+field] = (data[field][i]  - data[field]  [i-1]) / DELTA
-            for k in d:
-                if 'th' in k:
-                    d[k] = radians(d[k])
             s = mp.reset_state(d)
             self.mode = NORMAL_MODE
             mode ='normal'
             ref = mp.init_ref(s)
             reward = 0
             history.append((self.mode, t, s, ref, mp.DEFAULT_U, reward))
+
         return history
 
 #----------------------------
