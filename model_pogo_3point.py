@@ -306,6 +306,16 @@ def moment(s):
     am = sum([M[i]*np.cross(vs[i]-vs[0], vs[i]-ps[0]) for i in range(len(vs))])
     return tm[0], tm[1], am
 
+def calcf(A, b, acc):
+    A11 = A[:-3,:-3]
+    A12 = A[:-3,-3:]
+    A21 = A[-3:,:-3]
+    A22 = A[-3:,-3:]
+    b1 =  b[:-3]
+    b2 =  b[-3:]
+    y = np.linalg.solve(A11, -(A12 @ acc + b1))
+    return A21 @ y + A22 @ acc + b2
+
 def pdcontrol(s, ref):
     dob  = np.array([s[IDX_dth0], s[IDX_dthk], s[IDX_dthw]])
     ob = np.array([s[IDX_th0], s[IDX_thk], s[IDX_thw]])
@@ -322,13 +332,11 @@ def pdcontrol(s, ref):
     acc = err * Kpc - Kdc * dob
 
     if ground(s):
-        A, b, extf = groundAb(s, u)
-        ret = A[2:,:] * acc + b[2:]
+        A, b, extf = groundAb(s)
+        return calcf(A,b,acc)
     else:
-        A, b, extf = airAb(s, u)
-        ret = A[3:,:] * acc + b[3:]
-
-    return ret
+        A, b, extf = airAb(s)
+        return calcf(A,b,acc)
 
 
 
@@ -420,8 +428,9 @@ def land(s):
 cachedAbf = None
 cachedS = None
 
-def groundAb(s, u):
-    if cachedS == s and cachedAbf is not None:
+def groundAb(s, u=np.array([0,0,0])):
+    global cachedS
+    if cachedS is not None and np.allclose(cachedS, s) and cachedAbf is not None:
         return cachedAbf
     z    = s[IDX_z]
     thr  = s[IDX_thr]
@@ -479,8 +488,9 @@ def groundAb(s, u):
     return A, b, extf
 
 
-def airAb(s, u):
-    if cachedS == s and cachedAbf is not None:
+def airAb(s, u=np.array([0,0,0])):
+    global cachedS
+    if cachedS is not None and np.allclose(cachedS, s) and cachedAbf is not None:
         return cachedAbf
     xr   = s[IDX_xr]
     yr   = s[IDX_yr]
