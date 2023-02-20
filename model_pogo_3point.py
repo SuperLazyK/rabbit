@@ -326,7 +326,7 @@ def pdcontrol(s, ref):
 
     pos_pid = err * Kp - Kd * dob
 
-    if not compensation:
+    if not False:
         return pos_pid
 
     acc = err * Kpc - Kdc * dob
@@ -430,6 +430,7 @@ cachedS = None
 
 def groundAb(s, u=np.array([0,0,0])):
     global cachedS
+    global cachedAbf
     if cachedS is not None and np.allclose(cachedS, s) and cachedAbf is not None:
         return cachedAbf
     z    = s[IDX_z]
@@ -490,6 +491,7 @@ def groundAb(s, u=np.array([0,0,0])):
 
 def airAb(s, u=np.array([0,0,0])):
     global cachedS
+    global cachedAbf
     if cachedS is not None and np.allclose(cachedS, s) and cachedAbf is not None:
         return cachedAbf
     xr   = s[IDX_xr]
