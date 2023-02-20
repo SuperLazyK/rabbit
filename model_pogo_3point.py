@@ -39,7 +39,7 @@ l1 = 0.5
 l2 = 0.35
 #l = 1.2
 g  = 0
-#g  = 9.8
+g  = 9.8
 #g  = -9.8
 k  = 15000 # mgh = 1/2 k x**2 -> T=2*pi sqrt(m/k)
 c = 0
@@ -72,8 +72,8 @@ MAX_ROT_SPEED=100
 MAX_SPEED=100
 #MAX_TORQUEK=3000 # arm
 #MAX_TORQUE0=8000 # arm
-MAX_TORQUEK=400 # knee(400Nm) + arm(800N * 0.5m)
-MAX_TORQUEW=400 # knee(400Nm) + arm(800N * 0.5m)
+MAX_TORQUEK=800 # knee(400Nm) + arm(800N * 0.5m)
+MAX_TORQUEW=800 # knee(400Nm) + arm(800N * 0.5m)
 MAX_TORQUE0=800 # arm(800N x 1m)
 
 inf = float('inf')
@@ -83,8 +83,8 @@ Kp = 10*np.array([400, 800, 800])
 #Kp = np.array([400, 400, 800])
 #Kd = Kp * (0.01)
 Kd = Kp * (0.1)
-Kpc = 100
-Kdc = Kpc * 4
+Kpc = 500
+Kdc = Kpc * 0.1
 
 #-----------------
 # State
@@ -311,10 +311,14 @@ def calcf(A, b, acc):
     A12 = A[:-3,-3:]
     A21 = A[-3:,:-3]
     A22 = A[-3:,-3:]
-    b1 =  b[:-3]
-    b2 =  b[-3:]
-    y = np.linalg.solve(A11, -(A12 @ acc + b1))
-    return A21 @ y + A22 @ acc + b2
+    b1 =  b[:-3,:]
+    b2 =  b[-3:,:]
+    a = acc.reshape(3,1)
+    y = np.linalg.solve(A11, -(A12 @ a + b1))
+    ret = A21 @ y + A22 @ a + b2
+    #print("ret=", ret)
+    #print("y=", y)
+    return ret.reshape(3)
 
 def pdcontrol(s, ref):
     dob  = np.array([s[IDX_dth0], s[IDX_dthk], s[IDX_dthw]])
@@ -326,7 +330,7 @@ def pdcontrol(s, ref):
 
     pos_pid = err * Kp - Kd * dob
 
-    if not False:
+    if not compensation:
         return pos_pid
 
     acc = err * Kpc - Kdc * dob
@@ -429,10 +433,10 @@ cachedAbf = None
 cachedS = None
 
 def groundAb(s, u=np.array([0,0,0])):
-    global cachedS
-    global cachedAbf
-    if cachedS is not None and np.allclose(cachedS, s) and cachedAbf is not None:
-        return cachedAbf
+    #global cachedS
+    #global cachedAbf
+    #if cachedS is not None and np.allclose(cachedS, s) and cachedAbf is not None:
+    #    return cachedAbf
     z    = s[IDX_z]
     thr  = s[IDX_thr]
     th0  = s[IDX_th0]
@@ -484,16 +488,18 @@ def groundAb(s, u=np.array([0,0,0])):
     b[3] = dthr**2*l2*m1*cos(thr)*sin(thw+thr+thk+th0)*z0-dthr**2*l2*m1*sin(thr)*cos(thw+thr+thk+th0)*z0+dthr**2*l1*mw*cos(thr)*sin(thr+thk+th0)*z0+dthr**2*l1*m1*cos(thr)*sin(thr+thk+th0)*z0-dthr**2*l1*mw*sin(thr)*cos(thr+thk+th0)*z0-dthr**2*l1*m1*sin(thr)*cos(thr+thk+th0)*z0+dthr**2*l2*m1*cos(thr)*sin(thw+thr+thk+th0)*z-dthr**2*l2*m1*sin(thr)*cos(thw+thr+thk+th0)*z+dthr**2*l1*mw*cos(thr)*sin(thr+thk+th0)*z+dthr**2*l1*m1*cos(thr)*sin(thr+thk+th0)*z-dthr**2*l1*mw*sin(thr)*cos(thr+thk+th0)*z-dthr**2*l1*m1*sin(thr)*cos(thr+thk+th0)*z-dthw**2*l1*l2*m1*cos(thr+thk+th0)*sin(thw+thr+thk+th0)-2*dthr*dthw*l1*l2*m1*cos(thr+thk+th0)*sin(thw+thr+thk+th0)-2*dthk*dthw*l1*l2*m1*cos(thr+thk+th0)*sin(thw+thr+thk+th0)-2*dth0*dthw*l1*l2*m1*cos(thr+thk+th0)*sin(thw+thr+thk+th0)+dthr**2*l0*l2*m1*cos(thr+th0)*sin(thw+thr+thk+th0)+2*dth0*dthr*l0*l2*m1*cos(thr+th0)*sin(thw+thr+thk+th0)+dth0**2*l0*l2*m1*cos(thr+th0)*sin(thw+thr+thk+th0)+2*dthr*dz*l2*m1*sin(thr)*sin(thw+thr+thk+th0)-g*l2*m1*sin(thw+thr+thk+th0)+dthw**2*l1*l2*m1*sin(thr+thk+th0)*cos(thw+thr+thk+th0)+2*dthr*dthw*l1*l2*m1*sin(thr+thk+th0)*cos(thw+thr+thk+th0)+2*dthk*dthw*l1*l2*m1*sin(thr+thk+th0)*cos(thw+thr+thk+th0)+2*dth0*dthw*l1*l2*m1*sin(thr+thk+th0)*cos(thw+thr+thk+th0)-dthr**2*l0*l2*m1*sin(thr+th0)*cos(thw+thr+thk+th0)-2*dth0*dthr*l0*l2*m1*sin(thr+th0)*cos(thw+thr+thk+th0)-dth0**2*l0*l2*m1*sin(thr+th0)*cos(thw+thr+thk+th0)+2*dthr*dz*l2*m1*cos(thr)*cos(thw+thr+thk+th0)+dthr**2*l0*l1*mw*cos(thr+th0)*sin(thr+thk+th0)+2*dth0*dthr*l0*l1*mw*cos(thr+th0)*sin(thr+thk+th0)+dth0**2*l0*l1*mw*cos(thr+th0)*sin(thr+thk+th0)+dthr**2*l0*l1*m1*cos(thr+th0)*sin(thr+thk+th0)+2*dth0*dthr*l0*l1*m1*cos(thr+th0)*sin(thr+thk+th0)+dth0**2*l0*l1*m1*cos(thr+th0)*sin(thr+thk+th0)+2*dthr*dz*l1*mw*sin(thr)*sin(thr+thk+th0)+2*dthr*dz*l1*m1*sin(thr)*sin(thr+thk+th0)-g*l1*mw*sin(thr+thk+th0)-g*l1*m1*sin(thr+thk+th0)-dthr**2*l0*l1*mw*sin(thr+th0)*cos(thr+thk+th0)-2*dth0*dthr*l0*l1*mw*sin(thr+th0)*cos(thr+thk+th0)-dth0**2*l0*l1*mw*sin(thr+th0)*cos(thr+thk+th0)-dthr**2*l0*l1*m1*sin(thr+th0)*cos(thr+thk+th0)-2*dth0*dthr*l0*l1*m1*sin(thr+th0)*cos(thr+thk+th0)-dth0**2*l0*l1*m1*sin(thr+th0)*cos(thr+thk+th0)+2*dthr*dz*l1*mw*cos(thr)*cos(thr+thk+th0)+2*dthr*dz*l1*m1*cos(thr)*cos(thr+thk+th0)
     b[4] = dthr**2*l2*m1*cos(thr)*sin(thw+thr+thk+th0)*z0-dthr**2*l2*m1*sin(thr)*cos(thw+thr+thk+th0)*z0+dthr**2*l2*m1*cos(thr)*sin(thw+thr+thk+th0)*z-dthr**2*l2*m1*sin(thr)*cos(thw+thr+thk+th0)*z+dthr**2*l1*l2*m1*cos(thr+thk+th0)*sin(thw+thr+thk+th0)+2*dthk*dthr*l1*l2*m1*cos(thr+thk+th0)*sin(thw+thr+thk+th0)+2*dth0*dthr*l1*l2*m1*cos(thr+thk+th0)*sin(thw+thr+thk+th0)+dthk**2*l1*l2*m1*cos(thr+thk+th0)*sin(thw+thr+thk+th0)+2*dth0*dthk*l1*l2*m1*cos(thr+thk+th0)*sin(thw+thr+thk+th0)+dth0**2*l1*l2*m1*cos(thr+thk+th0)*sin(thw+thr+thk+th0)+dthr**2*l0*l2*m1*cos(thr+th0)*sin(thw+thr+thk+th0)+2*dth0*dthr*l0*l2*m1*cos(thr+th0)*sin(thw+thr+thk+th0)+dth0**2*l0*l2*m1*cos(thr+th0)*sin(thw+thr+thk+th0)+2*dthr*dz*l2*m1*sin(thr)*sin(thw+thr+thk+th0)-g*l2*m1*sin(thw+thr+thk+th0)-dthr**2*l1*l2*m1*sin(thr+thk+th0)*cos(thw+thr+thk+th0)-2*dthk*dthr*l1*l2*m1*sin(thr+thk+th0)*cos(thw+thr+thk+th0)-2*dth0*dthr*l1*l2*m1*sin(thr+thk+th0)*cos(thw+thr+thk+th0)-dthk**2*l1*l2*m1*sin(thr+thk+th0)*cos(thw+thr+thk+th0)-2*dth0*dthk*l1*l2*m1*sin(thr+thk+th0)*cos(thw+thr+thk+th0)-dth0**2*l1*l2*m1*sin(thr+thk+th0)*cos(thw+thr+thk+th0)-dthr**2*l0*l2*m1*sin(thr+th0)*cos(thw+thr+thk+th0)-2*dth0*dthr*l0*l2*m1*sin(thr+th0)*cos(thw+thr+thk+th0)-dth0**2*l0*l2*m1*sin(thr+th0)*cos(thw+thr+thk+th0)+2*dthr*dz*l2*m1*cos(thr)*cos(thw+thr+thk+th0)
 
-    cachedS = s
-    cachedAbf = (A, b, extf)
+    #cachedS = s
+    #cachedAbf = (A, b, extf)
     return A, b, extf
 
 
 def airAb(s, u=np.array([0,0,0])):
-    global cachedS
-    global cachedAbf
-    if cachedS is not None and np.allclose(cachedS, s) and cachedAbf is not None:
-        return cachedAbf
+    #global cachedS
+    #global cachedAbf
+    #if cachedS is not None and np.allclose(cachedS, s) and cachedAbf is not None:
+    #    print(id(cachedS), id(s))
+    #    print(cachedS - s)
+    #    return cachedAbf
     xr   = s[IDX_xr]
     yr   = s[IDX_yr]
     thr  = s[IDX_thr]
@@ -555,8 +561,8 @@ def airAb(s, u=np.array([0,0,0])):
     b[4] = dthr**2*l2*m1*cos(thr)*sin(thw+thr+thk+th0)*z0-dthr**2*l2*m1*sin(thr)*cos(thw+thr+thk+th0)*z0+dthr**2*l1*mw*cos(thr)*sin(thr+thk+th0)*z0+dthr**2*l1*m1*cos(thr)*sin(thr+thk+th0)*z0-dthr**2*l1*mw*sin(thr)*cos(thr+thk+th0)*z0-dthr**2*l1*m1*sin(thr)*cos(thr+thk+th0)*z0-dthw**2*l1*l2*m1*cos(thr+thk+th0)*sin(thw+thr+thk+th0)-2*dthr*dthw*l1*l2*m1*cos(thr+thk+th0)*sin(thw+thr+thk+th0)-2*dthk*dthw*l1*l2*m1*cos(thr+thk+th0)*sin(thw+thr+thk+th0)-2*dth0*dthw*l1*l2*m1*cos(thr+thk+th0)*sin(thw+thr+thk+th0)+dthr**2*l0*l2*m1*cos(thr+th0)*sin(thw+thr+thk+th0)+2*dth0*dthr*l0*l2*m1*cos(thr+th0)*sin(thw+thr+thk+th0)+dth0**2*l0*l2*m1*cos(thr+th0)*sin(thw+thr+thk+th0)-g*l2*m1*sin(thw+thr+thk+th0)+dthw**2*l1*l2*m1*sin(thr+thk+th0)*cos(thw+thr+thk+th0)+2*dthr*dthw*l1*l2*m1*sin(thr+thk+th0)*cos(thw+thr+thk+th0)+2*dthk*dthw*l1*l2*m1*sin(thr+thk+th0)*cos(thw+thr+thk+th0)+2*dth0*dthw*l1*l2*m1*sin(thr+thk+th0)*cos(thw+thr+thk+th0)-dthr**2*l0*l2*m1*sin(thr+th0)*cos(thw+thr+thk+th0)-2*dth0*dthr*l0*l2*m1*sin(thr+th0)*cos(thw+thr+thk+th0)-dth0**2*l0*l2*m1*sin(thr+th0)*cos(thw+thr+thk+th0)+dthr**2*l0*l1*mw*cos(thr+th0)*sin(thr+thk+th0)+2*dth0*dthr*l0*l1*mw*cos(thr+th0)*sin(thr+thk+th0)+dth0**2*l0*l1*mw*cos(thr+th0)*sin(thr+thk+th0)+dthr**2*l0*l1*m1*cos(thr+th0)*sin(thr+thk+th0)+2*dth0*dthr*l0*l1*m1*cos(thr+th0)*sin(thr+thk+th0)+dth0**2*l0*l1*m1*cos(thr+th0)*sin(thr+thk+th0)-g*l1*mw*sin(thr+thk+th0)-g*l1*m1*sin(thr+thk+th0)-dthr**2*l0*l1*mw*sin(thr+th0)*cos(thr+thk+th0)-2*dth0*dthr*l0*l1*mw*sin(thr+th0)*cos(thr+thk+th0)-dth0**2*l0*l1*mw*sin(thr+th0)*cos(thr+thk+th0)-dthr**2*l0*l1*m1*sin(thr+th0)*cos(thr+thk+th0)-2*dth0*dthr*l0*l1*m1*sin(thr+th0)*cos(thr+thk+th0)-dth0**2*l0*l1*m1*sin(thr+th0)*cos(thr+thk+th0)
     b[5] = dthr**2*l2*m1*cos(thr)*sin(thw+thr+thk+th0)*z0-dthr**2*l2*m1*sin(thr)*cos(thw+thr+thk+th0)*z0+dthr**2*l1*l2*m1*cos(thr+thk+th0)*sin(thw+thr+thk+th0)+2*dthk*dthr*l1*l2*m1*cos(thr+thk+th0)*sin(thw+thr+thk+th0)+2*dth0*dthr*l1*l2*m1*cos(thr+thk+th0)*sin(thw+thr+thk+th0)+dthk**2*l1*l2*m1*cos(thr+thk+th0)*sin(thw+thr+thk+th0)+2*dth0*dthk*l1*l2*m1*cos(thr+thk+th0)*sin(thw+thr+thk+th0)+dth0**2*l1*l2*m1*cos(thr+thk+th0)*sin(thw+thr+thk+th0)+dthr**2*l0*l2*m1*cos(thr+th0)*sin(thw+thr+thk+th0)+2*dth0*dthr*l0*l2*m1*cos(thr+th0)*sin(thw+thr+thk+th0)+dth0**2*l0*l2*m1*cos(thr+th0)*sin(thw+thr+thk+th0)-g*l2*m1*sin(thw+thr+thk+th0)-dthr**2*l1*l2*m1*sin(thr+thk+th0)*cos(thw+thr+thk+th0)-2*dthk*dthr*l1*l2*m1*sin(thr+thk+th0)*cos(thw+thr+thk+th0)-2*dth0*dthr*l1*l2*m1*sin(thr+thk+th0)*cos(thw+thr+thk+th0)-dthk**2*l1*l2*m1*sin(thr+thk+th0)*cos(thw+thr+thk+th0)-2*dth0*dthk*l1*l2*m1*sin(thr+thk+th0)*cos(thw+thr+thk+th0)-dth0**2*l1*l2*m1*sin(thr+thk+th0)*cos(thw+thr+thk+th0)-dthr**2*l0*l2*m1*sin(thr+th0)*cos(thw+thr+thk+th0)-2*dth0*dthr*l0*l2*m1*sin(thr+th0)*cos(thw+thr+thk+th0)-dth0**2*l0*l2*m1*sin(thr+th0)*cos(thw+thr+thk+th0)
 
-    cachedS = s
-    cachedAbf = (A, b, extf)
+    #cachedS = s
+    #cachedAbf = (A, b, extf)
     return A, b, extf
 
 def f_ground(s, u):
@@ -594,7 +600,13 @@ def f_air(s, u):
     return f
 
 def step(t, s, u, dt):
-    u = torq_limit(s, u)
+    u_clipped = torq_limit(s, u)
+    success = np.allclose(u, u_clipped)
+    if not success:
+        print("torq over!!")
+        print(u)
+        print(u_clipped)
+        print(s)
     ret = np.zeros(2*IDX_MAX)
     if ground(s):
         impulse = f_ground(s, u) * dt
@@ -615,7 +627,7 @@ def step(t, s, u, dt):
         else:
             mode ="air"
     ret[IDX_thr] = normalize_angle(ret[IDX_thr])
-    return True, 1 if ground(ret) else 0, t+dt, ret
+    return success, 1 if ground(ret) else 0, t+dt, ret
 
 def invkinematics3(s, input):
     # assert input[0] = 0

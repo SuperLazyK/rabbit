@@ -30,7 +30,7 @@ FRAME_RATE=30
 #DELTA = 0.005
 #SPEED=1000
 #SPEED=100
-SPEED=10
+SPEED=30
 
 NORMAL_MODE=0
 JUMP_MODE=1
@@ -252,7 +252,6 @@ class RabbitEnv():
             print(reason)
         elif not success:
             print("failure")
-            print(s)
             done = True
         reward = self.calc_reward(s, self.mode, t, done)
         self.history.append((mode, t, s, ref, u, reward))
@@ -270,7 +269,6 @@ class RabbitEnv():
         while t < t1:
             prev = (1-self.alpha) * prev + (self.alpha) * pos_ref
             u = mp.pdcontrol(s, prev)
-            u = mp.torq_limit(s, u)
             s, reward, done, p = self.step_plant(u, prev)
             if done:
                 break
