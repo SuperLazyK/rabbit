@@ -193,22 +193,22 @@ class RabbitEnv():
             s = self.reference[i][2]
             print(s)
         else:
-            #s = mp.reset_state({'pry': 1.2})
-            s = mp.reset_state({
-             'prx': 0.00,
-             'pry': 0.00,
-             'thr': 0.00,
-             'z': -0.01,
-             'th0': -0.18,
-             'thk': 0.46,
-             'thw': -0.08,
-             'dprx': 0.00,
-             'dpry': 0.00,
-             'dthr': 0.00,
-             'dz': 7.33,
-             'dth0': 1.30,
-             'dthk': -0.07,
-             'dthw': 2.65})
+            s = mp.reset_state({'pry': 1.2})
+            #s = mp.reset_state({
+            # 'prx': 0.00,
+            # 'pry': 0.00,
+            # 'thr': 0.00,
+            # 'z': -0.01,
+            # 'th0': -0.18,
+            # 'thk': 0.46,
+            # 'thw': -0.08,
+            # 'dprx': 0.00,
+            # 'dpry': 0.00,
+            # 'dthr': 0.00,
+            # 'dz': 7.33,
+            # 'dth0': 1.30,
+            # 'dthk': -0.07,
+            # 'dthw': 2.65})
 
         done, msg = self.game_over(s)
         assert not done, "???before-start???" + msg
