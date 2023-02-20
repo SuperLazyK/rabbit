@@ -72,8 +72,10 @@ y1: yw + l2 * cos(thr + th0 + thk + thw)$
 xc: (m0 * x0 + m1 * x1 + mk * xk + mw * xw + mt * xt) / (m0 + m1 + mk + mw + mt) $
 yc: (m0 * y0 + m1 * y1 + mk * yk + mw * yw + mt * yt) / (m0 + m1 + mk + mw + mt) $
 
+/*
 f90(ratsimp(xc -x0))$
 f90(ratsimp(yc -y0))$
+*/
 
 /*----------*/
 /* dynamics */
@@ -126,6 +128,7 @@ yhc:yc$
 /*
 hc:[xhc - x0, yhc - y0]$
 */
+/*
 hc:[xc - x0, yc - y0]$
 hc': diff(hc, t)$
 vec_thr:[-sin(thr), cos(thr)]$
@@ -134,6 +137,7 @@ rc:hc[1]*vec_thr[1] + hc[2]*vec_thr[2]$
 rc': ratsimp(trigreduce(diff(rc, t)))$
 thc:hc[1]*vec_dthr[1] + hc[2]*vec_dthr[2]$
 thc': ratsimp(trigreduce(diff(thc, t)))$
+*/
 
 /*
 f90(symbolilze(rc'));
@@ -149,11 +153,13 @@ th1': ratsimp(trigreduce(diff(th1, t)))$
 f90(symbolilze(r1'));
 f90(symbolilze(th1'));
 */
+/*
 amoment:  ratsimp(trigreduce(trigsimp(m1 * cross(x1-xc, y1-yc, x1'-xc', y1'-yc')
         + mk * cross(xk-xc, yk-yc, xk'-xc', yk'-yc')
         + mw * cross(xw-xc, yw-yc, xw'-xc', yw'-yc')
         + m0 * cross(x0-xc, y0-yc, x0'-xc', y0'-yc')
         + mt * cross(xt-xc, yt-yc, xt'-xc', yt'-yc'))))$
+*/
 /*
 amoment:  ratsimp(trigreduce(trigsimp(m1 * cross(x1-xr, y1-yr, x1'-xr', y1'-yr')
         + mk * cross(xk-xr, yk-yr, xk'-xr', yk'-yr')
@@ -227,7 +233,6 @@ E: K0_trs + Kk_trs + Kw_trs + K1_trs + Kt_trs + U0 + U1 + Uk + Uw + Ut + S$
 X : [xr, yr, thr, th0, thk, thw]$
 dX : [xr', yr', thr', th0', thk', thw']$
 ddX : symbolilze([xr'', yr'', thr'', th0'', thk'', thw''])$
-disp(ddX);
 rhs : air(symbolilze(expand(diff(jacobian([L],dX), t) - jacobian([L], X))))$
 */
 /*
@@ -238,6 +243,10 @@ A:(trigsimp(expand(trigexpand(jacobian(args(rhs)[1], ddX)))))$
 b:(expand(transpose(rhs) - (jacobian(args(rhs)[1], ddX)).transpose(matrix(ddX))))$
 showmatf90(A)$
 showmatf90(b)$
+A11:submatrix(4,5,6,A,4,5,6)$
+A22:submatrix(1,2,3,A,1,2,3)$
+disp(ratsimp(trigsimp(expand(determinant(A11)))));
+disp(ratsimp(trigsimp(expand(determinant(A22)))));
 */
 /*
 disp(ratsimp(trigsimp(expand(determinant(A)))));
@@ -255,6 +264,10 @@ A:(trigsimp(expand(trigexpand(jacobian(args(rhs)[1], ddX)))))$
 b:(expand(transpose(rhs) - (jacobian(args(rhs)[1], ddX)).transpose(matrix(ddX))))$
 showmatf90(A)$
 showmatf90(b)$
+A11:submatrix(3,4,5,A,3,4,5)$
+A22:submatrix(1,2,A,1,2)$
+disp(ratsimp(trigsimp(expand(determinant(A11)))));
+disp(ratsimp(trigsimp(expand(determinant(A22)))));
 dE:ground(symbolilze(diff(E, t)))$
 */
 
