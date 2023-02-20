@@ -4,7 +4,7 @@ from numpy import sin, cos, abs
 import sys
 import scipy
 
-debug=0
+debug=1
 np.set_printoptions(linewidth=np.inf)
 
 def debug_print(x):
@@ -55,6 +55,7 @@ ref_min_thw = np.deg2rad(-80)
 ref_max_thw = np.deg2rad(0)
 REF_MIN = np.array([ref_min_th0, ref_min_thk, ref_min_thw])
 REF_MAX = np.array([ref_max_th0, ref_max_thk, ref_max_thw])
+REF_SCALE=1.0 / (REF_MAX - REF_MIN)
 DIM_U = REF_MIN.shape
 DEFAULT_U = np.zeros(DIM_U)
 limit_min_thr = np.deg2rad(-180)
@@ -76,15 +77,18 @@ MAX_TORQUEK=800 # knee(400Nm) + arm(800N * 0.5m)
 MAX_TORQUEW=800 # knee(400Nm) + arm(800N * 0.5m)
 MAX_TORQUE0=800 # arm(800N x 1m)
 
+
 inf = float('inf')
 #Kp = np.array([4000, 13000])
 #Kp = 20*np.array([400, 800])
-Kp = 10*np.array([400, 800, 800])
+Kp = 10*np.array([600, 600, 600])
 #Kp = np.array([400, 400, 800])
 #Kd = Kp * (0.01)
 Kd = Kp * (0.1)
-Kpc = 500
+Kpc = 600
 Kdc = Kpc * 0.1
+
+#print("ref-range", REF_MAX - REF_MIN)
 
 #-----------------
 # State
@@ -330,9 +334,9 @@ def calcf(A, b, acc):
     return ret.reshape(3)
 
 def pdcontrol(s, ref):
-    dob  = np.array([s[IDX_dth0], s[IDX_dthk], s[IDX_dthw]])
+    dob  = REF_SCALE * np.array([s[IDX_dth0], s[IDX_dthk], s[IDX_dthw]])
     ob = np.array([s[IDX_th0], s[IDX_thk], s[IDX_thw]])
-    err = ref - ob
+    err = REF_SCALE * (ref - ob)
     debug_print(f"PD-ref: {np.rad2deg(ref[0])} {np.rad2deg(ref[1])} {np.rad2deg(ref[2])} ")
     debug_print(f"PD-obs: {np.rad2deg(ob[0])}  {np.rad2deg(ob[1])}  {np.rad2deg(ob[2])} ")
     debug_print(f"PD-vel: {dob}")

@@ -281,7 +281,8 @@ class RabbitEnv():
 
     def step_vel_control(self, v_ref):
         _, t, s, ref, _, _ = self.history[-1]
-        pos_ref = mp.ref_clip_scale(ref, v_ref)
+        #pos_ref = mp.ref_clip_scale(ref, v_ref)
+        pos_ref = mp.ref_clip(ref + v_ref)
         return self.step_pos_control(pos_ref)
 
     def render(self, frame=-1):
@@ -394,17 +395,17 @@ class RabbitEnv():
 
 def exec_cmd(env, v, frame):
     #ctr_mode = 'torq'
-    #ctr_mode = 'vel'
-    ctr_mode = 'inv3'
+    ctr_mode = 'vel'
+    #ctr_mode = 'inv3'
     if ctr_mode == 'vel':
-        k_th0 = SPEED/6*np.pi/360
-        k_thk = SPEED/6*np.pi/360
-        k_thw = SPEED/6*np.pi/360
+        k_th0 = 3*SPEED/6*np.pi/360
+        k_thk = 3*SPEED/6*np.pi/360
+        k_thw = 3*SPEED/6*np.pi/360
         _, _, done, _ = env.step_vel_control(np.array([k_th0, k_thk, k_thw]) * np.array([v[2], v[1], -v[0]]))
     elif ctr_mode == 'inv3':
-        k_th0 = 10*SPEED/6*np.pi/360
+        k_th0 = 100*SPEED/6*np.pi/360
         k_r = SPEED/2000
-        k_th = SPEED/60*np.pi/360
+        k_th = 10*SPEED/60*np.pi/360
         _, _, s, _, _, _ = env.history[frame]
         vj = mp.invkinematics3(s, np.array([0, -k_r, k_th]) * np.array([0, v[1], v[0]]))
         _, _, done, _ = env.step_vel_control(vj + np.array([k_th0*v[2], 0, 0]))
