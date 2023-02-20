@@ -39,7 +39,7 @@ l1 = 0.5
 l2 = 0.35
 #l = 1.2
 g  = 0
-g  = 9.8
+#g  = 9.8
 #g  = -9.8
 k  = 15000 # mgh = 1/2 k x**2 -> T=2*pi sqrt(m/k)
 c = 0
@@ -66,7 +66,7 @@ limit_max_th0 = np.deg2rad(45)
 limit_min_thk = np.deg2rad(0)
 limit_max_thk = np.deg2rad(90)
 limit_min_thw = np.deg2rad(-90)
-limit_max_thw = np.deg2rad(0)
+limit_max_thw = np.deg2rad(3)
 
 MAX_ROT_SPEED=100
 MAX_SPEED=100
@@ -253,9 +253,9 @@ def check_invariant(s):
     vec_0t = ps[IDX_pt] - ps[IDX_p0]
     vec_0w = ps[IDX_pw] - ps[IDX_p0]
 
-    if  np.cross(vec_0t, vec_0w) < 0:
-        reason = f"GAME OVER @ line-w1 < line-0t"
-        return False, reason
+    #if  np.cross(vec_0t, vec_0w) < 0:
+    #    reason = f"GAME OVER @ line-w1 < line-0t"
+    #    return False, reason
 
     if ground(s) and abs(s[IDX_thr]) > np.deg2rad(35):
         reason = f"GAME OVER @ thr is too big on ground"
@@ -634,7 +634,6 @@ def invkinematics3(s, input):
     th0  = s[IDX_th0]
     thk  = s[IDX_thk]
     thw  = s[IDX_thw]
-    z = s[IDX_z]
     A = np.zeros((3,3))
     A[0][0] = -(l2*lt*m1*mt*cos(thw+thk+th0)+((-2*l0*l2*m1*mt)-2*l0*l2*m0*m1)*cos(thw+thk)+((-2*l1*l2*m1*mt)-2*l1*l2*m1*mk-2*l1*l2*m0*m1)*cos(thw)+(l1*lt*mt*mw+l1*lt*m1*mt)*cos(thk+th0)+(((-2*l0*l1*mt)-2*l0*l1*m0)*mw-2*l0*l1*m1*mt-2*l0*l1*m0*m1)*cos(thk)+(l0*lt*mt*mw+(l0*lt*mk+l0*lt*m1)*mt)*cos(th0)+(((-l1**2)-l0**2)*mt-l1**2*mk-l2**2*m1+((-l1**2)-l0**2)*m0)*mw+(((-l2**2)-l1**2-l0**2)*m1-l0**2*mk)*mt+(((-l2**2)-l1**2)*m1-l0**2*m0)*mk+((-l2**2)-l1**2-l0**2)*m0*m1)/(2*l2*lt*m1*mt*cos(thw+thk+th0)+((-2*l0*l2*m1*mt)-2*l0*l2*m0*m1)*cos(thw+thk)+((-2*l1*l2*m1*mt)-2*l1*l2*m1*mk-2*l1*l2*m0*m1)*cos(thw)+(2*l1*lt*mt*mw+2*l1*lt*m1*mt)*cos(thk+th0)+(((-2*l0*l1*mt)-2*l0*l1*m0)*mw-2*l0*l1*m1*mt-2*l0*l1*m0*m1)*cos(thk)+(2*l0*lt*mt*mw+(2*l0*lt*mk+2*l0*lt*m1)*mt)*cos(th0)+(((-lt**2)-l1**2-l0**2)*mt-l1**2*mk-l2**2*m1+((-l1**2)-l0**2)*m0)*mw+(((-lt**2)-l0**2)*mk+((-lt**2)-l2**2-l1**2-l0**2)*m1-lt**2*m0)*mt+(((-l2**2)-l1**2)*m1-l0**2*m0)*mk+((-l2**2)-l1**2-l0**2)*m0*m1)
     A[0][1] = -(l2*lt*m1*mt*cos(thw+thk+th0)+((-l0*l2*m1*mt)-l0*l2*m0*m1)*cos(thw+thk)+((-2*l1*l2*m1*mt)-2*l1*l2*m1*mk-2*l1*l2*m0*m1)*cos(thw)+(l1*lt*mt*mw+l1*lt*m1*mt)*cos(thk+th0)+(((-l0*l1*mt)-l0*l1*m0)*mw-l0*l1*m1*mt-l0*l1*m0*m1)*cos(thk)+((-l1**2*mt)-l1**2*mk-l2**2*m1-l1**2*m0)*mw+((-l2**2)-l1**2)*m1*mt+((-l2**2)-l1**2)*m1*mk+((-l2**2)-l1**2)*m0*m1)/(2*l2*lt*m1*mt*cos(thw+thk+th0)+((-2*l0*l2*m1*mt)-2*l0*l2*m0*m1)*cos(thw+thk)+((-2*l1*l2*m1*mt)-2*l1*l2*m1*mk-2*l1*l2*m0*m1)*cos(thw)+(2*l1*lt*mt*mw+2*l1*lt*m1*mt)*cos(thk+th0)+(((-2*l0*l1*mt)-2*l0*l1*m0)*mw-2*l0*l1*m1*mt-2*l0*l1*m0*m1)*cos(thk)+(2*l0*lt*mt*mw+(2*l0*lt*mk+2*l0*lt*m1)*mt)*cos(th0)+(((-lt**2)-l1**2-l0**2)*mt-l1**2*mk-l2**2*m1+((-l1**2)-l0**2)*m0)*mw+(((-lt**2)-l0**2)*mk+((-lt**2)-l2**2-l1**2-l0**2)*m1-lt**2*m0)*mt+(((-l2**2)-l1**2)*m1-l0**2*m0)*mk+((-l2**2)-l1**2-l0**2)*m0*m1)

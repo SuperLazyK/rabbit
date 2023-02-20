@@ -394,8 +394,8 @@ class RabbitEnv():
 
 def exec_cmd(env, v, frame):
     #ctr_mode = 'torq'
-    ctr_mode = 'vel'
-    #ctr_mode = 'inv3'
+    #ctr_mode = 'vel'
+    ctr_mode = 'inv3'
     if ctr_mode == 'vel':
         k_th0 = SPEED/6*np.pi/360
         k_thk = SPEED/6*np.pi/360
