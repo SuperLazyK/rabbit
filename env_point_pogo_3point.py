@@ -78,17 +78,19 @@ def dump_plot(history, filename='plot.csv'):
     for _, t, s, _, _, _ in history:
         prop = {}
         joint = mp.calc_joint_property(s)
-        print(joint)
         prop['t'] = t
         for k in CSV_FIELDS[1:]:
             prop[k] = joint[k]
             if 'th' in k:
                 prop[k] = degrees(prop[k])
             prop[k] = round(float(prop[k]), 3)
+        cog = mp.cog(s)
+        prop['cogx'] = cog[0]
+        prop['cogy'] = cog[1]
         d.append(prop)
 
     with open(filename,'w',encoding='utf-8') as f:
-        writer = csv.DictWriter(f, fieldnames = CSV_FIELDS)
+        writer = csv.DictWriter(f, fieldnames = CSV_FIELDS+['cogx', 'cogy'])
         writer.writeheader()
         writer.writerows(d)
 
@@ -172,7 +174,6 @@ class RabbitEnv():
         self.min_obs = mp.OBS_MIN
         self.max_obs = mp.OBS_MAX
         self.reference = self.load_plot('main_pose.csv')
-        print(self.reference)
 
     def autosave(self, dirname='autodump'):
         print("dump!!!")
@@ -192,7 +193,23 @@ class RabbitEnv():
             s = self.reference[i][2]
             print(s)
         else:
-            s = mp.reset_state({'pry': 1.2})
+            #s = mp.reset_state({'pry': 1.2})
+            s = mp.reset_state({
+             'prx': 0.00,
+             'pry': 0.00,
+             'thr': 0.00,
+             'z': -0.01,
+             'th0': -0.18,
+             'thk': 0.46,
+             'thw': -0.08,
+             'dprx': 0.00,
+             'dpry': 0.00,
+             'dthr': 0.00,
+             'dz': 7.33,
+             'dth0': 1.30,
+             'dthk': -0.07,
+             'dthw': 2.65})
+
         done, msg = self.game_over(s)
         assert not done, "???before-start???" + msg
         self.mode = NORMAL_MODE
@@ -436,7 +453,7 @@ def main():
     move_point_idx = None
 
     env.render(frame=0)
-    plot_data = []
+    plot_data = [env.history[0]]
 
     while True:
         stepOne = False
@@ -480,6 +497,7 @@ def main():
                     s = env.reset()
                     n = env.num_of_frames()
                     env.render(frame=0)
+                    plot_data.append(env.history[0])
 
                 elif keyname == 's':
                     start = start ^ True
