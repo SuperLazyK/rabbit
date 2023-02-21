@@ -287,11 +287,9 @@ class RabbitEnv():
 
     def step_pvel_control(self, v_ref):
         _, t, s, ref, _, _ = self.history[-1]
-        print("check", ref)
         prev_pref = mp.to_polar(ref)
         new_pref = mp.pref_clip(prev_pref + v_ref)
         pos_ref = mp.from_polar(new_pref)
-        print(pos_ref)
         #pos_ref = mp.pref_clip(pos_ref)
         return self.step_pos_control(pos_ref)
 
