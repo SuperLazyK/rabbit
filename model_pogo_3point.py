@@ -53,11 +53,11 @@ ref_min_thk = np.deg2rad(1)
 ref_max_thk = np.deg2rad(80)
 ref_min_thw = np.deg2rad(-80)
 ref_max_thw = np.deg2rad(0)
-ref_min_pr = (l0 + l1) * 0.75
-ref_max_pr = l0 + l1
-ref_min_pth1 = np.deg2rad(3)
-ref_max_pth1 = np.deg2rad(60)
-ref_min_pth2 = np.deg2rad(3)
+ref_min_pr = (l0 + l1) * 0.85
+ref_max_pr = (l0 + l1) * 0.99
+ref_min_pth1 = np.deg2rad(1)
+ref_max_pth1 = np.deg2rad(45)
+ref_min_pth2 = np.deg2rad(1)
 ref_max_pth2 = np.deg2rad(30)
 REFP_MIN = np.array([ref_min_pr, ref_min_pth1, ref_min_pth2])
 REFP_MAX = np.array([ref_max_pr, ref_max_pth1, ref_max_pth2])
@@ -91,7 +91,7 @@ def to_polar(ref):
     thw = ref[2]
     r = sqrt(l0**2 + l1**2 + 2*l0*l1*cos(thk))
     thtmp1 = acos((l1**2+r**2-l0**2)/(2*l1*r))
-    th1 = thw - thtmp1
+    th1 = -thw - thtmp1
     th2 = th0 + thk - thtmp1
     return np.array([r, th1, th2])
 
@@ -103,7 +103,7 @@ def from_polar(ref):
     thtmp2 = acos((l0**2+r**2-l1**2)/(2*l0*r))
     thk = thtmp1 + thtmp2
     th0 = th2 - thtmp2
-    thw = thtmp1 + th1
+    thw = -(thtmp1 + th1)
     return np.array([th0, thk, thw])
 
 inf = float('inf')
@@ -720,3 +720,4 @@ def adjust_cog(pc, s):
         pry = 0
 
     return z, prx, pry
+

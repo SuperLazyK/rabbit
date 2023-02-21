@@ -285,6 +285,18 @@ class RabbitEnv():
         pos_ref = mp.ref_clip(ref + v_ref)
         return self.step_pos_control(pos_ref)
 
+    def step_pvel_control(self, v_ref):
+        _, t, s, ref, _, _ = self.history[-1]
+        print("check", ref)
+        prev_pref = mp.to_polar(ref)
+        new_pref = mp.pref_clip(prev_pref + v_ref)
+        pos_ref = mp.from_polar(new_pref)
+        print(pos_ref)
+        #pos_ref = mp.pref_clip(pos_ref)
+        return self.step_pos_control(pos_ref)
+
+
+
     def render(self, frame=-1):
         if self.viewer is None:
             self.viewer = RabbitViewer()
@@ -395,13 +407,19 @@ class RabbitEnv():
 
 def exec_cmd(env, v, frame):
     #ctr_mode = 'torq'
-    ctr_mode = 'vel'
+    #ctr_mode = 'vel'
+    ctr_mode = 'polar'
     #ctr_mode = 'inv3'
     if ctr_mode == 'vel':
         k_th0 = 3*SPEED/6*np.pi/360
         k_thk = 3*SPEED/6*np.pi/360
         k_thw = 3*SPEED/6*np.pi/360
         _, _, done, _ = env.step_vel_control(np.array([k_th0, k_thk, k_thw]) * np.array([v[2], v[1], -v[0]]))
+    elif ctr_mode == 'polar':
+        k_th0 = 3*SPEED/6*np.pi/360
+        k_thk = 3*SPEED/6*np.pi/360
+        k_thw = 3*SPEED/6*np.pi/360
+        _, _, done, _ = env.step_pvel_control(np.array([k_th0, k_thk, k_thw]) * np.array([v[2], v[1], -v[0]]))
     elif ctr_mode == 'inv3':
         k_th0 = 100*SPEED/6*np.pi/360
         k_r = SPEED/2000
