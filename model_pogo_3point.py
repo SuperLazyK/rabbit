@@ -4,7 +4,7 @@ from numpy import sin, cos, abs
 import sys
 import scipy
 
-debug=1
+debug=0
 np.set_printoptions(linewidth=np.inf)
 
 def debug_print(x):
@@ -156,7 +156,6 @@ def reset_state(d = {}):
     s[IDX_dthw] = d.get('dthw', 0)
     return s
 
-
 def print_state(s, titlePrefix="", fieldPrefix=""):
     d = calc_joint_property(s)
     for i in d:
@@ -203,6 +202,7 @@ def ref_clip_scale(ref, d):
     return ref_clip(ref + k * vec)
 
 def node_pos(s):
+
     pr = np.array([s[IDX_xr], s[IDX_yr]])
     thr = s[IDX_thr]
     z   = s[IDX_z  ]
@@ -475,11 +475,13 @@ def land(s):
 
 cachedAbf = None
 cachedS = None
+cachedU = None
 
 def groundAb(s, u=np.array([0,0,0])):
     #global cachedS
+    #global cachedU
     #global cachedAbf
-    #if cachedS is not None and np.allclose(cachedS, s) and cachedAbf is not None:
+    #if id(cachedS) == id(s) and (u == cachedU).all():
     #    return cachedAbf
     z    = s[IDX_z]
     thr  = s[IDX_thr]
@@ -533,16 +535,16 @@ def groundAb(s, u=np.array([0,0,0])):
     b[4] = dthr**2*l2*m1*cos(thr)*sin(thw+thr+thk+th0)*z0-dthr**2*l2*m1*sin(thr)*cos(thw+thr+thk+th0)*z0+dthr**2*l2*m1*cos(thr)*sin(thw+thr+thk+th0)*z-dthr**2*l2*m1*sin(thr)*cos(thw+thr+thk+th0)*z+dthr**2*l1*l2*m1*cos(thr+thk+th0)*sin(thw+thr+thk+th0)+2*dthk*dthr*l1*l2*m1*cos(thr+thk+th0)*sin(thw+thr+thk+th0)+2*dth0*dthr*l1*l2*m1*cos(thr+thk+th0)*sin(thw+thr+thk+th0)+dthk**2*l1*l2*m1*cos(thr+thk+th0)*sin(thw+thr+thk+th0)+2*dth0*dthk*l1*l2*m1*cos(thr+thk+th0)*sin(thw+thr+thk+th0)+dth0**2*l1*l2*m1*cos(thr+thk+th0)*sin(thw+thr+thk+th0)+dthr**2*l0*l2*m1*cos(thr+th0)*sin(thw+thr+thk+th0)+2*dth0*dthr*l0*l2*m1*cos(thr+th0)*sin(thw+thr+thk+th0)+dth0**2*l0*l2*m1*cos(thr+th0)*sin(thw+thr+thk+th0)+2*dthr*dz*l2*m1*sin(thr)*sin(thw+thr+thk+th0)-g*l2*m1*sin(thw+thr+thk+th0)-dthr**2*l1*l2*m1*sin(thr+thk+th0)*cos(thw+thr+thk+th0)-2*dthk*dthr*l1*l2*m1*sin(thr+thk+th0)*cos(thw+thr+thk+th0)-2*dth0*dthr*l1*l2*m1*sin(thr+thk+th0)*cos(thw+thr+thk+th0)-dthk**2*l1*l2*m1*sin(thr+thk+th0)*cos(thw+thr+thk+th0)-2*dth0*dthk*l1*l2*m1*sin(thr+thk+th0)*cos(thw+thr+thk+th0)-dth0**2*l1*l2*m1*sin(thr+thk+th0)*cos(thw+thr+thk+th0)-dthr**2*l0*l2*m1*sin(thr+th0)*cos(thw+thr+thk+th0)-2*dth0*dthr*l0*l2*m1*sin(thr+th0)*cos(thw+thr+thk+th0)-dth0**2*l0*l2*m1*sin(thr+th0)*cos(thw+thr+thk+th0)+2*dthr*dz*l2*m1*cos(thr)*cos(thw+thr+thk+th0)
 
     #cachedS = s
+    #cachedU = u
     #cachedAbf = (A, b, extf)
     return A, b, extf
 
 
 def airAb(s, u=np.array([0,0,0])):
+    #global cachedU
     #global cachedS
     #global cachedAbf
-    #if cachedS is not None and np.allclose(cachedS, s) and cachedAbf is not None:
-    #    print(id(cachedS), id(s))
-    #    print(cachedS - s)
+    #if id(cachedS) == id(s) and (u == cachedU).all():
     #    return cachedAbf
     xr   = s[IDX_xr]
     yr   = s[IDX_yr]
@@ -606,6 +608,7 @@ def airAb(s, u=np.array([0,0,0])):
     b[5] = dthr**2*l2*m1*cos(thr)*sin(thw+thr+thk+th0)*z0-dthr**2*l2*m1*sin(thr)*cos(thw+thr+thk+th0)*z0+dthr**2*l1*l2*m1*cos(thr+thk+th0)*sin(thw+thr+thk+th0)+2*dthk*dthr*l1*l2*m1*cos(thr+thk+th0)*sin(thw+thr+thk+th0)+2*dth0*dthr*l1*l2*m1*cos(thr+thk+th0)*sin(thw+thr+thk+th0)+dthk**2*l1*l2*m1*cos(thr+thk+th0)*sin(thw+thr+thk+th0)+2*dth0*dthk*l1*l2*m1*cos(thr+thk+th0)*sin(thw+thr+thk+th0)+dth0**2*l1*l2*m1*cos(thr+thk+th0)*sin(thw+thr+thk+th0)+dthr**2*l0*l2*m1*cos(thr+th0)*sin(thw+thr+thk+th0)+2*dth0*dthr*l0*l2*m1*cos(thr+th0)*sin(thw+thr+thk+th0)+dth0**2*l0*l2*m1*cos(thr+th0)*sin(thw+thr+thk+th0)-g*l2*m1*sin(thw+thr+thk+th0)-dthr**2*l1*l2*m1*sin(thr+thk+th0)*cos(thw+thr+thk+th0)-2*dthk*dthr*l1*l2*m1*sin(thr+thk+th0)*cos(thw+thr+thk+th0)-2*dth0*dthr*l1*l2*m1*sin(thr+thk+th0)*cos(thw+thr+thk+th0)-dthk**2*l1*l2*m1*sin(thr+thk+th0)*cos(thw+thr+thk+th0)-2*dth0*dthk*l1*l2*m1*sin(thr+thk+th0)*cos(thw+thr+thk+th0)-dth0**2*l1*l2*m1*sin(thr+thk+th0)*cos(thw+thr+thk+th0)-dthr**2*l0*l2*m1*sin(thr+th0)*cos(thw+thr+thk+th0)-2*dth0*dthr*l0*l2*m1*sin(thr+th0)*cos(thw+thr+thk+th0)-dth0**2*l0*l2*m1*sin(thr+th0)*cos(thw+thr+thk+th0)
 
     #cachedS = s
+    #cachedU = u
     #cachedAbf = (A, b, extf)
     return A, b, extf
 
