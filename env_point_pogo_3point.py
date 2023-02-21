@@ -223,11 +223,14 @@ class RabbitEnv():
         return mp.obs(s)
 
     def step(self, act):
+        print("ACT=", act)
         if use_polar:
-            ref = mp.from_polar(mp.pref_clip(act))
+            scaled = act*(mp.PREF_MAX - mp.PREF_MIN)/2 + (mp.PREF_MAX + mp.PREF_MIN)/2
+            ref = mp.from_polar(mp.pref_clip(scaled))
             s, reward, done, p = self.step_pos_control(ref)
         else:
-            s, reward, done, p = self.step_pos_control(act)
+            ref = mp.ref_clip(act)
+            s, reward, done, p = self.step_pos_control(ref)
         return mp.obs(s), reward, done, p
 
     def obs(self, s):
@@ -254,7 +257,7 @@ class RabbitEnv():
         success, mode, t, s = mp.step(t, s, u, DELTA)
         done, reason = self.game_over(s)
         if done:
-            #print(reason)
+            print(reason)
             pass
         elif not success:
             print("failure")
