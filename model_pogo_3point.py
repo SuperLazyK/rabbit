@@ -38,8 +38,8 @@ l0 = 0.4
 l1 = 0.5
 l2 = 0.35
 #l = 1.2
-g  = 0
-#g  = 9.8
+#g  = 0
+g  = 9.8
 #g  = -9.8
 k  = 15000 # mgh = 1/2 k x**2 -> T=2*pi sqrt(m/k)
 c = 0
@@ -75,7 +75,7 @@ limit_max_th0 = np.deg2rad(45)
 limit_min_thk = np.deg2rad(0)
 limit_max_thk = np.deg2rad(90)
 limit_min_thw = np.deg2rad(-90)
-limit_max_thw = np.deg2rad(5)
+limit_max_thw = np.deg2rad(15)
 
 MAX_ROT_SPEED=100
 MAX_SPEED=100
@@ -109,6 +109,7 @@ def from_polar(ref):
 inf = float('inf')
 #Kp = np.array([4000, 13000])
 #Kp = 20*np.array([400, 800])
+#Kp = 10*np.array([600, 600, 600])
 Kp = 10*np.array([600, 600, 600])
 #Kp = np.array([400, 400, 800])
 #Kd = Kp * (0.01)
@@ -259,6 +260,7 @@ OBS_MAX = np.array([1, 5, limit_max_thr,      0, limit_max_th0, limit_max_thk, l
 
 def obs(s):
     o = s.copy()
+    o[IDX_MAX:] = o[IDX_MAX:]/MAX_SPEED
     o[0] = 1 if ground(s) else 0
     return o
 
@@ -286,12 +288,15 @@ def check_invariant(s):
             return False, reason
     if s[IDX_th0] < limit_min_th0 or s[IDX_th0] > limit_max_th0:
             reason = f"GAME OVER @ range error th0={np.rad2deg(s[IDX_th0]):}"
+            print(reason)
             return False, reason
     if s[IDX_thk] < limit_min_thk or s[IDX_thk] > limit_max_thk:
             reason = f"GAME OVER @ range error thk={np.rad2deg(s[IDX_thk]):}"
+            print(reason)
             return False, reason
     if s[IDX_thw] < limit_min_thw or s[IDX_thw] > limit_max_thw:
             reason = f"GAME OVER @ range error thw={np.rad2deg(s[IDX_thw]):}"
+            print(reason)
             return False, reason
 
     vec_0t = ps[IDX_pt] - ps[IDX_p0]
@@ -301,17 +306,21 @@ def check_invariant(s):
     #    reason = f"GAME OVER @ line-w1 < line-0t"
     #    return False, reason
 
-    if ground(s) and abs(s[IDX_thr]) > np.deg2rad(35):
+    if ground(s) and abs(s[IDX_thr]) > np.deg2rad(45):
         reason = f"GAME OVER @ thr is too big on ground"
         return False, reason
 
     if energy(s) > 5000:
         reason = f"GAME OVER @ energy is too big"
+        print(reason)
         return False, reason
 
     pc = cog(s)
     if pc[1] < 0.4:
             reason = f"GAME OVER @ cog too low cogy={pc[1]:}"
+            return False, reason
+    if abs(pc[0]) > 10:
+            reason = f"GAME OVER @ cog too low cogx={pc[0]:}"
             return False, reason
     return True, ""
 
@@ -648,12 +657,10 @@ def f_air(s, u):
 
 def step(t, s, u, dt):
     u_clipped = torq_limit(s, u)
-    success = np.allclose(u, u_clipped)
-    if not success:
-        print("torq over!!")
-        print(u)
-        print(u_clipped)
-        print(s)
+    limited = np.allclose(u, u_clipped)
+    if not limited:
+        #print("torq over!!")
+        pass
     ret = np.zeros(2*IDX_MAX)
     if ground(s):
         impulse = f_ground(s, u) * dt
@@ -674,7 +681,7 @@ def step(t, s, u, dt):
         else:
             mode ="air"
     ret[IDX_thr] = normalize_angle(ret[IDX_thr])
-    return success, 1 if ground(ret) else 0, t+dt, ret
+    return True, 1 if ground(ret) else 0, t+dt, ret
 
 def invkinematics3(s, input):
     # assert input[0] = 0

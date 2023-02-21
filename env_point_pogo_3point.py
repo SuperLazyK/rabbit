@@ -19,6 +19,7 @@ import yaml
 from scipy import interpolate
 
 
+use_polar = True
 
 pygame.init()
 # input U
@@ -169,8 +170,9 @@ class RabbitEnv():
         self.viewer = None
         self.is_render_enabled= int(os.environ.get('RENDER', "0"))
 
-        self.min_action = mp.REF_MIN
-        self.max_action = mp.REF_MAX
+        # use only shape!
+        self.min_action = np.zeros(mp.DIM_U)
+        self.max_action = np.zeros(mp.DIM_U)
         self.min_obs = mp.OBS_MIN
         self.max_obs = mp.OBS_MAX
         self.reference = self.load_plot('main_pose.csv')
@@ -189,9 +191,8 @@ class RabbitEnv():
                 self.autosave("normal")
         if random is not None:
             i = random.randint(len(self.reference))
-            print(i, len(self.reference))
+            #print(i, len(self.reference))
             s = self.reference[i][2]
-            print(s)
         else:
             s = mp.reset_state({'pry': 1.2})
             #s = mp.reset_state({
@@ -222,7 +223,11 @@ class RabbitEnv():
         return mp.obs(s)
 
     def step(self, act):
-        s, reward, done, p = self.step_pos_control(act)
+        if use_polar:
+            ref = mp.from_polar(mp.pref_clip(act))
+            s, reward, done, p = self.step_pos_control(ref)
+        else:
+            s, reward, done, p = self.step_pos_control(act)
         return mp.obs(s), reward, done, p
 
     def obs(self, s):
@@ -249,7 +254,8 @@ class RabbitEnv():
         success, mode, t, s = mp.step(t, s, u, DELTA)
         done, reason = self.game_over(s)
         if done:
-            print(reason)
+            #print(reason)
+            pass
         elif not success:
             print("failure")
             done = True
@@ -590,6 +596,7 @@ def main():
                 if (slow or not start) or (frame % 3 == 0):
                     env.render(frame=frame)
                     env.dryrun(frame)
+                    env.game_over(env.history[frame][2])
                     if mp.debug:
                         env.info(frame)
                 last_frame = frame
