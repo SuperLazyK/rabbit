@@ -121,10 +121,11 @@ yr'': diff(yr', t)$
 z'': diff(z', t)$
 
 /* human upper body center */
-xhc: (m1 * x1 + mk * xk + mw * xw) / (m1 + mk + mw) $
-yhc: (m1 * y1 + mk * yk + mw * yw) / (m1 + mk + mw) $
 xhc:xc$
 yhc:yc$
+bdir:[xt-xw,yt-yw]$
+rdir:[x0-xhc, y0-yhc]$
+
 /*
 hc:[xhc - x0, yhc - y0]$
 */
@@ -209,6 +210,7 @@ disp(ratsimp(trigsimp(expand(determinant(J)))));
 /*----------*/
 /* Lagrange */
 /*----------*/
+/*
 U0: y0 * m0 * g$
 K0_trs: 1/2 * m0 * sqsum(x0', y0')$
 
@@ -227,6 +229,7 @@ Kt_trs: 1/2 * mt * sqsum(xt', yt')$
 S:1/2*k*(z)*(z)$
 L: K0_trs + Kk_trs + Kw_trs + K1_trs + Kt_trs - U0 - U1 - Uk - Uw - Ut - S$
 E: K0_trs + Kk_trs + Kw_trs + K1_trs + Kt_trs + U0 + U1 + Uk + Uw + Ut + S$
+*/
 /* CASE1: air  fx0=fy0=0*/
 
 /*
