@@ -53,6 +53,14 @@ ref_min_thk = np.deg2rad(1)
 ref_max_thk = np.deg2rad(80)
 ref_min_thw = np.deg2rad(-80)
 ref_max_thw = np.deg2rad(0)
+ref_min_pr = (l0 + l1) * 0.75
+ref_max_pr = l0 + l1
+ref_min_pth1 = np.deg2rad(3)
+ref_max_pth1 = np.deg2rad(60)
+ref_min_pth2 = np.deg2rad(3)
+ref_max_pth2 = np.deg2rad(30)
+REFP_MIN = np.array([ref_min_pr, ref_min_pth1, ref_min_pth2])
+REFP_MAX = np.array([ref_max_pr, ref_max_pth1, ref_max_pth2])
 REF_MIN = np.array([ref_min_th0, ref_min_thk, ref_min_thw])
 REF_MAX = np.array([ref_max_th0, ref_max_thk, ref_max_thw])
 REF_SCALE=1.0 / (REF_MAX - REF_MIN)
@@ -77,6 +85,26 @@ MAX_TORQUEK=800 # knee(400Nm) + arm(800N * 0.5m)
 MAX_TORQUEW=800 # knee(400Nm) + arm(800N * 0.5m)
 MAX_TORQUE0=800 # arm(800N x 1m)
 
+def to_polar(ref):
+    th0 = ref[0]
+    thk = ref[1]
+    thw = ref[2]
+    r = sqrt(l0**2 + l1**2 + 2*l0*l1*cos(thk))
+    thtmp1 = acos((l1**2+r**2-l0**2)/(2*l1*r))
+    th1 = thw - thtmp1
+    th2 = th0 + thk - thtmp1
+    return np.array([r, th1, th2])
+
+def from_polar(ref):
+    r   = ref[0]
+    th1 = ref[1]
+    th2 = ref[2]
+    thtmp1 = acos((l1**2+r**2-l0**2)/(2*l1*r))
+    thtmp2 = acos((l0**2+r**2-l1**2)/(2*l0*r))
+    thk = thtmp1 + thtmp2
+    th0 = th2 - thtmp2
+    thw = thtmp1 + th1
+    return np.array([th0, thk, thw])
 
 inf = float('inf')
 #Kp = np.array([4000, 13000])
@@ -161,6 +189,9 @@ def torq_limit(s, u):
 
 def ref_clip(ref):
     return np.clip(ref, REF_MIN, REF_MAX)
+
+def pref_clip(ref):
+    return np.clip(ref, REFP_MIN, REFP_MAX)
 
 def ref_clip_scale(ref, d):
     l = np.linalg.norm(d)
