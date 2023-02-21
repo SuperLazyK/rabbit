@@ -59,8 +59,8 @@ ref_min_pth1 = np.deg2rad(1)
 ref_max_pth1 = np.deg2rad(45)
 ref_min_pth2 = np.deg2rad(1)
 ref_max_pth2 = np.deg2rad(30)
-REFP_MIN = np.array([ref_min_pr, ref_min_pth1, ref_min_pth2])
-REFP_MAX = np.array([ref_max_pr, ref_max_pth1, ref_max_pth2])
+PREF_MIN = np.array([ref_min_pr, ref_min_pth1, ref_min_pth2])
+PREF_MAX = np.array([ref_max_pr, ref_max_pth1, ref_max_pth2])
 REF_MIN = np.array([ref_min_th0, ref_min_thk, ref_min_thw])
 REF_MAX = np.array([ref_max_th0, ref_max_thk, ref_max_thw])
 REF_SCALE=1.0 / (REF_MAX - REF_MIN)
@@ -75,7 +75,7 @@ limit_max_th0 = np.deg2rad(45)
 limit_min_thk = np.deg2rad(0)
 limit_max_thk = np.deg2rad(90)
 limit_min_thw = np.deg2rad(-90)
-limit_max_thw = np.deg2rad(3)
+limit_max_thw = np.deg2rad(5)
 
 MAX_ROT_SPEED=100
 MAX_SPEED=100
@@ -190,7 +190,7 @@ def ref_clip(ref):
     return np.clip(ref, REF_MIN, REF_MAX)
 
 def pref_clip(ref):
-    return np.clip(ref, REFP_MIN, REFP_MAX)
+    return np.clip(ref, PREF_MIN, PREF_MAX)
 
 def ref_clip_scale(ref, d):
     l = np.linalg.norm(d)
