@@ -264,26 +264,22 @@ def obs(s):
     return o
 
 def reward(s, u, ref_s):
-    pcog = cog(s)
-    rpcog = cog(ref_s)
-    r_Ey = -abs(3000 - (energyU(s) + energyTy(s)))/5000
-    #r_thr = -abs(s[IDX_thr])*2/np.pi
-    #r_cogx = -abs(pcog[0]-s[IDX_xr])
-    r_u = -np.linalg.norm(u/max_u())
-    r_r_cogpy  = -np.linalg.norm((pcog[1] - rpcog[1]))
-    r_r_joint = -np.linalg.norm((joints(s) - joints(ref_s)))
-    r_r_thr = -abs(s[IDX_thr] - ref_s[IDX_thr])
     kEy = 1
     ku = 1
     krcogpy = 1
     krjoint = 1
     krthr = 1
-    r = max(kEy*np.exp(r_Ey) + ku * np.exp(r_u) + krcogpy * np.exp(r_r_cogpy) + krjoint * np.exp(r_r_joint) + krthr*np.exp(r_r_thr), 0.1)
-    if r > 1000:
-        print("TOO MUCH REWARD")
-        print(r_Ey, r_thr, r_cogx)
-        print(s)
-        sys.exit(0)
+    pcog = cog(s)
+    rpcog = cog(ref_s)
+    r_Ey = kEy * abs(3000 - (energyU(s) + energyTy(s)))/5000
+    #r_thr = -abs(s[IDX_thr])*2/np.pi
+    #r_cogx = -abs(pcog[0]-s[IDX_xr])
+    r_u = ku * np.linalg.norm(u/max_u())
+    r_r_cogpy  = krcogpy * np.linalg.norm((pcog[1] - rpcog[1]))
+    r_r_joint = krjoint * np.linalg.norm((joints(s) - joints(ref_s)))
+    r_r_thr = krthr * abs(s[IDX_thr] - ref_s[IDX_thr])
+    r = max(np.exp(-r_Ey) + np.exp(-r_u) + np.exp(-r_r_cogpy) + np.exp(-r_r_joint) + np.exp(-r_r_thr), 0.1)
+    print("reward check", r_Ey, r_u, r_r_cogpy, r_r_joint, r_r_thr)
     return r
 
 def init_ref(s):
