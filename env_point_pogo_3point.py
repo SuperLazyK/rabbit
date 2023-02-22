@@ -33,6 +33,7 @@ FRAME_RATE=30
 #SPEED=100
 SPEED=30
 
+MAX_FRAME = int(3/DELTA)
 NORMAL_MODE=0
 JUMP_MODE=1
 FLIP_MODE=2
@@ -164,6 +165,7 @@ class RabbitEnv():
 
     def __init__(self, seed=None):
         self.history = []
+        self.reference = self.load_plot('main_pose.csv')
         self.reset()
         #self.alpha = 1
         #self.alpha = 0
@@ -176,7 +178,6 @@ class RabbitEnv():
         self.max_action = np.zeros(mp.DIM_U)
         self.min_obs = mp.OBS_MIN
         self.max_obs = mp.OBS_MAX
-        self.reference = self.load_plot('main_pose.csv')
 
     def autosave(self, dirname='autodump'):
         print("dump!!!")
@@ -191,9 +192,13 @@ class RabbitEnv():
             if int(os.environ.get('AUTOSAVE', "0")):
                 self.autosave("normal")
         if random is not None:
-            i = random.randint(len(self.reference))
-            t = i * DELTA
-            s = self.reference[i][2]
+            if random.randint(10) % 10 > 6:
+                t = 0
+                s = self.reference[0][2]
+            else:
+                i = random.randint(len(self.reference) - MAX_FRAME - 2)
+                t = i * DELTA
+                s = self.reference[i][2]
             done, msg = self.game_over(s)
             if done:
                 print(i, "/", len(self.reference))
@@ -276,6 +281,9 @@ class RabbitEnv():
             pass
         elif not success:
             print("failure")
+            done = True
+        if self.num_of_frames() >= MAX_FRAME:
+            print("timeout")
             done = True
         reward = self.calc_reward(s, u, self.mode, t, done)
         self.history.append((mode, t, s, ref, u, reward))
