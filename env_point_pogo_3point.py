@@ -23,8 +23,8 @@ use_polar = True
 
 pygame.init()
 # input U
-#DELTA = 0.002
-DELTA = 0.001
+DELTA = 0.002
+#DELTA = 0.001
 FRAME_RATE=30
 #FRAME_RATE=1000
 #DELTA = 0.002
@@ -248,12 +248,12 @@ class RabbitEnv():
     def obs(self, s):
         return mp.obs(s)
 
-    def calc_reward(self, u, s, mode, t, done):
+    def calc_reward(self, s, u, mode, t, done):
         if done:
             return 0.1
         i = round(t/DELTA)
         ref_s = self.reference[i][IDX_S]
-        r_su = mp.reward(s, u, ref_s)
+        r = mp.reward(s, u, ref_s)
 
         return max(0, r)
 
@@ -277,7 +277,7 @@ class RabbitEnv():
         elif not success:
             print("failure")
             done = True
-        reward = self.calc_reward(u, s, self.mode, t, done)
+        reward = self.calc_reward(s, u, self.mode, t, done)
         self.history.append((mode, t, s, ref, u, reward))
 
         #if self.is_render_enabled != 0:
@@ -343,7 +343,7 @@ class RabbitEnv():
         _, _, _, ref, u, reward = self.history[frame]
         success, mode, t, s = mp.step(t, prev_s, u, DELTA)
         done, reason = self.game_over(s)
-        reward = self.calc_reward(s, mode, t, done)
+        reward = self.calc_reward(s, u, mode, t, done)
 
 
     def info(self, frame=-1):

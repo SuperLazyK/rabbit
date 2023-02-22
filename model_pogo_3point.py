@@ -264,22 +264,29 @@ def obs(s):
     return o
 
 def reward(s, u, ref_s):
-    kEy = 1
-    ku = 1
-    krcogpy = 1
-    krjoint = 1
-    krthr = 1
+    #kEy = 1
+    ku = 0.1
+    krcogv = -10
+    krcogpy = -10
+    krjoint = -2
+    krthr = -1
     pcog = cog(s)
     rpcog = cog(ref_s)
-    r_Ey = kEy * abs(3000 - (energyU(s) + energyTy(s)))/5000
+    vcog = dcog(s)
+    rvcog = dcog(ref_s)
+    #r_Ey = kEy * abs(3000 - (energyU(s) + energyTy(s)))/1000
     #r_thr = -abs(s[IDX_thr])*2/np.pi
     #r_cogx = -abs(pcog[0]-s[IDX_xr])
     r_u = ku * np.linalg.norm(u/max_u())
-    r_r_cogpy  = krcogpy * np.linalg.norm((pcog[1] - rpcog[1]))
-    r_r_joint = krjoint * np.linalg.norm((joints(s) - joints(ref_s)))
+    r_r_cogv  = krcogv * np.linalg.norm((vcog - rvcog))/MAX_SPEED
+    r_r_cogpy  = krcogpy * np.linalg.norm((pcog[1] - rpcog[1]))/2
+    r_r_joint = krjoint * ( abs(s[IDX_th0] - ref_s[IDX_th0])
+                          + abs(s[IDX_thk] - ref_s[IDX_thk])
+                          + abs(s[IDX_thw] - ref_s[IDX_thw])
+                          )
     r_r_thr = krthr * abs(s[IDX_thr] - ref_s[IDX_thr])
-    r = max(np.exp(-r_Ey) + np.exp(-r_u) + np.exp(-r_r_cogpy) + np.exp(-r_r_joint) + np.exp(-r_r_thr), 0.1)
-    print("reward check", r_Ey, r_u, r_r_cogpy, r_r_joint, r_r_thr)
+    r = max(np.exp(-r_u) + np.exp(-r_r_cogv) + np.exp(-r_r_cogpy) + np.exp(-r_r_joint) + np.exp(-r_r_thr), 0.1)
+    print("reward check", -r_u, "ref", -r_r_cogv, -r_r_cogpy, -r_r_joint, -r_r_thr)
     return r
 
 def init_ref(s):
