@@ -37,6 +37,7 @@ NORMAL_MODE=0
 JUMP_MODE=1
 FLIP_MODE=2
 CSV_FIELDS=['t', 'prx', 'pry', 'thr', 'z', 'th0', 'thk', 'thw']
+IDX_S=2
 
 #----------------------------
 # Rendering
@@ -191,6 +192,7 @@ class RabbitEnv():
                 self.autosave("normal")
         if random is not None:
             i = random.randint(len(self.reference))
+            t = i * DELTA
             s = self.reference[i][2]
             done, msg = self.game_over(s)
             if done:
@@ -198,6 +200,7 @@ class RabbitEnv():
                 print(s)
                 assert not done, "???before-start???" + msg
         else:
+            t = 0
             d = { 'pry' : 1.2
                 , 'th0' : np.deg2rad(-35)
                 , 'thk' : np.deg2rad(64)
@@ -222,7 +225,6 @@ class RabbitEnv():
             done, msg = self.game_over(s)
             assert not done, "???before-start???" + msg
         self.mode = NORMAL_MODE
-        t = 0
         u = mp.DEFAULT_U
         reward = 0
         ref = mp.init_ref(s)
@@ -246,10 +248,13 @@ class RabbitEnv():
     def obs(self, s):
         return mp.obs(s)
 
-    def calc_reward(self, s, mode, t, done):
+    def calc_reward(self, u, s, mode, t, done):
         if done:
             return 0.1
-        r = mp.reward(s)
+        i = round(t/DELTA)
+        ref_s = self.reference[i][IDX_S]
+        r_su = mp.reward(s, u, ref_s)
+
         return max(0, r)
 
     def num_of_frames(self):
@@ -272,7 +277,7 @@ class RabbitEnv():
         elif not success:
             print("failure")
             done = True
-        reward = self.calc_reward(s, self.mode, t, done)
+        reward = self.calc_reward(u, s, self.mode, t, done)
         self.history.append((mode, t, s, ref, u, reward))
 
         #if self.is_render_enabled != 0:
@@ -321,7 +326,7 @@ class RabbitEnv():
         return self.viewer.render(s, mode, t, ref, u, reward)
 
     def set_fixed_constraint_0t(self, frame=-1):
-        mp.set_fixed_constraint_0t(self.history[frame][2])
+        mp.set_fixed_constraint_0t(self.history[frame][IDX_S])
 
     def close(self):
         if self.viewer:
@@ -609,7 +614,7 @@ def main():
                 if (slow or not start) or (frame % 3 == 0):
                     env.render(frame=frame)
                     env.dryrun(frame)
-                    done, reason = env.game_over(env.history[frame][2])
+                    done, reason = env.game_over(env.history[frame][IDX_S])
                     if done:
                         print("reason", reason)
                     if mp.debug:
