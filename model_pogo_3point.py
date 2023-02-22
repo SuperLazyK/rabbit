@@ -38,8 +38,8 @@ l0 = 0.4
 l1 = 0.5
 l2 = 0.35
 #l = 1.2
-#g  = 0
-g  = 9.8
+g  = 0
+#g  = 9.8
 #g  = -9.8
 k  = 15000 # mgh = 1/2 k x**2 -> T=2*pi sqrt(m/k)
 c = 0
@@ -108,9 +108,8 @@ def from_polar(ref):
 
 inf = float('inf')
 #Kp = np.array([4000, 13000])
-#Kp = 20*np.array([400, 800])
+Kp = 20*np.array([600, 600, 600])
 #Kp = 10*np.array([600, 600, 600])
-Kp = 10*np.array([600, 600, 600])
 #Kp = np.array([400, 400, 800])
 #Kd = Kp * (0.01)
 Kd = Kp * (0.1)
