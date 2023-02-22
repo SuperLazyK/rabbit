@@ -191,8 +191,12 @@ class RabbitEnv():
                 self.autosave("normal")
         if random is not None:
             i = random.randint(len(self.reference))
-            #print(i, len(self.reference))
             s = self.reference[i][2]
+            done, msg = self.game_over(s)
+            if done:
+                print(i, "/", len(self.reference))
+                print(s)
+                assert not done, "???before-start???" + msg
         else:
             s = mp.reset_state({'pry': 1.2})
             #s = mp.reset_state({
@@ -210,9 +214,8 @@ class RabbitEnv():
             # 'dth0': 1.30,
             # 'dthk': -0.07,
             # 'dthw': 2.65})
-
-        done, msg = self.game_over(s)
-        assert not done, "???before-start???" + msg
+            done, msg = self.game_over(s)
+            assert not done, "???before-start???" + msg
         self.mode = NORMAL_MODE
         t = 0
         u = mp.DEFAULT_U
@@ -225,8 +228,10 @@ class RabbitEnv():
     def step(self, act):
         print("ACT=", act)
         if use_polar:
-            scaled = act*(mp.PREF_MAX - mp.PREF_MIN)/2 + (mp.PREF_MAX + mp.PREF_MIN)/2
-            ref = mp.from_polar(mp.pref_clip(scaled))
+            #scaled = act*(mp.PREF_MAX - mp.PREF_MIN)/2 + (mp.PREF_MAX + mp.PREF_MIN)/2
+            #scaled = act*(mp.PREF_MAX - mp.PREF_MIN) + (mp.PREF_MAX + mp.PREF_MIN)/2
+            #ref = mp.from_polar(mp.pref_clip(scaled))
+            ref = mp.from_polar(mp.pref_clip(act))
             s, reward, done, p = self.step_pos_control(ref)
         else:
             ref = mp.ref_clip(act)
@@ -599,7 +604,9 @@ def main():
                 if (slow or not start) or (frame % 3 == 0):
                     env.render(frame=frame)
                     env.dryrun(frame)
-                    env.game_over(env.history[frame][2])
+                    done, reason = env.game_over(env.history[frame][2])
+                    if done:
+                        print("reason", reason)
                     if mp.debug:
                         env.info(frame)
                 last_frame = frame
