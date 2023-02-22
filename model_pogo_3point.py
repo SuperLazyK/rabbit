@@ -38,8 +38,8 @@ l0 = 0.4
 l1 = 0.5
 l2 = 0.35
 #l = 1.2
-g  = 0
-#g  = 9.8
+#g  = 0
+g  = 9.8
 #g  = -9.8
 k  = 15000 # mgh = 1/2 k x**2 -> T=2*pi sqrt(m/k)
 c = 0
@@ -159,7 +159,7 @@ def reset_state(d = {}):
 def print_state(s, titlePrefix="", fieldPrefix=""):
     d = calc_joint_property(s)
     for i in d:
-        print(f"{titlePrefix} {i:}: {d[i]:.2f}")
+        print(f"{titlePrefix} {i:}: {np.rad2deg(d[i]) if 'th' in i else d[i]:.2f}")
 
 def calc_joint_property(s, d = {}):
     d['prx'] = s[IDX_xr ]

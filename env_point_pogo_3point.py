@@ -23,8 +23,8 @@ use_polar = True
 
 pygame.init()
 # input U
-DELTA = 0.002
-#DELTA = 0.001
+#DELTA = 0.002
+DELTA = 0.001
 FRAME_RATE=30
 #FRAME_RATE=1000
 #DELTA = 0.002
@@ -198,7 +198,12 @@ class RabbitEnv():
                 print(s)
                 assert not done, "???before-start???" + msg
         else:
-            s = mp.reset_state({'pry': 1.2})
+            d = { 'pry' : 1.2
+                , 'th0' : np.deg2rad(-35)
+                , 'thk' : np.deg2rad(64)
+                , 'thw' : np.deg2rad(-29)
+                }
+            s = mp.reset_state(d)
             #s = mp.reset_state({
             # 'prx': 0.00,
             # 'pry': 0.00,
