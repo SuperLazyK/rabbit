@@ -265,11 +265,11 @@ def obs(s):
 
 def reward(s, u, ref_s):
     #kEy = 1
-    ku = 0.1
-    krcogv = -10
-    krcogpy = -10
-    krjoint = -2
-    krthr = -1
+    ku = 100
+    krcogv = 10
+    krcogpy = 10
+    krjoint = 2
+    krthr = 2
     pcog = cog(s)
     rpcog = cog(ref_s)
     vcog = dcog(s)
