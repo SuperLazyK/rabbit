@@ -264,31 +264,44 @@ def obs(s):
     o[0] = 1 if ground(s) else 0
     return o
 
-def reward(s, u, ref_s):
-    kEy = 0.1
-    ku = 100
-    krcogv = 1
-    krcogpy = 0.1
-    krjoint = 3
-    krthr = 2
-    pcog = cog(s)
-    rpcog = cog(ref_s)
-    vcog = dcog(s)
-    rvcog = dcog(ref_s)
-    r_Ey = kEy * abs(3000 - (energyU(s) + energyTy(s)))/1000
-    #r_thr = -abs(s[IDX_thr])*2/np.pi
-    #r_cogx = -abs(pcog[0]-s[IDX_xr])
-    #r_u = ku * np.linalg.norm(u/max_u())
-    r_r_cogv  = krcogv * np.linalg.norm((vcog - rvcog))/MAX_SPEED
+def diff_ref(s, ref_s):
+    r_r_cogv  = np.linalg.norm((vcog - rvcog))/MAX_SPEED
     r_r_cogpy  = krcogpy * np.linalg.norm((pcog - rpcog))/2
-    r_r_joint = krjoint * ( abs(s[IDX_th0] - ref_s[IDX_th0])
-                          + abs(s[IDX_thk] - ref_s[IDX_thk])
-                          + abs(s[IDX_thw] - ref_s[IDX_thw])
-                          )
-    r_r_thr = krthr * abs(s[IDX_thr] - ref_s[IDX_thr])
-    r = max(np.exp(-r_Ey) + np.exp(-r_r_cogv) + np.exp(-r_r_cogpy) + np.exp(-r_r_joint) + np.exp(-r_r_thr), 0.1)
-    print(np.exp(-r_Ey), "ref", np.exp(-r_r_cogv), np.exp(-r_r_cogpy), np.exp(-r_r_joint), np.exp(-r_r_thr))
+    #r_r_joint = krjoint * ( abs(s[IDX_th0] - ref_s[IDX_th0])
+    #                      + abs(s[IDX_thk] - ref_s[IDX_thk])
+    #                      + abs(s[IDX_thw] - ref_s[IDX_thw])
+    #                      )
+    r_r_thr = krthr * diff_angle(s[IDX_thr], ref_s[IDX_thr])
+    return sim_a, sim_b, ...
+
+def pos_info(s):
+    pcog = cog(s)
+    ps = list(node_pos(s))
+    pr = ps[0]
+    pt = ps[-1]
+    return pcog[1], pr-pcog, pt-pcog
+
+def dist_pos(ry, rvr, rvt, cy, vr, vt):
+    return abs(ry -cy) + np.linalg.norm(rvr - vr) + np.linalg.norm(rvt - vt)
+
+milestone_info = None
+
+def reward(s, u, ref_s, milestones):
+    global milestone_info
+    if milestone_info is None:
+        milestone_info = []
+        for i in milestones:
+            milestone_info.append(pos_info(i))
+
+    cy, vr, vt = pos_info(s)
+    ry, rvr, rvt = pos_info(ref_s)
+    kEy = 0.1
+    r = kEy * abs(3000 - (energyU(s) + energyTy(s)))/1000
+    r = r + np.exp(-10 * dist_pos(ry, rvr, rvt, cy, vr, vt))
+    for ry, rvr, rvt in milestone_info:
+        r = r + np.exp(-10 * dist_pos(ry, rvr, rvt, cy, vr, vt))
     return r
+
 
 def init_ref(s):
     return np.array([s[IDX_th0], s[IDX_thk], s[IDX_thw]])
