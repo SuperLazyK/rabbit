@@ -44,15 +44,23 @@ symbolilze(M):= subst([ diff(xr,t,2)=ddxr
                     ], M)$
 ground(M):= subst([dxr=0 , ddxr=0 , dyr=0, ddyr=0 ], M)$
 air(M):= subst([dz=0 , z=0, ddz=0], M)$
-configure_param(M):= subst([ m0=15
-                           , mk=5
-                           , mw=10
-                           , m1=40
-                           , mt=5
+configure_param(M):= bfloat(subst([ m0=15
+                           , mk=2
+                           , mw=20
+                           , m1=30
+                           , mt=7
                            , l0 = 0.4
                            , l1 = 0.5
-                           , l2 = 0.3
-                     ], M)$
+                           , l2 = 0.35
+                           , z0 = 0.55
+                           , lt = 0.83
+                     ], M))$
+
+trigappro(th,M):=subst([sin(th)=th, cos(th)=1], M)$
+trigappall(M):=
+trigappro(thw+thr+thk+th0,
+trigappro(thr+thk+th0,
+trigappro(th0+thr,trigappro(th0,trigappro(thr,M)))))$
 
 x0: xr - (z + z0) * sin(thr)$
 y0: yr + (z + z0) * cos(thr)$
@@ -210,7 +218,6 @@ disp(ratsimp(trigsimp(expand(determinant(J)))));
 /*----------*/
 /* Lagrange */
 /*----------*/
-/*
 U0: y0 * m0 * g$
 K0_trs: 1/2 * m0 * sqsum(x0', y0')$
 
@@ -229,7 +236,7 @@ Kt_trs: 1/2 * mt * sqsum(xt', yt')$
 S:1/2*k*(z)*(z)$
 L: K0_trs + Kk_trs + Kw_trs + K1_trs + Kt_trs - U0 - U1 - Uk - Uw - Ut - S$
 E: K0_trs + Kk_trs + Kw_trs + K1_trs + Kt_trs + U0 + U1 + Uk + Uw + Ut + S$
-*/
+f90(trigappall(E));
 /* CASE1: air  fx0=fy0=0*/
 
 /*
@@ -258,7 +265,6 @@ disp(ratsimp(trigsimp(expand(determinant(A)))));
 
 
 /* CASE2: ground*/
-/*
 X : [z, thr, th0, thk, thw]$
 dX : [z', thr', th0', thk', thw']$
 ddX : symbolilze([z'', thr'', th0'', thk'', thw''])$
@@ -267,6 +273,8 @@ A:(trigsimp(expand(trigexpand(jacobian(args(rhs)[1], ddX)))))$
 b:(expand(transpose(rhs) - (jacobian(args(rhs)[1], ddX)).transpose(matrix(ddX))))$
 showmatf90(A)$
 showmatf90(b)$
+disp(expand(configure_param(ratsimp(trigsimp(expand(determinant(A)))))));
+/*
 A11:submatrix(3,4,5,A,3,4,5)$
 A22:submatrix(1,2,A,1,2)$
 disp(ratsimp(trigsimp(expand(determinant(A11)))));
