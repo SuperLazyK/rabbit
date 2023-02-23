@@ -89,7 +89,7 @@ back_flip_top = mp.reset_state({
 
 moving_plan = [ (0, normal_jump)
               , (0.1, back_flip_prepare)
-              , (0.71, back_flip_jump)
+              , (0.7, back_flip_jump)
               , (0.9, back_flip_top)
               ]
 
@@ -222,7 +222,7 @@ class RabbitEnv():
         self.moving_plan = plan
 
     def set_pos_ref(self, pos_ref):
-        self.pos_ref = [(0, pos_ref)]
+        self.moving_plan = [(0, pos_ref)]
 
     def get_pos_ref(self, t):
         for (t1, ref) in reversed(self.moving_plan):
