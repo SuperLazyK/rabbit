@@ -30,9 +30,9 @@ USE_REF=True
 #FRAME_RATE=1000
 #DELTA = 0.002
 #DELTA = 0.005
-SPEED=1000
+#SPEED=1000
 #SPEED=100
-#SPEED=30
+SPEED=30
 
 USE_TIMEOUT = True
 MAX_FRAME = int(3/DELTA)
@@ -59,7 +59,21 @@ SCALE=100
 RSCALE=1/SCALE
 OFFSET_VERT = SCREEN_SIZE[1]/3
 
-normal_jump = mp.reset_state({
+vertical_prepare = mp.reset_state({
+ 'pry': 0,
+ 'th0': np.deg2rad(-21.696),
+ 'thk': np.deg2rad(57.636),
+ 'thw': np.deg2rad(-76.671)
+})
+
+vertical_jump = mp.reset_state({
+ 'pry': 0,
+ 'th0': np.deg2rad(-12.476),
+ 'thk': np.deg2rad(25.628),
+ 'thw': np.deg2rad(-25.66)
+ })
+
+vertical_jump_top = mp.reset_state({
  'pry': 2,
  'th0': np.deg2rad(-8.18 ),
  'thk': np.deg2rad(16.52 ),
@@ -87,11 +101,12 @@ back_flip_top = mp.reset_state({
  'thw': np.deg2rad(-106)
  })
 
-moving_plan = [ (0, normal_jump)
-              , (0.1, back_flip_prepare)
-              , (0.7, back_flip_jump)
-              , (0.9, back_flip_top)
-              ]
+moving_plan = [ (0, vertical_jump)]
+#moving_plan = [ (0, vertical_jump_top)
+#              , (0.1, back_flip_prepare)
+#              , (0.7, back_flip_jump)
+#              , (0.9, back_flip_top)
+#              ]
 
 
 def dump_history_csv(history, filename='state.csv'):
@@ -541,7 +556,7 @@ def main():
     env.render(frame=0)
     plot_data = [env.history[0]]
     ctr_mode = 'polar'
-    ctr_mode = 'ref'
+    #ctr_mode = 'ref'
 
     while True:
         stepOne = False
@@ -642,11 +657,17 @@ def main():
                     v = np.array([0, 0, -1])
                 elif keyname == '1':
                     ctr_mode = 'ref'
-                    env.set_pos_ref(mp.joints(back_flip_prepare))
+                    env.set_pos_ref(mp.joints(vertical_prepare))
                 elif keyname == '2':
                     ctr_mode = 'ref'
-                    env.set_pos_ref(mp.joints(back_flip_jump))
+                    env.set_pos_ref(mp.joints(vertical_jump))
                 elif keyname == '3':
+                    ctr_mode = 'ref'
+                    env.set_pos_ref(mp.joints(back_flip_prepare))
+                elif keyname == '4':
+                    ctr_mode = 'ref'
+                    env.set_pos_ref(mp.joints(back_flip_jump))
+                elif keyname == '5':
                     ctr_mode = 'ref'
                     env.set_pos_ref(mp.joints(back_flip_top))
                 elif keyname == 'g':
