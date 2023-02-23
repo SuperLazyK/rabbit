@@ -52,6 +52,7 @@ RED = (228, 0, 0)
 GREEN = (0, 228, 0)
 BLUE = (0, 0, 228)
 GRAY = (100, 100, 100)
+LGRAY = (220, 200, 200)
 SCREEN_SIZE=(1300, 500)
 SCALE=100
 RSCALE=1/SCALE
@@ -117,32 +118,31 @@ class RabbitViewer():
     def revert_pos(self, p):
         return self.flip((p - (np.array(SCREEN_SIZE)/2 +  np.array([0, OFFSET_VERT]))) * RSCALE)
 
-    def render(self, state, mode, t, ref, u, r):
-        energy = mp.energy(state)
-
+    def render_body(self, state, color=None):
         ps = list(mp.node_pos(state))
         for i in range(len(ps)):
             ps[i] = self.conv_pos(ps[i])
-        cog = self.conv_pos(mp.cog(state))
-        #head = self.conv_pos(mp.head_pos(state))
-
-        self.screen.fill(WHITE)
-
         for i in range(1, len(ps)-2):
-            pygame.draw.line(self.screen, BLACK, ps[i], ps[i+1],  width=int(100 * RSCALE))
-        pygame.draw.line(self.screen, BLACK, ps[-2], ps[-1],  width=int(100 * RSCALE))
-        pygame.draw.line(self.screen, GREEN, ps[1], ps[-1],  width=int(100 * RSCALE))
-        pygame.draw.line(self.screen, GRAY, ps[0], ps[1],  width=int(100 * RSCALE))
+            pygame.draw.line(self.screen, BLACK if color is None else color, ps[i], ps[i+1],  width=int(100 * RSCALE))
+        pygame.draw.line(self.screen, BLACK if color is None else color, ps[-2], ps[-1],  width=int(100 * RSCALE))
+        pygame.draw.line(self.screen, GREEN if color is None else color, ps[1], ps[-1],  width=int(100 * RSCALE))
+        pygame.draw.line(self.screen, GRAY if color is None else color, ps[0], ps[1],  width=int(100 * RSCALE))
 
         for i in range(len(ps)):
-            pygame.draw.circle(self.screen, GRAY, ps[i], 150/5 * np.sqrt(RSCALE))
-        #pygame.draw.circle(self.screen, RED, ps[0], 150/5 * np.sqrt(RSCALE))
-        pygame.draw.circle(self.screen, BLUE, ps[4], 150/5 * np.sqrt(RSCALE))
+            pygame.draw.circle(self.screen, GRAY if color is None else color, ps[i], 150/5 * np.sqrt(RSCALE))
+
+        pygame.draw.circle(self.screen, BLUE if color is None else color, ps[4], 150/5 * np.sqrt(RSCALE))
+
+    def render(self, state, mode, t, ref, u, r, milestones = []):
+        self.screen.fill(WHITE)
+        energy = mp.energy(state)
+        self.render_body(state)
+        cog = self.conv_pos(mp.cog(state))
+        for s in milestones:
+            self.render_body(s, LGRAY)
 
         pygame.draw.circle(self.screen, RED, cog, 150/5 * np.sqrt(RSCALE))
-        #pygame.draw.circle(self.screen, YELLOW, head, 150/5 * np.sqrt(RSCALE))
         pygame.draw.line(self.screen, BLACK, [0,SCREEN_SIZE[1]/2 + OFFSET_VERT], [SCREEN_SIZE[0], SCREEN_SIZE[1]/2 + OFFSET_VERT],  width=int(100 * RSCALE))
-        #pygame.draw.line(self.screen, BLACK, ps[-2], head,  width=int(100 * RSCALE))
         tmx, tmy, am = mp.moment(state)
         text = self.font.render(f"mode={mode:} t={t:.03f} E={energy:.01f}", True, BLACK)
         text1 = self.font.render(f"ref={degrees(ref[0]):.01f} {degrees(ref[1]):.02f} {degrees(ref[2]):.02f}", True, BLACK)
@@ -188,10 +188,14 @@ class RabbitEnv():
         timestamp = dt.strftime("%Y-%m-%d-%H-%M-%S")
         self.save(dirname + '/{}.pkl'.format(timestamp))
 
+    def reset_milestones(self):
+        self.milestones = [self.reference[int(round(t/DELTA))][2] for t in [3.6,4.3,5,5.7]]
+
     def reset(self, random=None):
         if len(self.history ) > 1:
             if int(os.environ.get('AUTOSAVE', "0")):
                 self.autosave("normal")
+        self.reset_milestones()
         if random is not None:
             if random.randint(10) % 10 > 6:
                 t = 0
@@ -264,7 +268,7 @@ class RabbitEnv():
             ref_s = self.reference[i][IDX_S]
         else:
             ref_s = s
-        r = mp.reward(s, u, ref_s)
+        r = mp.reward(s, u, ref_s, self.milestones)
 
         return max(0, r)
 
@@ -337,7 +341,7 @@ class RabbitEnv():
         if self.viewer is None:
             self.viewer = RabbitViewer()
         mode, t, s, ref, u, reward = self.history[frame]
-        return self.viewer.render(s, mode, t, ref, u, reward)
+        return self.viewer.render(s, mode, t, ref, u, reward, self.milestones)
 
     def set_fixed_constraint_0t(self, frame=-1):
         mp.set_fixed_constraint_0t(self.history[frame][IDX_S])
