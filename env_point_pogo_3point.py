@@ -237,6 +237,7 @@ class RabbitEnv():
         else:
             t = 0
             s = back_flip_prepare
+            self.pos_ref = mp.joints(s)
             done, msg = self.game_over(s)
             assert not done, "???before-start???" + msg
         self.mode = NORMAL_MODE
@@ -305,8 +306,9 @@ class RabbitEnv():
 
         return s, reward, done, {}
 
-    def step_pos_control(self, pos_ref):
-        print("POS", np.rad2deg(pos_ref))
+    def step_pos_control(self, pos_ref = None):
+        if pos_ref is None:
+            pos_ref = self.pos_ref
         _, t, s, prev, _, _ = self.history[-1]
         t1 = t + 1.0/FRAME_RATE
         #t1 = t + DELTA #30Hz
@@ -467,7 +469,7 @@ def exec_cmd(ctr_mode, env, v, frame):
         vj = mp.invkinematics3(s, np.array([0, -k_r, k_th]) * np.array([0, v[1], v[0]]))
         _, _, done, _ = env.step_vel_control(vj + np.array([k_th0*v[2], 0, 0]))
     elif ctr_mode == "ref":
-        _, _, done, _ = env.step_pos_control(v)
+        _, _, done, _ = env.step_pos_control()
     else:
         k_th0 = 100000
         k_thk = 100000
@@ -514,8 +516,7 @@ def main():
 
     env.render(frame=0)
     plot_data = [env.history[0]]
-    ctr_mode = 'ref'
-    v = mp.joints(back_flip_prepare)
+    ctr_mode = 'polar'
 
     while True:
         stepOne = False
@@ -616,20 +617,20 @@ def main():
                     v = np.array([0, 0, -1])
                 elif keyname == '1':
                     ctr_mode = 'ref'
-                    v = mp.joints(back_flip_prepare)
+                    env.pos_ref = mp.joints(back_flip_prepare)
                 elif keyname == '2':
                     ctr_mode = 'ref'
-                    v = mp.joints(back_flip_jump)
+                    env.pos_ref = mp.joints(back_flip_jump)
                 elif keyname == '3':
                     ctr_mode = 'ref'
-                    v = mp.joints(back_flip_top)
+                    env.pos_ref = mp.joints(back_flip_top)
                 elif keyname == 'g':
                     if mp.g == 0:
                         mp.g=9.8
                     else:
                         mp.g=0
-            #elif event.type == pl.KEYUP:
-            #    v = mp.DEFAULT_U
+            elif event.type == pl.KEYUP and ctr_mode != 'ref':
+                v = mp.DEFAULT_U
 
         if replay:
             if start:
