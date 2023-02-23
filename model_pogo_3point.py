@@ -38,8 +38,8 @@ l0 = 0.4
 l1 = 0.5
 l2 = 0.35
 #l = 1.2
-#g  = 0
-g  = 9.8
+g  = 0
+#g  = 9.8
 #g  = -9.8
 #k  = 15000 # mgh = 1/2 k x**2 -> T=2*pi sqrt(m/k)
 k  = 17000 # mgh = 1/2 k x**2 -> T=2*pi sqrt(m/k)
@@ -374,6 +374,11 @@ def dcog(s):
 
 def joints(s):
     return s[IDX_th0:IDX_MAX]
+
+def inertia(s):
+    c = cog(s)
+    ps = list(node_pos(s))
+    return sum([(ps[i]-c)@(ps[i]-c)*M[i] for i in range(len(ps))])
 
 def moment(s):
     vs = list(node_vel(s))

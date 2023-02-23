@@ -138,18 +138,20 @@ class RabbitViewer():
         self.screen.fill(WHITE)
         energy = mp.energy(state)
         self.render_body(state)
-        cog = self.conv_pos(mp.cog(state))
+        cog = mp.cog(state)
+        pcog = self.conv_pos(cog)
         for s in milestones:
             self.render_body(s, LGRAY)
 
-        pygame.draw.circle(self.screen, RED, cog, 150/5 * np.sqrt(RSCALE))
+        pygame.draw.circle(self.screen, RED, pcog, 150/5 * np.sqrt(RSCALE))
         pygame.draw.line(self.screen, BLACK, [0,SCREEN_SIZE[1]/2 + OFFSET_VERT], [SCREEN_SIZE[0], SCREEN_SIZE[1]/2 + OFFSET_VERT],  width=int(100 * RSCALE))
         tmx, tmy, am = mp.moment(state)
         text = self.font.render(f"mode={mode:} t={t:.03f} E={energy:.01f}", True, BLACK)
         text1 = self.font.render(f"ref={degrees(ref[0]):.01f} {degrees(ref[1]):.02f} {degrees(ref[2]):.02f}", True, BLACK)
         info = mp.calc_joint_property(state)
         text2 = self.font.render(f"obs={degrees(info['th0']):.01f} {degrees(info['thk']):.02f} {degrees(info['thw']):.02f}", True, BLACK)
-        text3 = self.font.render(f"moment={tmx:.01f} {tmy:.02f} {am:.02f}", True, BLACK)
+        #text3 = self.font.render(f"moment={tmx:.01f} {tmy:.02f} {am:.02f}", True, BLACK)
+        text3 = self.font.render(f"cog/inertia={cog[0]:.01f} {cog[1]:.02f} {mp.inertia(state):.02f}", True, BLACK)
         self.screen.blit(text, [300, 50])
         self.screen.blit(text1, [300, 100])
         self.screen.blit(text2, [300, 150])
@@ -220,21 +222,21 @@ class RabbitEnv():
                 , 'thk' : np.deg2rad(64)
                 , 'thw' : np.deg2rad(-29)
                 }
-            d = { 'prx': 0.00
-                , 'pry': 0.00
-                , 'thr': np.deg2rad(0.16)
-                , 'z': 0.00
-                , 'th0': np.deg2rad(-9.96)
-                , 'thk': np.deg2rad(26.08)
-                , 'thw': np.deg2rad(-4.01)
-                , 'dprx': 0.40
-                , 'dpry': 7.77
-                , 'dthr': np.deg2rad(94.32)
-                , 'dz': 0.00
-                , 'dth0': np.deg2rad(32.40)
-                , 'dthk': np.deg2rad(4.74)
-                , 'dthw': np.deg2rad(159.06)
-                }
+            #d = { 'prx': 0.00
+            #    , 'pry': 0.00
+            #    , 'thr': np.deg2rad(0.16)
+            #    , 'z': 0.00
+            #    , 'th0': np.deg2rad(-9.96)
+            #    , 'thk': np.deg2rad(26.08)
+            #    , 'thw': np.deg2rad(-4.01)
+            #    , 'dprx': 0.40
+            #    , 'dpry': 5.77
+            #    , 'dthr': np.deg2rad(194.32)
+            #    , 'dz': 0.00
+            #    , 'dth0': np.deg2rad(32.40)
+            #    , 'dthk': np.deg2rad(4.74)
+            #    , 'dthw': np.deg2rad(159.06)
+            #    }
             s = mp.reset_state(d)
             #s = mp.reset_state({
             # 'prx': 0.00,
