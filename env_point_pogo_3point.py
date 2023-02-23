@@ -59,6 +59,13 @@ SCALE=100
 RSCALE=1/SCALE
 OFFSET_VERT = SCREEN_SIZE[1]/3
 
+normal_jump = mp.reset_state({
+ 'pry': 2,
+ 'th0': np.deg2rad(-8.18 ),
+ 'thk': np.deg2rad(16.52 ),
+ 'thw': np.deg2rad(-8.34)
+ })
+
 back_flip_prepare = mp.reset_state({
  'pry': 2,
  'th0': np.deg2rad(-8.32 ),
@@ -68,16 +75,16 @@ back_flip_prepare = mp.reset_state({
 
 back_flip_jump = mp.reset_state({
  'pry': 2,
- 'th0': np.deg2rad(0.64),
+ 'th0': np.deg2rad(10.64),
  'thk': np.deg2rad(16.52),
- 'thw': np.deg2rad(-8.34)
+ 'thw': np.deg2rad(-10.34)
  })
 
 back_flip_top = mp.reset_state({
  'pry': 2,
- 'th0': np.deg2rad(-17.3),
- 'thk': np.deg2rad(83.9),
- 'thw': np.deg2rad(-101)
+ 'th0': np.deg2rad(-27.3),
+ 'thk': np.deg2rad(99.9),
+ 'thw': np.deg2rad(-106)
  })
 
 
@@ -237,6 +244,7 @@ class RabbitEnv():
         else:
             t = 0
             s = back_flip_prepare
+            s = normal_jump
             self.pos_ref = mp.joints(s)
             done, msg = self.game_over(s)
             assert not done, "???before-start???" + msg
@@ -307,11 +315,11 @@ class RabbitEnv():
         return s, reward, done, {}
 
     def step_pos_control(self, pos_ref = None):
-        if pos_ref is None:
-            pos_ref = self.pos_ref
         _, t, s, prev, _, _ = self.history[-1]
         t1 = t + 1.0/FRAME_RATE
         #t1 = t + DELTA #30Hz
+        if pos_ref is None:
+            pos_ref = self.pos_ref(t)
 
         while t < t1:
             prev = (1-self.alpha) * prev + (self.alpha) * pos_ref
