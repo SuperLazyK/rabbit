@@ -87,6 +87,11 @@ back_flip_top = mp.reset_state({
  'thw': np.deg2rad(-106)
  })
 
+moving_plan = [ (0, normal_jump)
+              , (0.1, back_flip_prepare)
+              , (0.71, back_flip_jump)
+              , (0.9, back_flip_top)
+              ]
 
 
 def dump_history_csv(history, filename='state.csv'):
@@ -213,11 +218,18 @@ class RabbitEnv():
         self.min_obs = mp.OBS_MIN
         self.max_obs = mp.OBS_MAX
 
-    def set_pos_ref(self, pos_ref=None):
-        self.pos_ref = pos_ref
+    def set_move_plan(self, plan):
+        self.moving_plan = plan
 
-    def get_pos_ref(self, t=None):
-        return self.pos_ref
+    def set_pos_ref(self, pos_ref):
+        self.pos_ref = [(0, pos_ref)]
+
+    def get_pos_ref(self, t):
+        for (t1, ref) in reversed(self.moving_plan):
+            print(t,t1)
+            if t >= t1:
+                return ref
+        assert False
 
     def autosave(self, dirname='autodump'):
         print("dump!!!")
@@ -248,9 +260,8 @@ class RabbitEnv():
         #        print(s)
         #        assert not done, "???before-start???" + msg
         t = 0
-        s = back_flip_prepare
-        s = normal_jump
-        self.set_pos_ref(mp.joints(s))
+        s = moving_plan[0][1]
+        self.set_move_plan([(t, mp.joints(s)) for (t,s) in moving_plan])
         done, msg = self.game_over(s)
         assert not done, "???before-start???" + msg
         self.mode = NORMAL_MODE
@@ -530,6 +541,7 @@ def main():
     env.render(frame=0)
     plot_data = [env.history[0]]
     ctr_mode = 'polar'
+    ctr_mode = 'ref'
 
     while True:
         stepOne = False
