@@ -23,16 +23,16 @@ use_polar = True
 
 pygame.init()
 # input U
-#DELTA = 0.002
-DELTA = 0.001
+DELTA = 0.002
+#DELTA = 0.001
 FRAME_RATE=30
 USE_REF=True
 #FRAME_RATE=1000
 #DELTA = 0.002
 #DELTA = 0.005
-#SPEED=1000
+SPEED=1000
 #SPEED=100
-SPEED=30
+#SPEED=30
 
 USE_TIMEOUT = True
 MAX_FRAME = int(3/DELTA)
@@ -58,6 +58,29 @@ SCREEN_SIZE=(1300, 500)
 SCALE=100
 RSCALE=1/SCALE
 OFFSET_VERT = SCREEN_SIZE[1]/3
+
+back_flip_prepare = mp.reset_state({
+ 'pry': 2,
+ 'th0': np.deg2rad(-8.32 ),
+ 'thk': np.deg2rad(16.52 ),
+ 'thw': np.deg2rad(-72.33)
+ })
+
+back_flip_jump = mp.reset_state({
+ 'pry': 2,
+ 'th0': np.deg2rad(0.64),
+ 'thk': np.deg2rad(16.52),
+ 'thw': np.deg2rad(-8.34)
+ })
+
+back_flip_top = mp.reset_state({
+ 'pry': 2,
+ 'th0': np.deg2rad(-26),
+ 'thk': np.deg2rad(63.9),
+ 'thw': np.deg2rad(-90)
+ })
+
+
 
 def dump_history_csv(history, filename='state.csv'):
     data = []
@@ -150,8 +173,8 @@ class RabbitViewer():
         text1 = self.font.render(f"ref={degrees(ref[0]):.01f} {degrees(ref[1]):.02f} {degrees(ref[2]):.02f}", True, BLACK)
         info = mp.calc_joint_property(state)
         text2 = self.font.render(f"obs={degrees(info['th0']):.01f} {degrees(info['thk']):.02f} {degrees(info['thw']):.02f}", True, BLACK)
-        #text3 = self.font.render(f"moment={tmx:.01f} {tmy:.02f} {am:.02f}", True, BLACK)
-        text3 = self.font.render(f"cog/inertia={cog[0]:.01f} {cog[1]:.02f} {mp.inertia(state):.02f}", True, BLACK)
+        text3 = self.font.render(f"moment={tmx:.01f} {tmy:.02f} {am:.02f}", True, BLACK)
+        #text3 = self.font.render(f"cog/inertia={cog[0]:.01f} {cog[1]:.02f} {mp.inertia(state):.02f}", True, BLACK)
         self.screen.blit(text, [300, 50])
         self.screen.blit(text1, [300, 100])
         self.screen.blit(text2, [300, 150])
@@ -169,7 +192,7 @@ class RabbitEnv():
 
     def __init__(self, seed=None):
         self.history = []
-        self.reference = self.load_plot('main_pose.csv')
+        #self.reference = self.load_plot('main_pose.csv')
         self.reset()
         #self.alpha = 1
         #self.alpha = 0
@@ -191,14 +214,12 @@ class RabbitEnv():
         timestamp = dt.strftime("%Y-%m-%d-%H-%M-%S")
         self.save(dirname + '/{}.pkl'.format(timestamp))
 
-    def reset_milestones(self):
-        self.milestones = [self.reference[int(round(t/DELTA))][2] for t in [3.6,5,5.7]]
 
     def reset(self, random=None):
         if len(self.history ) > 1:
             if int(os.environ.get('AUTOSAVE', "0")):
                 self.autosave("normal")
-        self.reset_milestones()
+        self.milestones = []
         if random is not None:
             if random.randint(10) % 10 > 6:
                 t = 0
@@ -215,44 +236,7 @@ class RabbitEnv():
                 assert not done, "???before-start???" + msg
         else:
             t = 0
-            d = { 'pry' : 1.2
-                #, 'thr' : np.deg2rad(-5)
-                #, 'dprx' : 0.3
-                , 'th0' : np.deg2rad(-35)
-                , 'thk' : np.deg2rad(64)
-                , 'thw' : np.deg2rad(-29)
-                }
-            #d = { 'prx': 0.00
-            #    , 'pry': 0.00
-            #    , 'thr': np.deg2rad(0.16)
-            #    , 'z': 0.00
-            #    , 'th0': np.deg2rad(-9.96)
-            #    , 'thk': np.deg2rad(26.08)
-            #    , 'thw': np.deg2rad(-4.01)
-            #    , 'dprx': 0.40
-            #    , 'dpry': 5.77
-            #    , 'dthr': np.deg2rad(194.32)
-            #    , 'dz': 0.00
-            #    , 'dth0': np.deg2rad(32.40)
-            #    , 'dthk': np.deg2rad(4.74)
-            #    , 'dthw': np.deg2rad(159.06)
-            #    }
-            s = mp.reset_state(d)
-            #s = mp.reset_state({
-            # 'prx': 0.00,
-            # 'pry': 0.00,
-            # 'thr': 0.00,
-            # 'z': -0.01,
-            # 'th0': -0.18,
-            # 'thk': 0.46,
-            # 'thw': -0.08,
-            # 'dprx': 0.00,
-            # 'dpry': 0.00,
-            # 'dthr': 0.00,
-            # 'dz': 7.33,
-            # 'dth0': 1.30,
-            # 'dthk': -0.07,
-            # 'dthw': 2.65})
+            s = back_flip_prepare
             done, msg = self.game_over(s)
             assert not done, "???before-start???" + msg
         self.mode = NORMAL_MODE
@@ -264,7 +248,6 @@ class RabbitEnv():
         return mp.obs(s)
 
     def step(self, act):
-        #print("ACT=", act)
         if use_polar:
             #scaled = act*(mp.PREF_MAX - mp.PREF_MIN)/2 + (mp.PREF_MAX + mp.PREF_MIN)/2
             #scaled = act*(mp.PREF_MAX - mp.PREF_MIN) + (mp.PREF_MAX + mp.PREF_MIN)/2
@@ -323,6 +306,7 @@ class RabbitEnv():
         return s, reward, done, {}
 
     def step_pos_control(self, pos_ref):
+        print("POS", np.rad2deg(pos_ref))
         _, t, s, prev, _, _ = self.history[-1]
         t1 = t + 1.0/FRAME_RATE
         #t1 = t + DELTA #30Hz
@@ -386,13 +370,13 @@ class RabbitEnv():
     def info(self, frame=-1):
         mode, t, s, ref, u, reward = self.history[frame]
         energy = mp.energy(s)
-        #print(f"--")
-        #print(f"t:{t:.3f} E: {energy:.2f} mode: {mode:} reward: {reward:}")
-        #print(f"INPUT: u: {100*(u/mp.max_u())} [%]")
-        #print(f"INPUT: ref: th0 {degrees(ref[0]):.2f}  thk {degrees(ref[1]):.2f}")
-        #print(f"OUTPUT:")
-        #mp.print_state(s)
-        #print(f"--------------")
+        print(f"--")
+        print(f"t:{t:.3f} E: {energy:.2f} mode: {mode:} reward: {reward:}")
+        print(f"INPUT: u: {100*(u/mp.max_u())} [%]")
+        print(f"INPUT: ref: th0 {degrees(ref[0]):.2f}  thk {degrees(ref[1]):.2f}")
+        print(f"OUTPUT:")
+        mp.print_state(s)
+        print(f"--------------")
 
     def save(self, filename='dump.pkl'):
         with open(filename,'wb') as f:
@@ -464,11 +448,7 @@ class RabbitEnv():
 # main
 #----------------------------
 
-def exec_cmd(env, v, frame):
-    #ctr_mode = 'torq'
-    #ctr_mode = 'vel'
-    ctr_mode = 'polar'
-    #ctr_mode = 'inv3'
+def exec_cmd(ctr_mode, env, v, frame):
     if ctr_mode == 'vel':
         k_th0 = 3*SPEED/6*np.pi/360
         k_thk = 3*SPEED/6*np.pi/360
@@ -486,6 +466,8 @@ def exec_cmd(env, v, frame):
         _, _, s, _, _, _ = env.history[frame]
         vj = mp.invkinematics3(s, np.array([0, -k_r, k_th]) * np.array([0, v[1], v[0]]))
         _, _, done, _ = env.step_vel_control(vj + np.array([k_th0*v[2], 0, 0]))
+    elif ctr_mode == "ref":
+        _, _, done, _ = env.step_pos_control(v)
     else:
         k_th0 = 100000
         k_thk = 100000
@@ -532,6 +514,8 @@ def main():
 
     env.render(frame=0)
     plot_data = [env.history[0]]
+    ctr_mode = 'ref'
+    v = mp.joints(back_flip_prepare)
 
     while True:
         stepOne = False
@@ -550,17 +534,17 @@ def main():
                     env.save()
                 elif keyname == 'c':
                     env.set_fixed_constraint_0t(frame)
-                elif keyname == '1':
-                    print("load")
-                    env.load('dump.pkl')
-                    frame = 0
-                    replay = True
-                    done = True
-                elif keyname == '0':
-                    env.history = env.load_plot('main_pose.csv')
-                    frame = 0
-                    replay = True
-                    done = True
+                #elif keyname == '1':
+                #    print("load")
+                #    env.load('dump.pkl')
+                #    frame = 0
+                #    replay = True
+                #    done = True
+                #elif keyname == '0':
+                #    env.history = env.load_plot('main_pose.csv')
+                #    frame = 0
+                #    replay = True
+                #    done = True
 
                 if keyname == 'q':
                     #dump_history_csv(env.history)
@@ -568,6 +552,7 @@ def main():
                     sys.exit()
 
                 if keyname == 'r':
+                    v = mp.joints(back_flip_prepare)
                     frame = 0
                     done = False
                     replay = False
@@ -629,13 +614,22 @@ def main():
                     v = np.array([0, 0, 1])
                 elif keyname == 'p':
                     v = np.array([0, 0, -1])
+                elif keyname == '1':
+                    ctr_mode = 'ref'
+                    v = mp.joints(back_flip_prepare)
+                elif keyname == '2':
+                    ctr_mode = 'ref'
+                    v = mp.joints(back_flip_jump)
+                elif keyname == '3':
+                    ctr_mode = 'ref'
+                    v = mp.joints(back_flip_top)
                 elif keyname == 'g':
                     if mp.g == 0:
                         mp.g=9.8
                     else:
                         mp.g=0
-            elif event.type == pl.KEYUP:
-                v = mp.DEFAULT_U
+            #elif event.type == pl.KEYUP:
+            #    v = mp.DEFAULT_U
 
         if replay:
             if start:
@@ -664,7 +658,7 @@ def main():
                 last_frame = frame
 
         elif start and not done:
-            done = exec_cmd(env, v, frame)
+            done = exec_cmd(ctr_mode, env, v, frame)
             frame = env.num_of_frames() - 1
             env.render(frame=frame)
             env.info()

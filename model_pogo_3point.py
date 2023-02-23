@@ -38,8 +38,8 @@ l0 = 0.4
 l1 = 0.5
 l2 = 0.35
 #l = 1.2
-g  = 0
-#g  = 9.8
+#g  = 0
+g  = 9.8
 #g  = -9.8
 #k  = 15000 # mgh = 1/2 k x**2 -> T=2*pi sqrt(m/k)
 k  = 17000 # mgh = 1/2 k x**2 -> T=2*pi sqrt(m/k)
@@ -281,19 +281,20 @@ def reward(s, u, ref_s, milestones):
             milestone_info.append((pos_info(i), moment(i)))
 
     pc, vr, vt = pos_info(s)
-    mx, my, ma = moment(s)
-    kEy = 0.1
-    r = kEy * abs(3000 - (energyU(s) + energyTy(s)))/1000
-    k = 2
+    #mx, my, ma = moment(s)
+    #kEy = 0.1
+    #r = kEy * abs(3000 - (energyU(s) + energyTy(s)))/1000
+    k = 1
+    r = 0
     for i, ((rpc, rvr, rvt), (rmx, rmy, rma)) in enumerate(milestone_info):
         if np.linalg.norm(rpc-pc) < 0.1:
             rdp = np.exp(-k*np.linalg.norm(rpc - pc))
             rdv = np.exp(-k*np.linalg.norm(rvr - vr))
             rdt = np.exp(-k*np.linalg.norm(rvt - vt))
-            rdmx = np.exp(-k*np.linalg.norm(rmx - mx))
-            rdmy = np.exp(-k*np.linalg.norm(rmy - my))
-            rdma = np.exp(-k*np.linalg.norm(rma - ma))
-            r = r + rdp + rdv + rdt + rdmx + rdmy + rdma
+            #rdmx = np.exp(-k*np.linalg.norm(rmx - mx))
+            #rdmy = np.exp(-k*np.linalg.norm(rmy - my))
+            #rdma = np.exp(-k*np.linalg.norm(rma - ma))
+            r = r + rdp + rdv + rdt # + rdmx + rdmy + rdma
     return r
 
 
