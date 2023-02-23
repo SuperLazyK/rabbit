@@ -23,9 +23,10 @@ use_polar = True
 
 pygame.init()
 # input U
-DELTA = 0.002
-#DELTA = 0.001
+#DELTA = 0.002
+DELTA = 0.001
 FRAME_RATE=30
+USE_REF=True
 #FRAME_RATE=1000
 #DELTA = 0.002
 #DELTA = 0.005
@@ -207,6 +208,8 @@ class RabbitEnv():
         else:
             t = 0
             d = { 'pry' : 1.2
+                #, 'thr' : np.deg2rad(-5)
+                , 'dprx' : 0.3
                 , 'th0' : np.deg2rad(-35)
                 , 'thk' : np.deg2rad(64)
                 , 'thw' : np.deg2rad(-29)
@@ -257,7 +260,10 @@ class RabbitEnv():
         if done:
             return 0.1
         i = round(t/DELTA)
-        ref_s = self.reference[i][IDX_S]
+        if USE_REF:
+            ref_s = self.reference[i][IDX_S]
+        else:
+            ref_s = s
         r = mp.reward(s, u, ref_s)
 
         return max(0, r)
@@ -444,7 +450,7 @@ def exec_cmd(env, v, frame):
         k_th0 = 3*SPEED/6*np.pi/360
         k_thk = 3*SPEED/6*np.pi/360
         k_thw = 3*SPEED/6*np.pi/360
-        _, _, done, _ = env.step_vel_control(np.array([k_th0, k_thk, k_thw]) * np.array([v[2], v[1], -v[0]]))
+        _, _, done, _ = env.step_vel_control(np.array([k_th0, k_thk, k_thw]) * np.array([v[2], v[1], v[0]]))
     elif ctr_mode == 'polar':
         k_r = 3*SPEED/6*np.pi/360
         k_th1 = 3*SPEED/6*np.pi/360
@@ -476,7 +482,9 @@ def main():
     pygame.init()
 
     global MAX_FRAME
+    global USE_REF
     MAX_FRAME = 100000000
+    USE_REF=False
 
     env = RabbitEnv()
 
