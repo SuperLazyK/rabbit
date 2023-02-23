@@ -245,7 +245,7 @@ class RabbitEnv():
         return mp.obs(s)
 
     def step(self, act):
-        print("ACT=", act)
+        #print("ACT=", act)
         if use_polar:
             #scaled = act*(mp.PREF_MAX - mp.PREF_MIN)/2 + (mp.PREF_MAX + mp.PREF_MIN)/2
             #scaled = act*(mp.PREF_MAX - mp.PREF_MIN) + (mp.PREF_MAX + mp.PREF_MIN)/2

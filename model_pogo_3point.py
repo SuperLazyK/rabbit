@@ -293,7 +293,6 @@ def reward(s, u, ref_s, milestones):
             rdmx = np.exp(-k*np.linalg.norm(rmx - mx))
             rdmy = np.exp(-k*np.linalg.norm(rmy - my))
             rdma = np.exp(-k*np.linalg.norm(rma - ma))
-            print("mile ", i, r, rdp, rdv, rdt, rdmx, rdmy, rdma)
             r = r + rdp + rdv + rdt + rdmx + rdmy + rdma
     return r
 
