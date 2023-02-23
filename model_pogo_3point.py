@@ -51,10 +51,10 @@ c = 0
 ref_min_th0 = np.deg2rad(-30)
 ref_max_th0 = np.deg2rad(20)
 ref_min_thk = np.deg2rad(1)
-ref_max_thk = np.deg2rad(80)
+ref_max_thk = np.deg2rad(100)
 ref_min_thw = np.deg2rad(-80)
 ref_max_thw = np.deg2rad(0)
-ref_min_pr = (l0 + l1) * 0.85
+ref_min_pr = (l0 + l1) * 0.75
 ref_max_pr = (l0 + l1) * 0.99
 ref_min_pth1 = np.deg2rad(1)
 ref_max_pth1 = np.deg2rad(65)
@@ -70,12 +70,12 @@ DEFAULT_U = np.zeros(DIM_U)
 limit_min_thr = np.deg2rad(-180)
 limit_max_thr = np.deg2rad(180)
 
-limit_min_th0 = np.deg2rad(-45)
-limit_max_th0 = np.deg2rad(45)
+limit_min_th0 = np.deg2rad(-55)
+limit_max_th0 = np.deg2rad(55)
 
 limit_min_thk = np.deg2rad(0)
 limit_max_thk = np.deg2rad(90)
-limit_min_thw = np.deg2rad(-100)
+limit_min_thw = np.deg2rad(-120)
 limit_max_thw = np.deg2rad(15)
 
 MAX_ROT_SPEED=100

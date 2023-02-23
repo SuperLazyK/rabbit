@@ -75,9 +75,9 @@ back_flip_jump = mp.reset_state({
 
 back_flip_top = mp.reset_state({
  'pry': 2,
- 'th0': np.deg2rad(-26),
- 'thk': np.deg2rad(63.9),
- 'thw': np.deg2rad(-90)
+ 'th0': np.deg2rad(-17.3),
+ 'thk': np.deg2rad(83.9),
+ 'thw': np.deg2rad(-101)
  })
 
 
