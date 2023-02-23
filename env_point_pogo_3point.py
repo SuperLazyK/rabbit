@@ -34,6 +34,7 @@ USE_REF=True
 #SPEED=100
 SPEED=30
 
+USE_TIMEOUT = True
 MAX_FRAME = int(3/DELTA)
 NORMAL_MODE=0
 JUMP_MODE=1
@@ -203,6 +204,7 @@ class RabbitEnv():
             else:
                 i = random.randint(len(self.reference) - MAX_FRAME - 2)
                 t = i * DELTA
+                t = 0 # i * DELTA
                 s = self.reference[i][2]
             done, msg = self.game_over(s)
             if done:
@@ -217,6 +219,21 @@ class RabbitEnv():
                 , 'th0' : np.deg2rad(-35)
                 , 'thk' : np.deg2rad(64)
                 , 'thw' : np.deg2rad(-29)
+                }
+            d = { 'prx': 0.00
+                , 'pry': 0.00
+                , 'thr': np.deg2rad(0.16)
+                , 'z': 0.00
+                , 'th0': np.deg2rad(-9.96)
+                , 'thk': np.deg2rad(26.08)
+                , 'thw': np.deg2rad(-4.01)
+                , 'dprx': 0.40
+                , 'dpry': 7.77
+                , 'dthr': np.deg2rad(94.32)
+                , 'dz': 0.00
+                , 'dth0': np.deg2rad(32.40)
+                , 'dthk': np.deg2rad(4.74)
+                , 'dthw': np.deg2rad(159.06)
                 }
             s = mp.reset_state(d)
             #s = mp.reset_state({
@@ -292,7 +309,7 @@ class RabbitEnv():
         elif not success:
             print("failure")
             done = True
-        if self.num_of_frames() >= MAX_FRAME:
+        if USE_TIMEOUT and self.num_of_frames() >= MAX_FRAME:
             print("timeout")
             done = True
         reward = self.calc_reward(s, u, self.mode, t, done)
@@ -485,10 +502,10 @@ def main():
 
     pygame.init()
 
-    global MAX_FRAME
     global USE_REF
-    MAX_FRAME = 100000000
+    global USE_TIMEOUT
     USE_REF=False
+    USE_TIMEOUT = False
 
     env = RabbitEnv()
 
