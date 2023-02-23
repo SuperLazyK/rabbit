@@ -475,6 +475,9 @@ def main():
 
     pygame.init()
 
+    global MAX_FRAME
+    MAX_FRAME = 100000000
+
     env = RabbitEnv()
 
     v = mp.DEFAULT_U
