@@ -189,7 +189,7 @@ class RabbitEnv():
         self.save(dirname + '/{}.pkl'.format(timestamp))
 
     def reset_milestones(self):
-        self.milestones = [self.reference[int(round(t/DELTA))][2] for t in [3.6,4.3,5,5.7]]
+        self.milestones = [self.reference[int(round(t/DELTA))][2] for t in [3.6,5,5.7]]
 
     def reset(self, random=None):
         if len(self.history ) > 1:

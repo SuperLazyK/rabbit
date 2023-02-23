@@ -269,10 +269,7 @@ def pos_info(s):
     ps = list(node_pos(s))
     pr = ps[0]
     pt = ps[-1]
-    return pcog[1], pr-pcog, pt-pcog
-
-def dist_pos(ry, rvr, rvt, cy, vr, vt):
-    return abs(ry -cy) + np.linalg.norm(rvr - vr) + np.linalg.norm(rvt - vt)
+    return pcog, pr-pcog, pt-pcog
 
 milestone_info = None
 
@@ -281,19 +278,23 @@ def reward(s, u, ref_s, milestones):
     if milestone_info is None:
         milestone_info = []
         for i in milestones:
-            milestone_info.append(pos_info(i))
+            milestone_info.append((pos_info(i), moment(i)))
 
-    cy, vr, vt = pos_info(s)
-    ry, rvr, rvt = pos_info(ref_s)
-    print("check reward", cy, vr, vt)
+    pc, vr, vt = pos_info(s)
+    mx, my, ma = moment(s)
     kEy = 0.1
     r = kEy * abs(3000 - (energyU(s) + energyTy(s)))/1000
     k = 2
-    r = r + np.exp(-k*dist_pos(ry, rvr, rvt, cy, vr, vt))
-    for i, (ry, rvr, rvt) in enumerate(milestone_info):
-        dr = np.exp(-k*dist_pos(ry, rvr, rvt, cy, vr, vt))
-        if dr > 0.8:
-            r = r + dr
+    for i, ((rpc, rvr, rvt), (rmx, rmy, rma)) in enumerate(milestone_info):
+        if np.linalg.norm(rpc-pc) < 0.1:
+            rdp = np.exp(-k*np.linalg.norm(rpc - pc))
+            rdv = np.exp(-k*np.linalg.norm(rvr - vr))
+            rdt = np.exp(-k*np.linalg.norm(rvt - vt))
+            rdmx = np.exp(-k*np.linalg.norm(rmx - mx))
+            rdmy = np.exp(-k*np.linalg.norm(rmy - my))
+            rdma = np.exp(-k*np.linalg.norm(rma - ma))
+            print("mile ", i, r, rdp, rdv, rdt, rdmx, rdmy, rdma)
+            r = r + rdp + rdv + rdt + rdmx + rdmy + rdma
     return r
 
 
