@@ -213,6 +213,12 @@ class RabbitEnv():
         self.min_obs = mp.OBS_MIN
         self.max_obs = mp.OBS_MAX
 
+    def set_pos_ref(self, pos_ref=None):
+        self.pos_ref = pos_ref
+
+    def get_pos_ref(self, t=None):
+        return self.pos_ref
+
     def autosave(self, dirname='autodump'):
         print("dump!!!")
         os.makedirs(dirname, exist_ok=True)
@@ -227,27 +233,26 @@ class RabbitEnv():
             if int(os.environ.get('AUTOSAVE', "0")):
                 self.autosave("normal")
         self.milestones = []
-        if random is not None:
-            if random.randint(10) % 10 > 6:
-                t = 0
-                s = self.reference[0][2]
-            else:
-                i = random.randint(len(self.reference) - MAX_FRAME - 2)
-                t = i * DELTA
-                t = 0 # i * DELTA
-                s = self.reference[i][2]
-            done, msg = self.game_over(s)
-            if done:
-                print(i, "/", len(self.reference))
-                print(s)
-                assert not done, "???before-start???" + msg
-        else:
-            t = 0
-            s = back_flip_prepare
-            s = normal_jump
-            self.pos_ref = mp.joints(s)
-            done, msg = self.game_over(s)
-            assert not done, "???before-start???" + msg
+        #if random is not None:
+        #    if random.randint(10) % 10 > 6:
+        #        t = 0
+        #        s = self.reference[0][2]
+        #    else:
+        #        i = random.randint(len(self.reference) - MAX_FRAME - 2)
+        #        t = i * DELTA
+        #        t = 0 # i * DELTA
+        #        s = self.reference[i][2]
+        #    done, msg = self.game_over(s)
+        #    if done:
+        #        print(i, "/", len(self.reference))
+        #        print(s)
+        #        assert not done, "???before-start???" + msg
+        t = 0
+        s = back_flip_prepare
+        s = normal_jump
+        self.set_pos_ref(mp.joints(s))
+        done, msg = self.game_over(s)
+        assert not done, "???before-start???" + msg
         self.mode = NORMAL_MODE
         u = mp.DEFAULT_U
         reward = 0
@@ -319,7 +324,7 @@ class RabbitEnv():
         t1 = t + 1.0/FRAME_RATE
         #t1 = t + DELTA #30Hz
         if pos_ref is None:
-            pos_ref = self.pos_ref(t)
+            pos_ref = self.get_pos_ref(t)
 
         while t < t1:
             prev = (1-self.alpha) * prev + (self.alpha) * pos_ref
@@ -625,13 +630,13 @@ def main():
                     v = np.array([0, 0, -1])
                 elif keyname == '1':
                     ctr_mode = 'ref'
-                    env.pos_ref = mp.joints(back_flip_prepare)
+                    env.set_pos_ref(mp.joints(back_flip_prepare))
                 elif keyname == '2':
                     ctr_mode = 'ref'
-                    env.pos_ref = mp.joints(back_flip_jump)
+                    env.set_pos_ref(mp.joints(back_flip_jump))
                 elif keyname == '3':
                     ctr_mode = 'ref'
-                    env.pos_ref = mp.joints(back_flip_top)
+                    env.set_pos_ref(mp.joints(back_flip_top))
                 elif keyname == 'g':
                     if mp.g == 0:
                         mp.g=9.8
