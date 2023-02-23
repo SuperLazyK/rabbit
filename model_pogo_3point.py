@@ -264,16 +264,6 @@ def obs(s):
     o[0] = 1 if ground(s) else 0
     return o
 
-def diff_ref(s, ref_s):
-    r_r_cogv  = np.linalg.norm((vcog - rvcog))/MAX_SPEED
-    r_r_cogpy  = krcogpy * np.linalg.norm((pcog - rpcog))/2
-    #r_r_joint = krjoint * ( abs(s[IDX_th0] - ref_s[IDX_th0])
-    #                      + abs(s[IDX_thk] - ref_s[IDX_thk])
-    #                      + abs(s[IDX_thw] - ref_s[IDX_thw])
-    #                      )
-    r_r_thr = krthr * diff_angle(s[IDX_thr], ref_s[IDX_thr])
-    return sim_a, sim_b, ...
-
 def pos_info(s):
     pcog = cog(s)
     ps = list(node_pos(s))
@@ -295,11 +285,15 @@ def reward(s, u, ref_s, milestones):
 
     cy, vr, vt = pos_info(s)
     ry, rvr, rvt = pos_info(ref_s)
+    print("check reward", cy, vr, vt)
     kEy = 0.1
     r = kEy * abs(3000 - (energyU(s) + energyTy(s)))/1000
-    r = r + np.exp(-10 * dist_pos(ry, rvr, rvt, cy, vr, vt))
-    for ry, rvr, rvt in milestone_info:
-        r = r + np.exp(-10 * dist_pos(ry, rvr, rvt, cy, vr, vt))
+    k = 2
+    r = r + np.exp(-k*dist_pos(ry, rvr, rvt, cy, vr, vt))
+    for i, (ry, rvr, rvt) in enumerate(milestone_info):
+        dr = np.exp(-k*dist_pos(ry, rvr, rvt, cy, vr, vt))
+        if dr > 0.8:
+            r = r + dr
     return r
 
 
@@ -332,7 +326,7 @@ def check_invariant(s):
     #    reason = f"GAME OVER @ line-w1 < line-0t"
     #    return False, reason
 
-    if ground(s) and abs(s[IDX_thr]) > np.deg2rad(45):
+    if ground(s) and abs(s[IDX_thr]) > np.deg2rad(55):
         reason = f"GAME OVER @ thr is too big on ground"
         return False, reason
 

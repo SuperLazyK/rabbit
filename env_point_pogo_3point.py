@@ -213,7 +213,7 @@ class RabbitEnv():
             t = 0
             d = { 'pry' : 1.2
                 #, 'thr' : np.deg2rad(-5)
-                , 'dprx' : 0.3
+                #, 'dprx' : 0.3
                 , 'th0' : np.deg2rad(-35)
                 , 'thk' : np.deg2rad(64)
                 , 'thw' : np.deg2rad(-29)
@@ -367,13 +367,13 @@ class RabbitEnv():
     def info(self, frame=-1):
         mode, t, s, ref, u, reward = self.history[frame]
         energy = mp.energy(s)
-        print(f"--")
-        print(f"t:{t:.3f} E: {energy:.2f} mode: {mode:} reward: {reward:}")
-        print(f"INPUT: u: {100*(u/mp.max_u())} [%]")
-        print(f"INPUT: ref: th0 {degrees(ref[0]):.2f}  thk {degrees(ref[1]):.2f}")
-        print(f"OUTPUT:")
-        mp.print_state(s)
-        print(f"--------------")
+        #print(f"--")
+        #print(f"t:{t:.3f} E: {energy:.2f} mode: {mode:} reward: {reward:}")
+        #print(f"INPUT: u: {100*(u/mp.max_u())} [%]")
+        #print(f"INPUT: ref: th0 {degrees(ref[0]):.2f}  thk {degrees(ref[1]):.2f}")
+        #print(f"OUTPUT:")
+        #mp.print_state(s)
+        #print(f"--------------")
 
     def save(self, filename='dump.pkl'):
         with open(filename,'wb') as f:
