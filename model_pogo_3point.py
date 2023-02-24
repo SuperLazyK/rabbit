@@ -38,8 +38,8 @@ l0 = 0.4
 l1 = 0.5
 l2 = 0.35
 #l = 1.2
-g  = 0
-#g  = 9.8
+#g  = 0
+g  = 9.8
 #g  = -9.8
 #k  = 15000 # mgh = 1/2 k x**2 -> T=2*pi sqrt(m/k)
 k  = 17000 # mgh = 1/2 k x**2 -> T=2*pi sqrt(m/k)
@@ -256,15 +256,22 @@ def node_vel(s):
     vt = v0 + dthr*lt*dir_dthr
     return vr, v0, vk, vw, v1, vt
 
+MODE_LV0=0
+MODE_LV1=1 # 1m jump
+MODE_LV2=2 # 2m jump
+MODE_LV3=3 # 3m jump
+MODE_LV4=4 # backflip
+MODE_END=5 # land
+
 OBS_MIN = np.array([0, 0, limit_min_thr, -max_z, limit_min_th0, limit_min_thk, limit_min_thw,
                    -MAX_SPEED, -MAX_SPEED, -MAX_ROT_SPEED, -MAX_SPEED, -MAX_ROT_SPEED, -MAX_ROT_SPEED, -MAX_ROT_SPEED])
-OBS_MAX = np.array([1, 5, limit_max_thr,      0, limit_max_th0, limit_max_thk, limit_max_thw,
+OBS_MAX = np.array([4, 5, limit_max_thr,      0, limit_max_th0, limit_max_thk, limit_max_thw,
                     MAX_SPEED , MAX_SPEED , MAX_ROT_SPEED, MAX_SPEED, MAX_ROT_SPEED, MAX_ROT_SPEED, MAX_ROT_SPEED])
 
-def obs(s):
+def obs(s, mode):
     o = s.copy()
     o[IDX_MAX:] = o[IDX_MAX:]/MAX_SPEED
-    o[0] = 1 if ground(s) else 0
+    o[0] = mode
     return o
 
 def pos_info(s):
@@ -300,7 +307,6 @@ def reward(s, u, ref_s, milestones):
             r = r + rdp + rdv + rdt # + rdmx + rdmy + rdma
     return r
 
-
 def init_ref(s):
     return np.array([s[IDX_th0], s[IDX_thk], s[IDX_thw]])
 
@@ -312,15 +318,12 @@ def check_invariant(s):
             return False, reason
     if s[IDX_th0] < limit_min_th0 or s[IDX_th0] > limit_max_th0:
             reason = f"GAME OVER @ range error th0={np.rad2deg(s[IDX_th0]):}"
-            print(reason)
             return False, reason
     if s[IDX_thk] < limit_min_thk or s[IDX_thk] > limit_max_thk:
             reason = f"GAME OVER @ range error thk={np.rad2deg(s[IDX_thk]):}"
-            print(reason)
             return False, reason
     if s[IDX_thw] < limit_min_thw or s[IDX_thw] > limit_max_thw:
             reason = f"GAME OVER @ range error thw={np.rad2deg(s[IDX_thw]):}"
-            print(reason)
             return False, reason
 
     vec_0t = ps[IDX_pt] - ps[IDX_p0]
@@ -365,6 +368,9 @@ def energyT(s):
 
 def energy(s):
     return energyU(s) + energyT(s)
+
+def pogo_angle(s):
+    return s[IDX_thr]
 
 def cog(s):
     ps = list(node_pos(s))

@@ -36,7 +36,6 @@ SPEED=30
 
 USE_TIMEOUT = True
 MAX_FRAME = int(3/DELTA)
-NORMAL_MODE=0
 JUMP_MODE=1
 FLIP_MODE=2
 CSV_FIELDS=['t', 'prx', 'pry', 'thr', 'z', 'th0', 'thk', 'thw']
@@ -101,12 +100,12 @@ back_flip_top = mp.reset_state({
  'thw': np.deg2rad(-106)
  })
 
-moving_plan = [ (0, vertical_jump)]
-#moving_plan = [ (0, vertical_jump_top)
-#              , (0.1, back_flip_prepare)
-#              , (0.7, back_flip_jump)
-#              , (0.9, back_flip_top)
-#              ]
+#moving_plan = [ (0, vertical_jump)]
+moving_plan = [ (0, vertical_jump_top)
+              , (0.1, back_flip_prepare)
+              , (0.7, back_flip_jump)
+              , (0.9, back_flip_top)
+              ]
 
 
 def dump_history_csv(history, filename='state.csv'):
@@ -184,14 +183,12 @@ class RabbitViewer():
 
         pygame.draw.circle(self.screen, BLUE if color is None else color, ps[4], 150/5 * np.sqrt(RSCALE))
 
-    def render(self, state, mode, t, ref, u, r, milestones = []):
+    def render(self, state, mode, t, ref, u, r):
         self.screen.fill(WHITE)
         energy = mp.energy(state)
         self.render_body(state)
         cog = mp.cog(state)
         pcog = self.conv_pos(cog)
-        for s in milestones:
-            self.render_body(s, LGRAY)
 
         pygame.draw.circle(self.screen, RED, pcog, 150/5 * np.sqrt(RSCALE))
         pygame.draw.line(self.screen, BLACK, [0,SCREEN_SIZE[1]/2 + OFFSET_VERT], [SCREEN_SIZE[0], SCREEN_SIZE[1]/2 + OFFSET_VERT],  width=int(100 * RSCALE))
@@ -200,8 +197,8 @@ class RabbitViewer():
         text1 = self.font.render(f"ref={degrees(ref[0]):.01f} {degrees(ref[1]):.02f} {degrees(ref[2]):.02f}", True, BLACK)
         info = mp.calc_joint_property(state)
         text2 = self.font.render(f"obs={degrees(info['th0']):.01f} {degrees(info['thk']):.02f} {degrees(info['thw']):.02f}", True, BLACK)
-        text3 = self.font.render(f"moment={tmx:.01f} {tmy:.02f} {am:.02f}", True, BLACK)
-        #text3 = self.font.render(f"cog/inertia={cog[0]:.01f} {cog[1]:.02f} {mp.inertia(state):.02f}", True, BLACK)
+        #text3 = self.font.render(f"moment={tmx:.01f} {tmy:.02f} {am:.02f}", True, BLACK)
+        text3 = self.font.render(f"cog/inertia={cog[0]:.01f} {cog[1]:.02f} {mp.inertia(state):.02f}", True, BLACK)
         self.screen.blit(text, [300, 50])
         self.screen.blit(text1, [300, 100])
         self.screen.blit(text2, [300, 150])
@@ -241,7 +238,7 @@ class RabbitEnv():
 
     def get_pos_ref(self, t):
         for (t1, ref) in reversed(self.moving_plan):
-            print(t,t1)
+            #print(t,t1)
             if t >= t1:
                 return ref
         assert False
@@ -259,7 +256,6 @@ class RabbitEnv():
         if len(self.history ) > 1:
             if int(os.environ.get('AUTOSAVE', "0")):
                 self.autosave("normal")
-        self.milestones = []
         #if random is not None:
         #    if random.randint(10) % 10 > 6:
         #        t = 0
@@ -279,13 +275,14 @@ class RabbitEnv():
         self.set_move_plan([(t, mp.joints(s)) for (t,s) in moving_plan])
         done, msg = self.game_over(s)
         assert not done, "???before-start???" + msg
-        self.mode = NORMAL_MODE
+        self.mode = mp.MODE_LV0
+        self.mode = mp.MODE_LV3
         u = mp.DEFAULT_U
         reward = 0
         ref = mp.init_ref(s)
         self.history = [(self.mode, t, s, ref, u, reward)]
 
-        return mp.obs(s)
+        return mp.obs(s, self.mode)
 
     def step(self, act):
         if use_polar:
@@ -297,20 +294,37 @@ class RabbitEnv():
         else:
             ref = mp.ref_clip(act)
             s, reward, done, p = self.step_pos_control(ref)
-        return mp.obs(s), reward, done, p
+        return mp.obs(s, self.mode), reward, done, p
 
     def obs(self, s):
-        return mp.obs(s)
+        return mp.obs(s, self.mode)
 
-    def calc_reward(self, s, u, mode, t, done):
+    def calc_reward(self, s, u, t, done):
         if done:
-            return 0.1
-        i = round(t/DELTA)
-        if USE_REF:
-            ref_s = self.reference[i][IDX_S]
-        else:
-            ref_s = s
-        r = mp.reward(s, u, ref_s, self.milestones)
+            return 0
+        r = 0.1
+        pc = mp.cog(s)
+        angle = degrees(mp.pogo_angle(s))
+        if self.mode == mp.MODE_LV0:
+            if pc[1] >= 1:
+                r = r + 100*np.exp(-abs(angle)/10)
+                self.mode = mp.MODE_LV1
+        elif self.mode == mp.MODE_LV1:
+            if pc[1] >= 2:
+                r = r + 100*np.exp(-abs(angle)/10)
+                self.mode = mp.MODE_LV2
+        elif self.mode == mp.MODE_LV2:
+            if pc[1] >= 3:
+                r = r + 100
+                self.mode = mp.MODE_LV3
+        elif self.mode == mp.MODE_LV3:
+            if pc[1] >= 2 and abs(abs(angle) - 180) < 5:
+                r = r + 100
+                self.mode = mp.MODE_LV4
+        elif self.mode == mp.MODE_LV4:
+            if mp.ground(s):
+                r = r + 100
+                self.mode = mp.MODE_END
 
         return max(0, r)
 
@@ -326,7 +340,7 @@ class RabbitEnv():
 
     def step_plant(self, u, ref=mp.DEFAULT_U):
         _, t, s, _, _, _ = self.history[-1]
-        success, mode, t, s = mp.step(t, s, u, DELTA)
+        success, _, t, s = mp.step(t, s, u, DELTA)
         done, reason = self.game_over(s)
         if done:
             print(reason)
@@ -337,8 +351,8 @@ class RabbitEnv():
         if USE_TIMEOUT and self.num_of_frames() >= MAX_FRAME:
             print("timeout")
             done = True
-        reward = self.calc_reward(s, u, self.mode, t, done)
-        self.history.append((mode, t, s, ref, u, reward))
+        reward = self.calc_reward(s, u, t, done)
+        self.history.append((self.mode, t, s, ref, u, reward))
 
         #if self.is_render_enabled != 0:
         #    self.render(-1)
@@ -385,7 +399,7 @@ class RabbitEnv():
         if self.viewer is None:
             self.viewer = RabbitViewer()
         mode, t, s, ref, u, reward = self.history[frame]
-        return self.viewer.render(s, mode, t, ref, u, reward, self.milestones)
+        return self.viewer.render(s, mode, t, ref, u, reward)
 
     def set_fixed_constraint_0t(self, frame=-1):
         mp.set_fixed_constraint_0t(self.history[frame][IDX_S])
@@ -405,7 +419,7 @@ class RabbitEnv():
         _, _, _, ref, u, reward = self.history[frame]
         success, mode, t, s = mp.step(t, prev_s, u, DELTA)
         done, reason = self.game_over(s)
-        reward = self.calc_reward(s, u, mode, t, done)
+        reward = self.calc_reward(s, u, t, done)
 
 
     def info(self, frame=-1):
@@ -477,8 +491,7 @@ class RabbitEnv():
                 else:
                     d['d'+field] = (data[field][i]  - data[field]  [i-1]) / DELTA
             s = mp.reset_state(d)
-            self.mode = NORMAL_MODE
-            mode ='normal'
+            self.mode = mp.MODE_LV1
             ref = mp.init_ref(s)
             reward = 0
             history.append((self.mode, t, s, ref, mp.DEFAULT_U, reward))
@@ -555,8 +568,8 @@ def main():
 
     env.render(frame=0)
     plot_data = [env.history[0]]
-    ctr_mode = 'polar'
-    #ctr_mode = 'ref'
+    #ctr_mode = 'polar'
+    ctr_mode = 'ref'
 
     while True:
         stepOne = False
@@ -708,7 +721,7 @@ def main():
             done = exec_cmd(ctr_mode, env, v, frame)
             frame = env.num_of_frames() - 1
             env.render(frame=frame)
-            env.info()
+            #env.info()
             plot_data.append(env.history[frame])
             dump_plot(plot_data)
             if stepOne:
