@@ -58,6 +58,13 @@ SCALE=100
 RSCALE=1/SCALE
 OFFSET_VERT = SCREEN_SIZE[1]/3
 
+init_pose = mp.reset_state({
+ 'pry': 0,
+ 'th0': np.deg2rad(-46.77),
+ 'thk': np.deg2rad(99.76 ),
+ 'thw': np.deg2rad(-78.72)
+})
+
 vertical_prepare = mp.reset_state({
  'pry': 0,
  'th0': np.deg2rad(-21.696),
@@ -100,13 +107,17 @@ back_flip_top = mp.reset_state({
  'thw': np.deg2rad(-106)
  })
 
-#moving_plan = [ (0, vertical_jump)]
-moving_plan = [ (0, vertical_jump_top)
-              , (0.1, back_flip_prepare)
-              , (0.7, back_flip_jump)
-              , (0.9, back_flip_top)
-              ]
+moving_plan = [ (0, vertical_prepare)]
+#moving_plan = [ (0, vertical_jump_top)
+#              , (0.1, back_flip_prepare)
+#              , (0.7, back_flip_jump)
+#              , (0.9, back_flip_top)
+#              ]
 
+milestones = [ (mp.MODE_LV0, init_pose)
+             , (mp.MODE_LV2, vertical_jump_top)
+             , (mp.MODE_LV3, back_flip_prepare)
+             ]
 
 def dump_history_csv(history, filename='state.csv'):
     data = []
@@ -256,7 +267,20 @@ class RabbitEnv():
         if len(self.history ) > 1:
             if int(os.environ.get('AUTOSAVE', "0")):
                 self.autosave("normal")
-        #if random is not None:
+        if random is not None:
+            i = random.randint(len(milestones))
+            mode, s = milestones[i]
+            t = 0
+            self.mode = mode
+            done, msg = self.game_over(s)
+            assert not done, "???before-start???" + msg
+        else:
+            t = 0
+            s = moving_plan[0][1]
+            self.set_move_plan([(t, mp.joints(s)) for (t,s) in moving_plan])
+            done, msg = self.game_over(s)
+            self.mode = mp.MODE_LV0
+            assert not done, "???before-start???" + msg
         #    if random.randint(10) % 10 > 6:
         #        t = 0
         #        s = self.reference[0][2]
@@ -270,13 +294,6 @@ class RabbitEnv():
         #        print(i, "/", len(self.reference))
         #        print(s)
         #        assert not done, "???before-start???" + msg
-        t = 0
-        s = moving_plan[0][1]
-        self.set_move_plan([(t, mp.joints(s)) for (t,s) in moving_plan])
-        done, msg = self.game_over(s)
-        assert not done, "???before-start???" + msg
-        self.mode = mp.MODE_LV0
-        self.mode = mp.MODE_LV3
         u = mp.DEFAULT_U
         reward = 0
         ref = mp.init_ref(s)
@@ -306,7 +323,7 @@ class RabbitEnv():
         pc = mp.cog(s)
         angle = degrees(mp.pogo_angle(s))
         if self.mode == mp.MODE_LV0:
-            if pc[1] >= 1:
+            if pc[1] >= 1.5:
                 r = r + 100*np.exp(-abs(angle)/10)
                 self.mode = mp.MODE_LV1
         elif self.mode == mp.MODE_LV1:
@@ -568,8 +585,8 @@ def main():
 
     env.render(frame=0)
     plot_data = [env.history[0]]
-    #ctr_mode = 'polar'
-    ctr_mode = 'ref'
+    ctr_mode = 'polar'
+    #ctr_mode = 'ref'
 
     while True:
         stepOne = False
