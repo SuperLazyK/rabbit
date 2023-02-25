@@ -58,6 +58,14 @@ SCALE=100
 RSCALE=1/SCALE
 OFFSET_VERT = SCREEN_SIZE[1]/3
 
+hoge = mp.reset_state({
+ 'pry': 1,
+ 'thr': np.deg2rad(-5.696),
+ 'th0': np.deg2rad(-21.696),
+ 'thk': np.deg2rad(57.636),
+ 'thw': np.deg2rad(-76.671)
+})
+
 init_pose = mp.reset_state({
  'pry': 0,
  'th0': np.deg2rad(-46.77),
@@ -66,7 +74,7 @@ init_pose = mp.reset_state({
 })
 
 vertical_prepare = mp.reset_state({
- 'pry': 0,
+ 'pry': 1,
  'th0': np.deg2rad(-21.696),
  'thk': np.deg2rad(57.636),
  'thw': np.deg2rad(-76.671)
@@ -107,16 +115,51 @@ back_flip_top = mp.reset_state({
  'thw': np.deg2rad(-106)
  })
 
-moving_plan = [ (0, vertical_prepare)]
-#moving_plan = [ (0, vertical_jump_top)
-#              , (0.1, back_flip_prepare)
-#              , (0.7, back_flip_jump)
-#              , (0.9, back_flip_top)
-#              ]
+back_flip_jumpprep = mp.reset_state({
+ "prx": 0.22,
+ "pry": 0.00,
+ "thr": np.deg2rad(15.67),
+ "z": 0.00,
+ "th0": np.deg2rad(-8.32),
+ "thk": np.deg2rad(16.52),
+ "thw": np.deg2rad(-72.30),
+ "dprx": 0.00,
+ "dpry": 0.00,
+ "dthr": np.deg2rad(103.57),
+ "dz": -6.21,
+ "dth0": np.deg2rad(-14.29),
+ "dthk": np.deg2rad(-73.92),
+ "dthw": np.deg2rad(-21.47),
+})
+
+back_flip_jumpup = mp.reset_state({
+ "prx": 0,
+ "pry": 0.00,
+ "thr": np.deg2rad(19.95),
+ "z": -0.04,
+ "th0": np.deg2rad(6.83),
+ "thk": np.deg2rad(16.28),
+ "thw": np.deg2rad(-22.26),
+ "dprx": 0.00,
+ "dpry": 0.00,
+ "dthr": np.deg2rad(51.87),
+ "dz": 7.25,
+ "dth0": np.deg2rad(45.95),
+ "dthk": np.deg2rad(3.99),
+ "dthw": np.deg2rad(171.72),
+})
+
+#moving_plan = [ (0, vertical_prepare)]
+moving_plan = [ (0, vertical_jump_top)
+              , (0.1, back_flip_prepare)
+              , (0.7, back_flip_jump)
+              , (0.9, back_flip_top)
+              ]
 
 milestones = [ (mp.MODE_LV0, init_pose)
              , (mp.MODE_LV2, vertical_jump_top)
-             , (mp.MODE_LV3, back_flip_prepare)
+             , (mp.MODE_LV3, back_flip_jumpprep)
+             , (mp.MODE_LV3, back_flip_jumpup)
              ]
 
 def dump_history_csv(history, filename='state.csv'):
@@ -193,6 +236,11 @@ class RabbitViewer():
             pygame.draw.circle(self.screen, GRAY if color is None else color, ps[i], 150/5 * np.sqrt(RSCALE))
 
         pygame.draw.circle(self.screen, BLUE if color is None else color, ps[4], 150/5 * np.sqrt(RSCALE))
+        ground_point = ps[0].copy()
+        air_point = ps[0].copy()
+        ground_point[1] = 0
+        air_point[1] = 500
+        pygame.draw.line(self.screen, YELLOW, ground_point, air_point,  width=int(100 * RSCALE))
 
     def render(self, state, mode, t, ref, u, r):
         self.screen.fill(WHITE)
@@ -204,16 +252,17 @@ class RabbitViewer():
         pygame.draw.circle(self.screen, RED, pcog, 150/5 * np.sqrt(RSCALE))
         pygame.draw.line(self.screen, BLACK, [0,SCREEN_SIZE[1]/2 + OFFSET_VERT], [SCREEN_SIZE[0], SCREEN_SIZE[1]/2 + OFFSET_VERT],  width=int(100 * RSCALE))
         tmx, tmy, am = mp.moment(state)
-        text = self.font.render(f"mode={mode:} t={t:.03f} E={energy:.01f}", True, BLACK)
+        #text = self.font.render(f"mode={mode:} t={t:.03f} E={energy:.01f}", True, BLACK)
+        text = self.font.render(f"mode=normal t={t:.03f}", True, BLACK)
         text1 = self.font.render(f"ref={degrees(ref[0]):.01f} {degrees(ref[1]):.02f} {degrees(ref[2]):.02f}", True, BLACK)
         info = mp.calc_joint_property(state)
         text2 = self.font.render(f"obs={degrees(info['th0']):.01f} {degrees(info['thk']):.02f} {degrees(info['thw']):.02f}", True, BLACK)
         #text3 = self.font.render(f"moment={tmx:.01f} {tmy:.02f} {am:.02f}", True, BLACK)
         text3 = self.font.render(f"cog/inertia={cog[0]:.01f} {cog[1]:.02f} {mp.inertia(state):.02f}", True, BLACK)
         self.screen.blit(text, [300, 50])
-        self.screen.blit(text1, [300, 100])
-        self.screen.blit(text2, [300, 150])
-        self.screen.blit(text3, [300, 200])
+        #self.screen.blit(text1, [300, 100])
+        #self.screen.blit(text2, [300, 150])
+        #self.screen.blit(text3, [300, 200])
         pygame.display.flip()
         self.clock.tick(60)
 
@@ -277,6 +326,7 @@ class RabbitEnv():
         else:
             t = 0
             s = moving_plan[0][1]
+            s = hoge
             self.set_move_plan([(t, mp.joints(s)) for (t,s) in moving_plan])
             done, msg = self.game_over(s)
             self.mode = mp.MODE_LV0
@@ -439,6 +489,10 @@ class RabbitEnv():
         reward = self.calc_reward(s, u, t, done)
 
 
+    def set_zero_vel(self, frame=-1):
+        mode, t, s, ref, u, reward = self.history[frame]
+        mp.set_zero_vel(s)
+
     def info(self, frame=-1):
         mode, t, s, ref, u, reward = self.history[frame]
         energy = mp.energy(s)
@@ -531,8 +585,8 @@ def exec_cmd(ctr_mode, env, v, frame):
         k_th2 = 3*SPEED/6*np.pi/360
         _, _, done, _ = env.step_pvel_control(np.array([k_r, k_th1, k_th2]) * np.array([-v[1], v[0], v[2]]))
     elif ctr_mode == 'inv3':
-        k_th0 = 100*SPEED/6*np.pi/360
-        k_r = SPEED/2000
+        k_th0 = 10*SPEED/6*np.pi/360
+        k_r = SPEED/4000
         k_th = 10*SPEED/60*np.pi/360
         _, _, s, _, _, _ = env.history[frame]
         vj = mp.invkinematics3(s, np.array([0, -k_r, k_th]) * np.array([0, v[1], v[0]]))
@@ -587,6 +641,7 @@ def main():
     plot_data = [env.history[0]]
     ctr_mode = 'polar'
     #ctr_mode = 'ref'
+    #ctr_mode = 'inv3'
 
     while True:
         stepOne = False
@@ -701,10 +756,12 @@ def main():
                     ctr_mode = 'ref'
                     env.set_pos_ref(mp.joints(back_flip_top))
                 elif keyname == 'g':
+                    print(mp.g)
                     if mp.g == 0:
                         mp.g=9.8
                     else:
                         mp.g=0
+                        env.set_zero_vel()
             elif event.type == pl.KEYUP and ctr_mode != 'ref':
                 v = mp.DEFAULT_U
 
