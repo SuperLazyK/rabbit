@@ -273,8 +273,10 @@ A:(trigsimp(expand(trigexpand(jacobian(args(rhs)[1], ddX)))))$
 b:(expand(transpose(rhs) - (jacobian(args(rhs)[1], ddX)).transpose(matrix(ddX))))$
 showmatf90(A)$
 showmatf90(b)$
-disp(expand(configure_param(ratsimp(trigsimp(expand(determinant(A)))))));
+Ath:A[2]$
+f90(symbolilze(Ath . dX))$
 /*
+disp(expand(configure_param(ratsimp(trigsimp(expand(determinant(A)))))));
 A11:submatrix(3,4,5,A,3,4,5)$
 A22:submatrix(1,2,A,1,2)$
 disp(ratsimp(trigsimp(expand(determinant(A11)))));

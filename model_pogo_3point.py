@@ -38,8 +38,8 @@ l0 = 0.4
 l1 = 0.5
 l2 = 0.35
 #l = 1.2
-g  = 0
-#g  = 9.8
+#g  = 0
+g  = 9.8
 #g  = -9.8
 #k  = 15000 # mgh = 1/2 k x**2 -> T=2*pi sqrt(m/k)
 k  = 17000 # mgh = 1/2 k x**2 -> T=2*pi sqrt(m/k)
@@ -51,16 +51,16 @@ c = 0
 ref_min_th0 = np.deg2rad(-30)
 ref_max_th0 = np.deg2rad(20)
 ref_min_thk = np.deg2rad(1)
-ref_max_thk = np.deg2rad(100)
-#ref_max_thk = np.deg2rad(80)
+#ref_max_thk = np.deg2rad(100)
+ref_max_thk = np.deg2rad(80)
 ref_min_thw = np.deg2rad(-80)
 ref_max_thw = np.deg2rad(0)
-ref_min_pr = (l0 + l1) * 0.65
-#ref_min_pr = (l0 + l1) * 0.85
+#ref_min_pr = (l0 + l1) * 0.65
+ref_min_pr = (l0 + l1) * 0.85
 ref_max_pr = (l0 + l1) * 0.99
 ref_min_pth1 = np.deg2rad(-20)
-ref_max_pth1 = np.deg2rad(65)
-#ref_max_pth1 = np.deg2rad(45)
+#ref_max_pth1 = np.deg2rad(65)
+ref_max_pth1 = np.deg2rad(45)
 ref_min_pth2 = np.deg2rad(1)
 ref_max_pth2 = np.deg2rad(30)
 PREF_MIN = np.array([ref_min_pr, ref_min_pth1, ref_min_pth2])
@@ -167,6 +167,9 @@ def print_state(s, titlePrefix="", fieldPrefix=""):
             print(f"{titlePrefix} \"{i:}\": np.deg2rad({np.rad2deg(d[i]):.2f}),")
         else:
             print(f"{titlePrefix} \"{i:}\": {d[i]:.2f},")
+    c = cog(s)
+    print("C", c)
+    print("R", s[IDX_xr:IDX_yr+1])
 
 def calc_joint_property(s, d = {}):
     d['prx'] = s[IDX_xr ]

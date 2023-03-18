@@ -59,8 +59,7 @@ RSCALE=1/SCALE
 OFFSET_VERT = SCREEN_SIZE[1]/3
 
 hoge = mp.reset_state({
- 'pry': 1,
- 'thr': np.deg2rad(-5.696),
+ 'pry': 0,
  'th0': np.deg2rad(-21.696),
  'thk': np.deg2rad(57.636),
  'thw': np.deg2rad(-76.671)
@@ -580,14 +579,14 @@ def exec_cmd(ctr_mode, env, v, frame):
         k_thw = 3*SPEED/6*np.pi/360
         _, _, done, _ = env.step_vel_control(np.array([k_th0, k_thk, k_thw]) * np.array([v[2], v[1], v[0]]))
     elif ctr_mode == 'polar':
-        k_r = 3*SPEED/6*np.pi/360
-        k_th1 = 3*SPEED/6*np.pi/360
-        k_th2 = 3*SPEED/6*np.pi/360
+        k_r = SPEED/6*np.pi/360
+        k_th1 = SPEED/6*np.pi/360
+        k_th2 = SPEED/6*np.pi/360
         _, _, done, _ = env.step_pvel_control(np.array([k_r, k_th1, k_th2]) * np.array([-v[1], v[0], v[2]]))
     elif ctr_mode == 'inv3':
-        k_th0 = 10*SPEED/6*np.pi/360
-        k_r = SPEED/4000
-        k_th = 10*SPEED/60*np.pi/360
+        k_th0 = 20*SPEED/6*np.pi/360
+        k_r = SPEED/1000
+        k_th = 20*SPEED/60*np.pi/360
         _, _, s, _, _, _ = env.history[frame]
         vj = mp.invkinematics3(s, np.array([0, -k_r, k_th]) * np.array([0, v[1], v[0]]))
         _, _, done, _ = env.step_vel_control(vj + np.array([k_th0*v[2], 0, 0]))
@@ -795,7 +794,7 @@ def main():
             done = exec_cmd(ctr_mode, env, v, frame)
             frame = env.num_of_frames() - 1
             env.render(frame=frame)
-            #env.info()
+            env.info()
             plot_data.append(env.history[frame])
             dump_plot(plot_data)
             if stepOne:
